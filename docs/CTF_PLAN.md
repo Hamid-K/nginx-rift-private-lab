@@ -1,6 +1,6 @@
 # Nginx Rift CTF Plan
 
-Last updated: 2026-05-15 00:01:04 CEST
+Last updated: 2026-05-15 00:58:38 CEST
 
 ## Goal
 
@@ -41,7 +41,7 @@ Native x86_64 VM is the preferred ASLR-realism track:
 - [x] Run first same-port core-guided CTF mode.
 - [x] Inspect PoC mechanics to determine whether the recovered sprayed-body address is the correct overwrite target or only an input to another pointer calculation.
 - [x] Test worker reset after LFI core read to avoid final attempts running on a heap perturbed by core extraction.
-- [ ] Inspect crash core for the overwritten victim pool and cleanup pointer bytes.
+- [x] Inspect crash core for the overwritten victim pool and cleanup pointer bytes.
 - [x] Add Vagrant x86_64 Ubuntu track for ASLR-realism experiments.
 - [x] Launch ESXi VM using an `ovftool`-usable ESXi password source.
 - [x] Smoke-test same-port LFI/phpinfo on the x86_64 Ubuntu VM.
@@ -49,7 +49,7 @@ Native x86_64 VM is the preferred ASLR-realism track:
 - [x] Patch core-guided mode so it can generate a probe core even when ASLR yields no legacy URI-safe candidates.
 - [x] Add derive-only mode for non-destructive remote ASLR layout sampling.
 - [x] Sample fresh VM nginx master layouts for URI-safe candidate availability.
-- [ ] Decide whether core dumps are in-scope as a realistic LFI-assisted primitive or only a lab amplifier.
+- [x] Decide whether core dumps are in-scope as a realistic LFI-assisted primitive or only a lab amplifier.
 - [ ] If core-guided mode succeeds in a later iteration, repeat from a clean container to prove reproducibility.
 - [x] If core-guided mode fails, document the remaining missing primitive precisely.
 - [x] Commit first stable checkpoint before deeper changes: `12956c1`.
@@ -62,8 +62,22 @@ Native x86_64 VM is the preferred ASLR-realism track:
 4. Try 2-4 byte cleanup-pointer overwrites so unsafe high bytes are inherited from nginx's real cleanup pointer rather than sent through the URI.
 5. If partial overwrite fails, fall back to twin-VM tuning and deeper crash-core parsing of victim `ngx_pool_t` structures.
 
-Current status: initial partial-overwrite geometry is instrumented, but not won. Cores show the upload victim does create a non-NULL cleanup pointer, while the overflow marker remains short of the cleanup field before nginx changes allocation path. Only one ESXi VM exists right now, so any live debugger work still needs a separate clone/twin VM before it can count as non-target oracle work.
+Current status: partial-overwrite geometry is instrumented, but not won. A debug/twin VM now exists at `192.168.1.89`, separate from the target VM at `192.168.1.205`. The best stable debug layout reaches a 69-byte near miss before allocation thresholds move the overflow into unrelated structures.
 
 ## Current Strategy
 
-The best candidate is a hybrid of options 2 and 4 from the prompt: use a common web behavior, large upload/request-body buffering, to create a legitimate cleanup entry in the victim request pool, then exploit the overflow as a partial pointer overwrite. This may bypass the current full six-byte URI-safe address blocker because bytes above the overwrite remain from nginx's real cleanup pointer.
+The best current candidate is a core-guided partial overwrite:
+
+1. Use a common web behavior, large upload/request-body buffering, to create a legitimate cleanup entry in the victim request pool.
+2. Use an HTTP/LFI-readable crash core only as a CTF leak primitive to recover sprayed body slots and the victim cleanup pointer's preserved high bytes.
+3. Filter 2-byte-safe slot candidates to those matching the victim cleanup pointer high-byte window.
+4. Retry with the fake cleanup structure at the recovered body offset.
+
+This still does not count as a realistic default-production exploit path unless core dumps are enabled and readable. It is, however, a legitimate lab answer to whether a strong PHP local-file-read primitive plus a common web behavior can remove the current ASLR blocker without hardcoding target offsets.
+
+## Immediate Next Actions
+
+1. Reset the debug/twin VM out of the failed split-capture config and back to a known single-capture layout.
+2. Add automated core parsing for victim cleanup pointer high-byte recovery.
+3. Re-run 2-byte slot scan and only try fake-structure addresses whose high bytes match the recovered cleanup pointer mask.
+4. If this still misses, add a delayed-victim-body mode so the vulnerable overflow can corrupt request/pool metadata before the upload body forces temp-file cleanup allocation.

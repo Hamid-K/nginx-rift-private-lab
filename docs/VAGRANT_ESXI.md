@@ -1,6 +1,6 @@
 # Vagrant ESXi Lab
 
-Last updated: 2026-05-14 23:30:26 CEST
+Last updated: 2026-05-15 00:58:38 CEST
 
 ## Purpose
 
@@ -42,7 +42,7 @@ export ESXI_PASSWORD='...'
 
 In this branch, the working launch used a hidden macOS prompt to populate `ESXI_PASSWORD` for `ovftool` while leaving SSH to `Ultra` key-based. Do not commit the password or any generated password file.
 
-Current launch status:
+Current target launch status:
 
 - `ssh root@ultra.home` works with key authentication.
 - `vagrant validate` succeeds.
@@ -97,6 +97,8 @@ Then run the remote driver against that IP:
 
 Running. The current VM target is `192.168.1.205:19321`.
 
+A separate debug/twin VM is also running at `192.168.1.89:19321`. It is provisioned from the same repo and may be modified for live debugging, gdb tracing, and layout experiments. Do not use addresses or object locations learned from the debug/twin as target-specific exploit inputs for the CTF target.
+
 Latest smoke test:
 
 ```text
@@ -110,3 +112,5 @@ guest architecture: x86_64
 Latest core-guided result: the driver recovered 20 sprayed fake-structure addresses from an LFI-readable core, but all 20 were URI-unsafe in the current ASLR layout, so no marker proof was achieved.
 
 Latest ASLR sampling result: 12 fresh nginx master layouts produced `0 / 12` cases with any URI-safe legacy cleanup candidate.
+
+Latest debug/twin result: reducing `connection_pool_size` and adding a short literal prefix can create a stable 69-byte partial-overwrite near miss, but crossing that remaining gap changes nginx allocation geometry.

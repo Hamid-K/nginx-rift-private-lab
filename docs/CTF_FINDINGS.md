@@ -1,6 +1,6 @@
 # Nginx Rift CTF Findings
 
-Last updated: 2026-05-14 23:33:29 CEST
+Last updated: 2026-05-15 00:58:38 CEST
 
 ## Working Findings
 
@@ -104,3 +104,29 @@ Under the current constraints, LFI/phpinfo-style primitives are enough to remove
 They are not, by themselves, enough to make the existing PoC reliably exploit same-port nginx remotely. The remaining hard requirement is a way to recover or stabilize the exact cleanup-object target, not merely one copy of the sprayed fake structure. The first core-guided experiment recovered sprayed body addresses but still did not produce marker proof.
 
 On the real x86_64 VM, an additional constraint appeared: even when core-guided recovery finds the sprayed fake structures, the resulting addresses may all be URI-unsafe. That makes the current chain unreliable under normal ASLR unless another primitive can influence heap placement, select a URI-safe target, or avoid the six-byte URI-safety constraint.
+
+## New Findings From The Debug Twin
+
+### Worker Crash Brute Force Is Plausible But Not Free
+
+The nginx master usually respawns a worker after a crash, so a limited remote brute-force loop can be a valid lab strategy. It is not cost-free: repeated worker death is user-visible disruption, and if core dumps are enabled each failed attempt can create large files under the service working directory.
+
+For this CTF, a brute-force solution should therefore be bounded, rate-limited, and marker-verified. A plain "worker crashed" signal is not enough proof because many bad pointers crash before cleanup execution.
+
+### 2-Byte Partial Overwrite Needs High-Byte Correlation
+
+Slot scanning an LFI-readable core can recover many sprayed fake-structure addresses and their offsets inside the POST body. In 2-byte mode, many low bytes are URI-safe.
+
+That alone does not solve the exploit. A 2-byte overwrite only replaces the low 16 bits of the victim `pool->cleanup` pointer; the upper bits remain whatever nginx originally allocated for the real cleanup record. Therefore a candidate fake structure is useful only if it falls in the same preserved high-byte window as the victim cleanup pointer after masking off the overwritten bytes.
+
+Current driver gap: it can recover sprayed slots, but it does not yet automatically recover the victim cleanup pointer high bytes from the probe core and filter slot hits against them.
+
+### Layout Tuning Reaches A Near Miss, Not A Win
+
+Live debugging on the clone VM found a stable near miss by reducing `connection_pool_size` and adding a small literal prefix before `$1` in the vulnerable `set` directive. The best tested stable layout left the overwrite marker about 69 bytes before the victim cleanup slot.
+
+Attempts to move the marker the final distance caused nginx to cross allocation thresholds. The overflow then corrupts malloc metadata or request/log state instead of the intended cleanup pointer. This explains why naive increments of `plus_count`, request prefix length, or header-buffer size do not behave as a simple linear write-length knob.
+
+### Debugger Data Is Not A Target Oracle
+
+The new VM at `192.168.1.89` is a debug twin. GDB output from that VM can explain source-level behavior and guide lab design, but it cannot supply target-specific ASLR addresses for the CTF win on `192.168.1.205`.

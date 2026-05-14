@@ -1,6 +1,6 @@
 # Nginx Rift CTF Experiment Log
 
-Last updated: 2026-05-14 23:14:41 CEST
+Last updated: 2026-05-15 00:58:38 CEST
 
 ## 2026-05-14
 
@@ -243,3 +243,53 @@ Last updated: 2026-05-14 23:14:41 CEST
 - Tested `large_client_header_buffers 4 16384`; the transition still occurred after the stable `plus_count=2600` path. The cleanup-bearing victim pool disappeared from recognizable core scans for larger plus counts.
 - Current partial-overwrite blocker: a non-NULL cleanup pointer exists, but the accessible overflow geometry reaches nearby request/pool memory, not the cleanup pointer field itself.
 - Correction: no second clone VM has been created yet. All ESXi VM tests so far used the single VM at `192.168.1.205`. A separate clone/twin VM must be created before using live debugger output as non-target oracle data.
+
+## 2026-05-15
+
+### Debug Twin VM
+
+- User fixed the ESXi NIC/port-group issue.
+- Created/provisioned a separate debug/twin VM at `192.168.1.89:19321` for live-debugging and layout experiments.
+- Kept the original target VM at `192.168.1.205:19321` as the CTF target.
+- Installed `gdb` and set `kernel.yama.ptrace_scope=0` only on the debug/twin VM.
+- Added `debug/gdb_trace_request.gdb` to trace request allocations, rewrite copy positions, cleanup registration, request freeing, and pool destruction.
+- Rule clarification: gdb and direct SSH-derived offsets from `192.168.1.89` are allowed for source/layout understanding, but target exploitation against `192.168.1.205` must still use HTTP/LFI primitives or version/distro facts.
+
+### Slot-Scan Core Probe
+
+- Added a slot-probe spray body that writes a unique nonce at many 8-byte-aligned offsets inside the 4000-byte POST body.
+- Added core scanning that finds these nonce records in an LFI-readable core and maps them back to candidate fake-cleanup structure addresses and body offsets.
+- Default 6-byte mode on the debug VM found thousands of sprayed slots in the core, but zero URI-safe addresses.
+- 3-byte mode also produced zero URI-safe candidates in the tested layout.
+- 2-byte mode produced hundreds of URI-safe low-byte candidates, but trying the first candidate batch still gave worker disruption without marker proof.
+- Current interpretation: slot recovery works, but a 2-byte partial overwrite must be filtered against the victim cleanup pointer's preserved high bytes. Trying arbitrary low-byte-safe sprayed slots is too broad and mostly points the cleanup pointer to the wrong 64 KiB window.
+
+### Live Debug Geometry Results
+
+- GDB tracing on the debug/twin VM confirmed the vulnerable copy location, the upload victim cleanup registration, and the later crash site.
+- With the repo/default config (`request_pool_size 7920`, `connection_pool_size 4096`, `client_header_buffer_size 4096`, `large_client_header_buffers 4 16384`) and `a_count=349`, `plus_count=2600`, the marker landed roughly 3123 bytes before the victim `pool->cleanup` slot.
+- Increasing `plus_count` moved the marker linearly only up to a narrow threshold. Past the threshold nginx switched allocation/copy geometry, and the overflow moved into malloc metadata or other request/log objects instead of the desired cleanup slot.
+- Reducing `connection_pool_size` was the strongest layout lever:
+  - `request_pool_size=4096`, `connection_pool_size=1536`, `a_count=128`, `plus_count=2800` left about a 160-byte gap.
+  - `request_pool_size=4096`, `connection_pool_size=1472`, `a_count=128`, `plus_count=2800` left about a 96-byte gap.
+  - `request_pool_size=4096`, `connection_pool_size=1456`, `a_count=128`, `plus_count=2800` left about an 80-byte gap.
+- Literal prefix padding in `set $original_endpoint` can shift the marker slightly without increasing attacker URI length:
+  - With `connection_pool_size=1456`, an 11-byte literal prefix before `$1` reduced the stable gap to about 69 bytes.
+  - At 12 bytes and beyond, the allocation path changed and the target disappeared from the stable crash geometry.
+- Varying spray count did not materially change this best stable gap once enough sprays were present.
+- Changing `client_header_buffer_size` away from 4096 either increased the gap or moved into a bad layout.
+- `connection_pool_size` must be a multiple of 16; invalid intermediate values fail nginx config validation.
+
+### Split-Capture Experiment
+
+- Tried changing the vulnerable route to split the capture into `$1` plus a final six-byte `$2`, with a literal suffix between them:
+  - Intended effect: preserve the old request-line allocation path while shifting only the final overwritten bytes toward the cleanup slot.
+  - Implementation used `location ~ ^/api/(.*)(......)$` because the unquoted `{6}` regex form was rejected by nginx config parsing in this context.
+- Result: the layout moved to a bad/large-allocation path; core hits were not usable for the intended escaped-copy position, and the nearest recognizable pools were far away.
+- Current status: abandoned as the primary path unless source review reveals a better way to split captures without changing the vulnerable script engine behavior.
+
+### Worker Crash And Brute Force Note
+
+- A bounded brute-force path is acceptable if each attempt is remote-only, uses HTTP/LFI-derived facts, and has a clear success proof.
+- Nginx worker crashes are normally recovered by the master spawning a replacement worker, so single attempts are not permanent process loss.
+- Practical caveats remain: rapid repeated crashes are service disruption, master start-rate/systemd limits can be hit in lab control scenarios, and core dumps can fill disk if enabled.

