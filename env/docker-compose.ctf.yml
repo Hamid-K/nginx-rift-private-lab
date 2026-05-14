@@ -1,7 +1,10 @@
 services:
   nginx:
     platform: linux/amd64
-    build: .
+    image: nginx-rift-ctf
+    build:
+      context: .
+      dockerfile: Dockerfile.ctf
     cap_add:
       - SYS_PTRACE
     security_opt:
@@ -9,5 +12,6 @@ services:
     init: true
     ports:
       - "19321:19321"
+      - "19324:19324"
     tty: true
     stdin_open: true

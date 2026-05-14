@@ -1,0 +1,8 @@
+services:
+  nginx:
+    image: nginx-rift-ctf-lfi
+    build:
+      context: .
+      dockerfile: Dockerfile.lfi
+    environment:
+      NGINX_CONF: /app/nginx-lfi.conf

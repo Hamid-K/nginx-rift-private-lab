@@ -33,3 +33,5 @@ Tested on Ubuntu 24.04.3 LTS.
 1. `./setup.sh` — build the container.
 2. `docker compose -f env/docker-compose.yml up` — start the vulnerable NGINX server.
 3. `python3 poc.py --shell` — pop a shell.
+
+For the local Docker reproduction flow, see [LAB.md](LAB.md).
