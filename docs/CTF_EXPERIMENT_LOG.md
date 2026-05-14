@@ -1,6 +1,6 @@
 # Nginx Rift CTF Experiment Log
 
-Last updated: 2026-05-14 23:06:13 CEST
+Last updated: 2026-05-14 23:14:41 CEST
 
 ## 2026-05-14
 
@@ -102,3 +102,79 @@ Last updated: 2026-05-14 23:06:13 CEST
 - The driver reset the worker after parsing the core and before final attempts.
 - Result remained worker disruption without marker proof.
 - Current interpretation: the final failure is not simply caused by LFI core-read traffic perturbing the next worker. Next step is inspecting the crash core for the overwritten victim pool/cleanup pointer bytes.
+
+### Native Architecture Track Decision
+
+- User asked whether switching to ARM would help, then suggested a real Ubuntu VM through Vagrant on the `Ultra` ESXi host.
+- Decision: stay x86_64 and use Vagrant for the realism track.
+- Rationale:
+  - ARM64 removes Docker Desktop amd64 emulation artifacts but invalidates the original x86_64 PoC heap candidates and changes libc/codegen/layout.
+  - A real x86_64 Ubuntu VM removes the Docker Desktop emulation caveat while preserving the architecture the PoC was tuned for.
+- An ARM64 overlay briefly built during exploration, then the lab was returned to the x86_64 same-port CTF image and the ARM overlay was removed from the branch.
+
+### Vagrant ESXi Attempt 1
+
+- Added `Vagrantfile`, `vagrant/provision.sh`, and `docs/VAGRANT_ESXI.md`.
+- Confirmed `root@ultra.home` SSH key authentication works.
+- Confirmed `vagrant validate` succeeds when an ESXi password spec is syntactically available.
+- Ran `vagrant up --provider=vmware_esxi`.
+- Vagrant downloaded `generic/ubuntu2204` VMware box and started the ESXi build.
+- `ovftool` prompted for an ESXi password despite SSH key auth; this is expected for this provider because `ovftool` does not use SSH keys.
+- Killed the launch before any VM was created. `vagrant status` reports `not created`, and `vim-cmd vmsvc/getallvms` shows no `nginx-rift-lab` VM.
+- Next VM launch requires `ESXI_PASSWORD_SPEC=env:ESXI_PASSWORD`, `ESXI_PASSWORD_SPEC=file:/path`, or an interactive `prompt:` run.
+
+### Vagrant ESXi Launch And Manual Provision
+
+- User clarified that the password prompt was intended for `ovftool` operations, not SSH to `Ultra`.
+- Kept SSH to `root@ultra.home` key-based and used a hidden macOS prompt only to populate `ESXI_PASSWORD` for the Vagrant/`ovftool` path.
+- Launched the VM through `vagrant up --provider=vmware_esxi`.
+- ESXi created VMID `24` with guest IP `192.168.1.205`.
+- Vagrant provider guest communication did not complete cleanly, but direct Vagrant-key SSH to `vagrant@192.168.1.205` worked.
+- Synced the repo manually to `/vagrant` and ran `sudo bash /vagrant/vagrant/provision.sh`.
+- Provisioning installed/build the nginx target, PHP-FPM, same-port LFI/phpinfo routes, and systemd services.
+- Smoke test passed:
+  - `http://192.168.1.205:19321/` returned `ok`.
+  - PHP-FPM LFI `/proc/self/status` showed UID/GID `65534`.
+  - `/proc/sys/kernel/randomize_va_space` returned `2`.
+  - guest architecture is `x86_64`.
+
+### VM Core-Dump Provisioning Fix
+
+- First VM core-guided run failed to read `/app/tmp/core`.
+- Guest checks showed Ubuntu routed cores through apport:
+  - `/proc/sys/kernel/core_pattern` was an apport pipe.
+  - the shell `ulimit -c` was `0`.
+- Updated `vagrant/provision.sh` to:
+  - disable apport for the lab,
+  - set `kernel.core_pattern=core`,
+  - set `kernel.core_uses_pid=0`,
+  - set `fs.suid_dumpable=2`,
+  - make `/app/tmp` owned by `nobody:nogroup`.
+- Re-ran provisioning on the VM.
+- LFI confirmed:
+  - `/proc/sys/kernel/core_pattern` is `core`,
+  - `/proc/sys/fs/suid_dumpable` is `2`,
+  - `/proc/sys/kernel/randomize_va_space` remains `2`.
+
+### VM Core-Guided Attempt 1
+
+- Patched `ctf_remote_exploit.py` so core-guided mode can generate a probe core using URI-safe bogus address `0x303030303030` when the current ASLR layout has no legacy URI-safe candidates.
+- Ran `./ctf_remote_exploit.py --host 192.168.1.205 --port 19321 --core-guided --tries-per-candidate 2 --proof-delay 0.25 --verbose`.
+- The driver derived over HTTP:
+  - nginx worker PID,
+  - nginx writable image mapping,
+  - worker heap ranges,
+  - libc base/path,
+  - `system()` offset and absolute address from LFI-read libc.
+- The current VM master layout produced `0 / 20` URI-safe legacy candidates.
+- The core probe created an LFI-readable `/app/tmp/core`, but the first search reported no URI-safe sprayed-body hits.
+- Added driver instrumentation to distinguish total core hits from URI-safe hits.
+
+### VM Core-Guided Attempt 2: URI Safety Accounting
+
+- Re-ran the VM core-guided driver after instrumentation.
+- Result:
+  - `Core-guided sprayed-body addresses: 0 URI-safe / 20 total`
+  - sample unsafe hits included `0x55d484df7477`, `0x55d484dfdeb7`, and `0x55d484e5e1b7`.
+- Interpretation: core-guided LFI can recover sprayed fake-structure addresses on the VM, but this ASLR layout makes all recovered addresses unusable for the PoC's six-byte URI overwrite path.
+- No marker proof has been achieved on the real x86_64 VM.

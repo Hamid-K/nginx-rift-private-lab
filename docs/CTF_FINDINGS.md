@@ -1,6 +1,6 @@
 # Nginx Rift CTF Findings
 
-Last updated: 2026-05-14 23:06:13 CEST
+Last updated: 2026-05-14 23:25:48 CEST
 
 ## Working Findings
 
@@ -64,8 +64,28 @@ Worker-reset testing did not change the outcome. The stronger current hypothesis
 
 The host is arm64 while the target container is `linux/amd64`. Docker Desktop emulation appears to make addresses stable even with `randomize_va_space=2` and normal process personality. This is acceptable for developing the address-derivation logic, but it is not a clean measurement of real x86_64 Linux ASLR entropy.
 
+The better realism track is a real x86_64 Ubuntu VM via Vagrant, not ARM64. That removes Docker Desktop/Rosetta effects while preserving the architecture and libc family the published PoC targets.
+
+For the installed `vagrant-vmware-esxi` provider, SSH key auth is not enough for the full VM creation path. The provider's SSH operations can use keys, but `ovftool` still needs ESXi password authentication for uploading/importing a VM.
+
+### VM ASLR Result So Far
+
+The x86_64 Ubuntu VM removes the Docker Desktop emulation caveat. In the VM:
+
+- `uname -m` is `x86_64`.
+- `/proc/sys/kernel/randomize_va_space` is `2`.
+- same-port PHP-FPM still runs as UID `65534`.
+- LFI can read the same-UID nginx worker maps and the mapped libc file.
+- The driver computes `system()` from the target libc through LFI, not from local files.
+
+The first VM ASLR layout produced zero URI-safe legacy candidate addresses. After enabling local core dumps, the core-guided probe recovered 20 sprayed fake-structure addresses from `/app/tmp/core`, but all 20 were URI-unsafe for the six-byte overwrite path. That is a stronger and more realistic limitation than the Docker result, where emulation-stable addresses happened to include URI-safe candidates.
+
+Current implication: for the VM path, the blocker is not merely finding the sprayed structure. The exploit also needs a way to make or select a sprayed fake-structure address whose low six bytes survive the nginx URI processing constraint. Worker crashes alone do not change the master process layout, so replacement workers are expected to inherit the same broad ASLR layout.
+
 ## Current Research Answer Draft
 
 Under the current constraints, LFI/phpinfo-style primitives are enough to remove the libc/PIE ASLR uncertainty if they can read the nginx worker's `/proc/<pid>/maps` and the mapped libc file.
 
 They are not, by themselves, enough to make the existing PoC reliably exploit same-port nginx remotely. The remaining hard requirement is a way to recover or stabilize the exact cleanup-object target, not merely one copy of the sprayed fake structure. The first core-guided experiment recovered sprayed body addresses but still did not produce marker proof.
+
+On the real x86_64 VM, an additional constraint appeared: even when core-guided recovery finds the sprayed fake structures, the resulting addresses may all be URI-unsafe. That makes the current chain unreliable under normal ASLR unless another primitive can influence heap placement, select a URI-safe target, or avoid the six-byte URI-safety constraint.
