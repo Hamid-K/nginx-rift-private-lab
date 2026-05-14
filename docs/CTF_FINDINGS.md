@@ -1,6 +1,6 @@
 # Nginx Rift CTF Findings
 
-Last updated: 2026-05-15 00:58:38 CEST
+Last updated: 2026-05-15 01:16:56 CEST
 
 ## Working Findings
 
@@ -127,6 +127,8 @@ Live debugging on the clone VM found a stable near miss by reducing `connection_
 
 Attempts to move the marker the final distance caused nginx to cross allocation thresholds. The overflow then corrupts malloc metadata or request/log state instead of the intended cleanup pointer. This explains why naive increments of `plus_count`, request prefix length, or header-buffer size do not behave as a simple linear write-length knob.
 
+One useful source-level lever is to keep raw URI length constant while replacing `A` bytes with `+` bytes. The length pass still counts one raw byte, while the vulnerable copy pass escapes `+` to three bytes under args escaping. This advances the overflow by two bytes per swap without crossing request-line length thresholds. The final winning path used HTTP/2 instead, but this remains a concrete layout-control primitive for future variants.
+
 ### Debugger Data Is Not A Target Oracle
 
 The new VM at `192.168.1.89` is a debug twin. GDB output from that VM can explain source-level behavior and guide lab design, but it cannot supply target-specific ASLR addresses for the CTF win on `192.168.1.205`.
@@ -138,3 +140,19 @@ The delayed-upload variant creates the victim request first, triggers the rewrit
 On the tuned debug layout, nginx segfaults in `ngx_http_request_handler()` immediately after the vulnerable copy, before the delayed body can become the next useful allocation event. This means nearby pool/request/log corruption is currently fatal earlier than the cleanup-allocation idea can help.
 
 Current implication: the next useful work is avoiding or weaponizing the earlier request/log corruption, not further delayed-body variants.
+
+### HTTP/2 Provides A Practical Same-Port Cleanup Target
+
+The successful lab chain uses HTTP/2 as the second common web behavior. HTTP/2 is served by the same nginx instance and port, and nginx registers an HTTP/2 cleanup record on the connection pool. That gives the exploit a real non-NULL cleanup pointer near the vulnerable connection-pool/log objects.
+
+The final path is:
+
+1. Use PHP LFI to derive the nginx worker PID, worker maps, libc base/path, and `system()`.
+2. Trigger a probe crash with a 2-byte URI-safe bogus cleanup target.
+3. Read the LFI-accessible core and find the corrupted HTTP/2 connection pool whose `cleanup` field preserves the correct high bytes.
+4. Find sprayed h2 extension-frame body slots in the same 64 KiB window.
+5. Retry with a fake `ngx_pool_cleanup_s` at the selected h2-body offset.
+
+This bypasses ordinary PIE/libc ASLR in the lab without disabling ASLR or hardcoding target offsets. The target VM was exploited after deriving the runtime facts over HTTP/LFI.
+
+The realism caveat remains significant: the winning chain depends on LFI-readable core dumps. That is a deliberate CTF/lab amplifier, not a default-production assumption. Without readable cores or another memory disclosure, LFI plus phpinfo/maps can solve base addresses but not this exact heap/window selection problem.

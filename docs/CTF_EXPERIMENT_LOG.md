@@ -1,6 +1,6 @@
 # Nginx Rift CTF Experiment Log
 
-Last updated: 2026-05-15 00:58:38 CEST
+Last updated: 2026-05-15 01:16:56 CEST
 
 ## 2026-05-14
 
@@ -320,3 +320,35 @@ Last updated: 2026-05-15 00:58:38 CEST
   - 0 safe slots matching observed cleanup windows.
 - Live gdb on the tuned delayed-upload run showed the worker segfaults in `ngx_http_request_handler()` immediately after the vulnerable copy and before the delayed body can register a temp-file cleanup.
 - Current conclusion: delayed upload is not useful unless another layout lever avoids the earlier request/log corruption.
+
+### HTTP/2 Connection-Pool Cleanup Path
+
+- Source review found that HTTP/2 setup registers a cleanup on the connection pool (`ngx_http_v2_pool_cleanup`), giving a non-NULL `pool->cleanup` before the vulnerable HTTP/1 request can corrupt the neighboring connection-pool objects.
+- Enabled HTTP/2 on the same public port in the CTF lab with `listen 19321 http2;`. Plain HTTP/1.1 on the same port still reaches `/`, `/api/...`, `/lfi.php`, and `/phpinfo.php`.
+- Added `--h2-victim` to the PoC/driver:
+  - opens an HTTP/2 connection on the same nginx listener,
+  - sends the HTTP/2 preface and SETTINGS frame,
+  - sends a standards-compliant unknown extension frame carrying the same 4000-byte probe/fake-structure body,
+  - leaves the connection alive as the corruption victim.
+- Added corrupted/probe pool scanning for cores:
+  - normal `ngx_pool_t` validation fails after the overwrite because `d.last`, `d.end`, `large`, and related fields are corrupted,
+  - the new scanner specifically looks for pool-like 16-byte-aligned objects whose `cleanup` field has the probe low bytes and whose `log` pointer still maps to writable memory.
+- GDB calibration on the debug clone:
+  - `a_count=128`, `plus_count=962` reached the HTTP/2 connection pool but left the overwrite one byte misaligned.
+  - `a_count=127`, `plus_count=962` aligned the low-2-byte partial overwrite on `pool->cleanup`.
+- Debug clone win:
+  - command: `./ctf_remote_exploit.py --host 192.168.1.89 --port 19321 --core-guided --target-len 2 --h2-victim --a-count 127 --plus-count 962 --tries-per-candidate 1 --max-core-hits 100 --proof-delay 0.25 --core-delay 2 --verbose`
+  - result: recovered one corrupted/probe pool and matched safe h2-body slots in the same 64 KiB window.
+  - first final candidate executed the marker command and was verified through LFI.
+- Target VM win:
+  - deployed the updated branch lab config to `192.168.1.205` as lab setup.
+  - ran the same command against the target VM, using only HTTP/LFI facts during exploitation.
+  - target facts derived remotely included worker PID `15474`, nginx rw mapping `0x562f58677000`, libc base `0x7fca6acfa000`, and `system()` `0x7fca6ad4ad70`.
+  - probe found `1` corrupted/probe pool with cleanup `0x562f58b23030`.
+  - filter found `266` matching safe slots in that preserved high-byte window.
+  - first final candidate `0x562f58b23627` at body offset `80` executed the marker command.
+- Target repeat after clean service restart:
+  - worker PID `15554`, nginx rw mapping `0x561281df2000`, libc base `0x7f576434f000`, `system()` `0x7f576439fd70`.
+  - probe found `1` corrupted/probe pool and `45` matching safe slots.
+  - first final candidate `0x5612824f777a` at body offset `0` executed the marker command.
+- CTF status: won under the updated lab rules. The final exploit did not use target-side gdb, SSH-derived offsets, or hardcoded ASLR bases.

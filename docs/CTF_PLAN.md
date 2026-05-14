@@ -1,6 +1,6 @@
 # Nginx Rift CTF Plan
 
-Last updated: 2026-05-15 00:58:38 CEST
+Last updated: 2026-05-15 01:16:56 CEST
 
 ## Goal
 
@@ -50,34 +50,27 @@ Native x86_64 VM is the preferred ASLR-realism track:
 - [x] Add derive-only mode for non-destructive remote ASLR layout sampling.
 - [x] Sample fresh VM nginx master layouts for URI-safe candidate availability.
 - [x] Decide whether core dumps are in-scope as a realistic LFI-assisted primitive or only a lab amplifier.
-- [ ] If core-guided mode succeeds in a later iteration, repeat from a clean container to prove reproducibility.
+- [x] If core-guided mode succeeds in a later iteration, repeat from a clean service restart to prove reproducibility.
+- [x] Achieve marker-verified CTF win against the debug clone with HTTP/LFI-only exploit inputs.
+- [x] Achieve marker-verified CTF win against the target VM with HTTP/LFI-only exploit inputs.
 - [x] If core-guided mode fails, document the remaining missing primitive precisely.
 - [x] Commit first stable checkpoint before deeper changes: `12956c1`.
 
 ## Next Actions
 
-1. Test partial overwrite against a victim request whose request pool has a real non-NULL `pool->cleanup` pointer.
-2. Add a realistic victim route that forces request-body temp-file buffering, because nginx registers a pool cleanup for temp files.
-3. Use an LFI-readable crash core to recover the original cleanup pointer high bytes and sprayed fake-structure locations.
-4. Try 2-4 byte cleanup-pointer overwrites so unsafe high bytes are inherited from nginx's real cleanup pointer rather than sent through the URI.
-5. If partial overwrite fails, fall back to twin-VM tuning and deeper crash-core parsing of victim `ngx_pool_t` structures.
+1. Preserve the winning config and exploit command in version control.
+2. Summarize the research answer: this is exploitable in the updated lab with ASLR enabled when a strong local-file-read primitive can also read crash cores; phpinfo or `/proc/<pid>/maps` alone is not enough for this exact chain.
 
-Current status: partial-overwrite geometry is instrumented, but not won. A debug/twin VM now exists at `192.168.1.89`, separate from the target VM at `192.168.1.205`. The best stable debug layout reaches a 69-byte near miss before allocation thresholds move the overflow into unrelated structures.
+Current status: won in the updated HTTP/2 same-port lab. A debug/twin VM exists at `192.168.1.89`, separate from the target VM at `192.168.1.205`. The final target win used no target-side debugger or SSH-derived offsets.
 
 ## Current Strategy
 
-The best current candidate is a core-guided partial overwrite:
+The winning strategy is a core-guided partial overwrite against an HTTP/2 connection-pool cleanup:
 
-1. Use a common web behavior, large upload/request-body buffering, to create a legitimate cleanup entry in the victim request pool.
-2. Use an HTTP/LFI-readable crash core only as a CTF leak primitive to recover sprayed body slots and the victim cleanup pointer's preserved high bytes.
-3. Filter 2-byte-safe slot candidates to those matching the victim cleanup pointer high-byte window.
-4. Retry with the fake cleanup structure at the recovered body offset.
+1. Enable HTTP/2 on the same nginx listener so the same worker/port handles the leak surface, vulnerable route, and h2 victim.
+2. Use an unknown HTTP/2 extension frame as the victim body carrier, leaving binary fake-cleanup structures in the h2 connection pool.
+3. Use an HTTP/LFI-readable crash core only as a CTF leak primitive to recover h2-body slots and the corrupted connection pool's preserved high bytes.
+4. Filter 2-byte-safe slot candidates to those matching the corrupted cleanup pointer high-byte window.
+5. Retry with the fake cleanup structure at the recovered h2-body offset.
 
 This still does not count as a realistic default-production exploit path unless core dumps are enabled and readable. It is, however, a legitimate lab answer to whether a strong PHP local-file-read primitive plus a common web behavior can remove the current ASLR blocker without hardcoding target offsets.
-
-## Immediate Next Actions
-
-1. Reset the debug/twin VM out of the failed split-capture config and back to a known single-capture layout.
-2. Add automated core parsing for victim cleanup pointer high-byte recovery.
-3. Re-run 2-byte slot scan and only try fake-structure addresses whose high bytes match the recovered cleanup pointer mask.
-4. Investigate the earlier request/log corruption path, because delayed victim body crashed before cleanup allocation could become useful.

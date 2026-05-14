@@ -1,6 +1,6 @@
 # Vagrant ESXi Lab
 
-Last updated: 2026-05-15 00:58:38 CEST
+Last updated: 2026-05-15 01:16:56 CEST
 
 ## Purpose
 
@@ -114,3 +114,14 @@ Latest core-guided result: the driver recovered 20 sprayed fake-structure addres
 Latest ASLR sampling result: 12 fresh nginx master layouts produced `0 / 12` cases with any URI-safe legacy cleanup candidate.
 
 Latest debug/twin result: reducing `connection_pool_size` and adding a short literal prefix can create a stable 69-byte partial-overwrite near miss, but crossing that remaining gap changes nginx allocation geometry.
+
+Latest CTF target result: the updated HTTP/2 same-port lab config was deployed to `192.168.1.205`, and the core-guided HTTP/LFI driver achieved marker-verified RCE with:
+
+```bash
+./ctf_remote_exploit.py --host 192.168.1.205 --port 19321 \
+  --core-guided --target-len 2 --h2-victim \
+  --a-count 127 --plus-count 962 \
+  --tries-per-candidate 1 --max-core-hits 100
+```
+
+This target run used direct SSH only for lab deployment/service restart, not for target offset discovery.

