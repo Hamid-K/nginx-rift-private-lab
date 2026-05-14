@@ -1,6 +1,6 @@
 # Nginx Rift CTF Plan
 
-Last updated: 2026-05-14 23:30:26 CEST
+Last updated: 2026-05-15 00:01:04 CEST
 
 ## Goal
 
@@ -56,8 +56,14 @@ Native x86_64 VM is the preferred ASLR-realism track:
 
 ## Next Actions
 
-1. Commit the ESXi/Vagrant VM recipe, core-dump provisioning, and VM test notes.
-2. Extend sampling to core-derived sprayed-body addresses if needed; the first VM core run was `0 URI-safe / 20 total`.
-3. Compare core-derived fake-structure addresses against the original preread candidate set and inspect the crash core for overwritten victim pool evidence.
-4. Determine whether the six-byte target lands at the intended cleanup pointer or corrupts an earlier/later field in same-port mode.
-5. Decide whether LFI-readable core dumps are a realistic primitive or a lab-only amplifier.
+1. Test partial overwrite against a victim request whose request pool has a real non-NULL `pool->cleanup` pointer.
+2. Add a realistic victim route that forces request-body temp-file buffering, because nginx registers a pool cleanup for temp files.
+3. Use an LFI-readable crash core to recover the original cleanup pointer high bytes and sprayed fake-structure locations.
+4. Try 2-4 byte cleanup-pointer overwrites so unsafe high bytes are inherited from nginx's real cleanup pointer rather than sent through the URI.
+5. If partial overwrite fails, fall back to twin-VM tuning and deeper crash-core parsing of victim `ngx_pool_t` structures.
+
+Current status: initial partial-overwrite geometry is instrumented, but not won. Cores show the upload victim does create a non-NULL cleanup pointer, while the overflow marker remains short of the cleanup field before nginx changes allocation path. Only one ESXi VM exists right now, so any live debugger work still needs a separate clone/twin VM before it can count as non-target oracle work.
+
+## Current Strategy
+
+The best candidate is a hybrid of options 2 and 4 from the prompt: use a common web behavior, large upload/request-body buffering, to create a legitimate cleanup entry in the victim request pool, then exploit the overflow as a partial pointer overwrite. This may bypass the current full six-byte URI-safe address blocker because bytes above the overwrite remain from nginx's real cleanup pointer.

@@ -196,3 +196,50 @@ Last updated: 2026-05-14 23:14:41 CEST
 - Strong arbitrary file read helps with target fingerprinting, downloading exact binaries/libraries, reading `/proc/<pid>/maps` when permissions allow, and reading accessible crash cores.
 - It does not automatically expose live heap contents. `/proc/<pid>/mem` is not normally readable through ordinary file-read bugs, and `/proc/<pid>/maps` does not contain object contents.
 - Current VM blocker therefore remains address usability and heap/object precision, not simple inability to download local files.
+
+### Strategy Pivot: Partial Cleanup Pointer Overwrite
+
+- User offered several routes to continue, including finding a new primitive, using a twin VM, or discovering a way to correlate/process ASLR.
+- Chosen first candidate: partial pointer overwrite using a common nginx web behavior.
+- Source review notes:
+  - `ngx_create_pool()` initializes `pool->cleanup = NULL`.
+  - `ngx_destroy_pool()` calls `c->handler(c->data)` for each `pool->cleanup` entry.
+  - `ngx_pool_cleanup_add()` prepends cleanup records to `pool->cleanup`.
+  - `ngx_create_temp_file()` registers a pool cleanup record, and nginx request body buffering can create temp files for large request bodies.
+- Hypothesis: the original PoC targets a NULL cleanup pointer in an incomplete victim request pool, requiring a full six-byte fake-structure address in the URI. If the victim request has already registered a real cleanup pointer, we can overwrite only the low 2-4 bytes and inherit the unsafe high bytes from nginx's legitimate cleanup pointer.
+- This would turn the blocker from "all six pointer bytes must be URI-safe" into "only the overwritten low bytes must be URI-safe and the fake structure must be near the real cleanup record."
+
+### Partial Overwrite Geometry Experiments
+
+- Added `/victim_upload` to the nginx lab config to force large request-body buffering and a real request-pool cleanup entry.
+- Parameterized the PoC and CTF driver with:
+  - `--target-len`,
+  - `--upload-victim`,
+  - `--victim-body-len`,
+  - `--a-count`,
+  - `--plus-count`.
+- Added core pattern inspection to the CTF driver.
+- VM run with full six-byte safe candidates still produced worker disruption without marker proof.
+- Diagnostic safe marker `QWXYZV` plus upload victim showed:
+  - marker lands in the generated overflow/request area,
+  - upload victim creates a plausible request pool with non-NULL `pool->cleanup`,
+  - the cleanup field is after the marker, initially about `0xf50` bytes away.
+- Increasing `plus_count` moves the marker, but the request geometry changes at allocator/header-buffer thresholds:
+  - with `client_header_buffer_size 2048`, the stable crash path stopped near `plus_count=1640`, still about `0x763` bytes short.
+  - with `client_header_buffer_size 4096`, stable crash path extended to around `plus_count=2610`, but still remained about `0xc15` bytes short before another allocation/layout transition.
+- Changing victim upload body size did not move the cleanup-bearing request pool in this setup.
+- Request-pool-size sampling showed smaller pools did not preserve the same crash path; larger pools moved the cleanup field farther away.
+- Direct `/proc/<nginx-worker>/mem` through PHP LFI was tested and returned 404 with `ptrace_scope=1`, so live worker memory is not available through the current file-read primitive.
+- Pulled nginx structure offsets from the matching source/build:
+  - `sizeof(ngx_pool_t)=80`,
+  - `ngx_pool_t.cleanup=64`,
+  - `sizeof(ngx_http_request_t)=1352`,
+  - `ngx_http_request_t.signature=0`,
+  - `ngx_http_request_t.pool=88`,
+  - `ngx_http_request_t.cleanup=1136`.
+- User reminded to consult nginx source and use live debug on the clone VM when weird-machine behavior changes unexpectedly. Next step is debug-first analysis of request allocation transitions rather than blind parameter sweeps.
+- Source check in `ngx_http_alloc_large_header_buffer()` explains the observed geometry discontinuities: when the request line exhausts the active header buffer, nginx allocates/copies into `large_client_header_buffers` from the connection pool. The overflow then moves relative to request-pool objects, so increasing `plus_count` is not a linear write-length control across the threshold.
+- Next geometry control should tune `large_client_header_buffers` and request sequencing with live debugging, not only `plus_count`.
+- Tested `large_client_header_buffers 4 16384`; the transition still occurred after the stable `plus_count=2600` path. The cleanup-bearing victim pool disappeared from recognizable core scans for larger plus counts.
+- Current partial-overwrite blocker: a non-NULL cleanup pointer exists, but the accessible overflow geometry reaches nearby request/pool memory, not the cleanup pointer field itself.
+- Correction: no second clone VM has been created yet. All ESXi VM tests so far used the single VM at `192.168.1.205`. A separate clone/twin VM must be created before using live debugger output as non-target oracle data.
