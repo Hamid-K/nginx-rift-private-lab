@@ -1,6 +1,6 @@
 # Nginx Rift CTF Experiment Log
 
-Last updated: 2026-05-14 23:01:26 CEST
+Last updated: 2026-05-14 23:02:52 CEST
 
 ## 2026-05-14
 
@@ -73,3 +73,14 @@ Last updated: 2026-05-14 23:01:26 CEST
   - `docs/CTF_FINDINGS.md`
 - Committed the first stable checkpoint: `12956c1` (`Add CTF remote LFI lab checkpoint`).
 - Next step is same-port core-guided testing.
+
+### Same-Port Core-Guided Attempt 1
+
+- Ran `./ctf_remote_exploit.py --host 127.0.0.1 --port 19321 --core-guided --tries-per-candidate 10 --verbose`.
+- The driver again derived nginx worker maps and `system()` through same-port HTTP-only LFI.
+- Probe crash produced an LFI-readable core.
+- Core search found two URI-safe sprayed-body addresses:
+  - `0x5555556b3477`
+  - `0x555555754a77`
+- Retrying those addresses produced worker disruption but no LFI-visible marker proof.
+- Current interpretation: core reading and sprayed-body discovery work, but the recovered fake-structure address is not yet sufficient as the overwrite target. The PoC likely requires a more precise relationship between the cleanup pointer, preread buffer layout, and sprayed body.

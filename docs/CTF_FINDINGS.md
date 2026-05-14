@@ -1,6 +1,6 @@
 # Nginx Rift CTF Findings
 
-Last updated: 2026-05-14 23:01:26 CEST
+Last updated: 2026-05-14 23:02:52 CEST
 
 ## Working Findings
 
@@ -54,6 +54,8 @@ The lab currently produces `/app/tmp/core` after nginx worker crashes. Because t
 
 This is a plausible lab CTF path but a realism caveat. Many production systems disable core dumps, write them outside web-readable paths, or restrict access through service managers and kernel settings.
 
+First same-port core-guided result: the driver successfully located two sprayed-body addresses in the core, but using them directly as overwrite targets did not execute the marker command. The remaining unknown is the exact pointer relationship needed by the corrupted nginx cleanup object.
+
 ### Platform Caveat
 
 The host is arm64 while the target container is `linux/amd64`. Docker Desktop emulation appears to make addresses stable even with `randomize_va_space=2` and normal process personality. This is acceptable for developing the address-derivation logic, but it is not a clean measurement of real x86_64 Linux ASLR entropy.
@@ -62,4 +64,4 @@ The host is arm64 while the target container is `linux/amd64`. Docker Desktop em
 
 Under the current constraints, LFI/phpinfo-style primitives are enough to remove the libc/PIE ASLR uncertainty if they can read the nginx worker's `/proc/<pid>/maps` and the mapped libc file.
 
-They are not, by themselves, enough to make the existing PoC reliably exploit same-port nginx remotely. The remaining hard requirement is a way to recover or stabilize the target request-pool/sprayed-body address. The next experiment tests whether an LFI-readable core dump supplies that missing primitive.
+They are not, by themselves, enough to make the existing PoC reliably exploit same-port nginx remotely. The remaining hard requirement is a way to recover or stabilize the exact cleanup-object target, not merely one copy of the sprayed fake structure. The first core-guided experiment recovered sprayed body addresses but still did not produce marker proof.

@@ -1,6 +1,6 @@
 # Nginx Rift CTF Plan
 
-Last updated: 2026-05-14 23:01:26 CEST
+Last updated: 2026-05-14 23:02:52 CEST
 
 ## Goal
 
@@ -32,15 +32,16 @@ The side-port PHP variant in `env/docker-compose.ctf.yml` is diagnostic only. It
 - [x] Add `ctf_remote_exploit.py` to derive worker PID, nginx mapping, libc base, and `system()` through HTTP.
 - [x] Re-baseline original PoC and verify real command execution, not just worker crash.
 - [x] Add ranged LFI reads for large local files.
-- [ ] Run same-port core-guided CTF mode.
+- [x] Run first same-port core-guided CTF mode.
+- [ ] Inspect PoC mechanics to determine whether the recovered sprayed-body address is the correct overwrite target or only an input to another pointer calculation.
 - [ ] Decide whether core dumps are in-scope as a realistic LFI-assisted primitive or only a lab amplifier.
-- [ ] If core-guided mode succeeds, repeat from a clean container to prove reproducibility.
-- [ ] If core-guided mode fails, document the remaining missing primitive precisely.
+- [ ] If core-guided mode succeeds in a later iteration, repeat from a clean container to prove reproducibility.
+- [x] If core-guided mode fails, document the remaining missing primitive precisely.
 - [x] Commit first stable checkpoint before deeper changes: `12956c1`.
 
 ## Next Actions
 
-1. Rebuild same-port CTF target after the ranged LFI change.
-2. Run `ctf_remote_exploit.py --core-guided` against `19321`.
-3. Update `docs/CTF_EXPERIMENT_LOG.md`, `docs/CTF_TESTS.md`, and `docs/CTF_FINDINGS.md` with the result before making the next exploit change.
-4. Commit the next stable checkpoint after the core-guided result is documented.
+1. Inspect the fake cleanup structure and overwrite target relationship in `poc.py` and the disclosure material.
+2. Update `ctf_remote_exploit.py` if the core-derived address needs an offset or a different structure search.
+3. Repeat the same-port CTF run and record marker-proof status.
+4. Commit the next stable checkpoint after this result is documented.

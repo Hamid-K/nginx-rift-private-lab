@@ -1,6 +1,6 @@
 # Nginx Rift CTF Tests
 
-Last updated: 2026-05-14 23:01:26 CEST
+Last updated: 2026-05-14 23:02:52 CEST
 
 ## Baseline: Original PoC Command Execution
 
@@ -127,4 +127,13 @@ Expected pass condition:
 [+] CTF win: marker /tmp/nginx_rift_ctf_<id> contains token ...
 ```
 
-Status: queued.
+Observed:
+
+```text
+Core-guided URI-safe spray addresses: 2
+Trying core-derived spray address 0x5555556b3477
+Trying core-derived spray address 0x555555754a77
+Core-guided candidates did not produce proof.
+```
+
+Status: failed proof, but passed core-read and spray-address-discovery subtests.
