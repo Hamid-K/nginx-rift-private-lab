@@ -1,6 +1,6 @@
 # Nginx Rift CTF Plan
 
-Last updated: 2026-05-14 22:59:05 CEST
+Last updated: 2026-05-14 23:01:26 CEST
 
 ## Goal
 
@@ -36,11 +36,11 @@ The side-port PHP variant in `env/docker-compose.ctf.yml` is diagnostic only. It
 - [ ] Decide whether core dumps are in-scope as a realistic LFI-assisted primitive or only a lab amplifier.
 - [ ] If core-guided mode succeeds, repeat from a clean container to prove reproducibility.
 - [ ] If core-guided mode fails, document the remaining missing primitive precisely.
-- [ ] Commit each stable checkpoint before deeper changes.
+- [x] Commit first stable checkpoint before deeper changes: `12956c1`.
 
 ## Next Actions
 
-1. Commit the current lab/script/docs checkpoint.
-2. Rebuild same-port CTF target after the ranged LFI change.
-3. Run `ctf_remote_exploit.py --core-guided` against `19321`.
-4. Update `docs/CTF_EXPERIMENT_LOG.md`, `docs/CTF_TESTS.md`, and `docs/CTF_FINDINGS.md` with the result before making the next exploit change.
+1. Rebuild same-port CTF target after the ranged LFI change.
+2. Run `ctf_remote_exploit.py --core-guided` against `19321`.
+3. Update `docs/CTF_EXPERIMENT_LOG.md`, `docs/CTF_TESTS.md`, and `docs/CTF_FINDINGS.md` with the result before making the next exploit change.
+4. Commit the next stable checkpoint after the core-guided result is documented.

@@ -1,6 +1,6 @@
 # Nginx Rift CTF Experiment Log
 
-Last updated: 2026-05-14 22:59:05 CEST
+Last updated: 2026-05-14 23:01:26 CEST
 
 ## 2026-05-14
 
@@ -71,4 +71,5 @@ Last updated: 2026-05-14 22:59:05 CEST
   - `docs/CTF_EXPERIMENT_LOG.md`
   - `docs/CTF_TESTS.md`
   - `docs/CTF_FINDINGS.md`
-- Next step is to commit this checkpoint before continuing core-guided testing.
+- Committed the first stable checkpoint: `12956c1` (`Add CTF remote LFI lab checkpoint`).
+- Next step is same-port core-guided testing.

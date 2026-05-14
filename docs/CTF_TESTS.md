@@ -1,6 +1,6 @@
 # Nginx Rift CTF Tests
 
-Last updated: 2026-05-14 22:59:05 CEST
+Last updated: 2026-05-14 23:01:26 CEST
 
 ## Baseline: Original PoC Command Execution
 
