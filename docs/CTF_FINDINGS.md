@@ -1,6 +1,6 @@
 # Nginx Rift CTF Findings
 
-Last updated: 2026-05-14 23:30:26 CEST
+Last updated: 2026-05-14 23:33:29 CEST
 
 ## Working Findings
 
@@ -36,6 +36,19 @@ The nginx master runs as root. The PHP process running as `nobody` cannot read t
 phpinfo is useful for deployment hints such as SAPI, filesystem paths, loaded configuration, and environment. It does not itself reveal nginx worker process maps or the nginx worker heap/request layout.
 
 phpinfo becomes much more useful when combined with an LFI/local-file-read primitive that can access the relevant `/proc/<pid>` files.
+
+### Arbitrary File Download Is Stronger Than Classic LFI, But Does Not Remove Every Blocker
+
+The current lab LFI is already closer to arbitrary local file download than to a weak include-only bug: it can read full files, supports ranged reads, and has downloaded `/proc/<nginx-worker>/maps`, the target libc, and LFI-readable core files.
+
+That means the current blocker is not file-read bandwidth. A full arbitrary file-read/download primitive improves reliability for:
+
+- downloading the exact nginx binary and shared libraries,
+- reading nginx config, pid files, logs, and environment,
+- reading `/proc/<nginx-worker>/maps` when permissions allow it,
+- reading crash cores if the service writes them somewhere readable.
+
+It still does not automatically provide live nginx heap contents. `/proc/<pid>/maps` gives memory ranges and mapped-file bases, not allocator state or object contents. `/proc/<pid>/mem` is normally protected by ptrace-style permission checks and is not equivalent to ordinary file download. Without a readable core, debugger access, or another memory disclosure primitive, arbitrary local file read can solve ASLR base discovery but not necessarily the exact cleanup-object/heap-placement problem.
 
 ### The Current Missing Piece Is Not libc ASLR
 

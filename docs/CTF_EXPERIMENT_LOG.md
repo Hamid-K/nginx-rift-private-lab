@@ -188,3 +188,11 @@ Last updated: 2026-05-14 23:14:41 CEST
   - observed nginx writable image mappings included `0x55c59b3ce000`, `0x55ab22265000`, `0x55e693dbc000`, `0x555da1ccc000`, `0x55a02cf5a000`, `0x5559cdd81000`, `0x55cbe7f0e000`, `0x558fd8411000`, `0x5559c6dfa000`, `0x56040dbbe000`, `0x5558fcaae000`, and `0x55e899590000`.
 - A tight restart loop briefly hit systemd's start-rate limit; `systemctl reset-failed nginx-rift` restored the service, and sampling continued with a slower stop/start cadence.
 - Interpretation: real x86_64 ASLR does vary the target bases as expected, and the current PoC candidate model is usually blocked by the URI-safe byte filter before the exploit reaches the cleanup-object precision problem.
+
+### File-Read Primitive Clarification
+
+- User asked whether the limitation is the LFI vector and whether a proper arbitrary local file download bug changes the conclusion.
+- Clarified finding: the lab LFI already behaves like a strong file-download primitive for the relevant files, including ranged reads.
+- Strong arbitrary file read helps with target fingerprinting, downloading exact binaries/libraries, reading `/proc/<pid>/maps` when permissions allow, and reading accessible crash cores.
+- It does not automatically expose live heap contents. `/proc/<pid>/mem` is not normally readable through ordinary file-read bugs, and `/proc/<pid>/maps` does not contain object contents.
+- Current VM blocker therefore remains address usability and heap/object precision, not simple inability to download local files.
