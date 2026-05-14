@@ -1,6 +1,6 @@
 # Nginx Rift CTF Plan
 
-Last updated: 2026-05-14 23:02:52 CEST
+Last updated: 2026-05-14 23:06:13 CEST
 
 ## Goal
 
@@ -33,7 +33,9 @@ The side-port PHP variant in `env/docker-compose.ctf.yml` is diagnostic only. It
 - [x] Re-baseline original PoC and verify real command execution, not just worker crash.
 - [x] Add ranged LFI reads for large local files.
 - [x] Run first same-port core-guided CTF mode.
-- [ ] Inspect PoC mechanics to determine whether the recovered sprayed-body address is the correct overwrite target or only an input to another pointer calculation.
+- [x] Inspect PoC mechanics to determine whether the recovered sprayed-body address is the correct overwrite target or only an input to another pointer calculation.
+- [x] Test worker reset after LFI core read to avoid final attempts running on a heap perturbed by core extraction.
+- [ ] Inspect crash core for the overwritten victim pool and cleanup pointer bytes.
 - [ ] Decide whether core dumps are in-scope as a realistic LFI-assisted primitive or only a lab amplifier.
 - [ ] If core-guided mode succeeds in a later iteration, repeat from a clean container to prove reproducibility.
 - [x] If core-guided mode fails, document the remaining missing primitive precisely.
@@ -41,7 +43,6 @@ The side-port PHP variant in `env/docker-compose.ctf.yml` is diagnostic only. It
 
 ## Next Actions
 
-1. Inspect the fake cleanup structure and overwrite target relationship in `poc.py` and the disclosure material.
-2. Update `ctf_remote_exploit.py` if the core-derived address needs an offset or a different structure search.
-3. Repeat the same-port CTF run and record marker-proof status.
-4. Commit the next stable checkpoint after this result is documented.
+1. Compare core-derived fake-structure addresses against the original preread candidate set and inspect the crash core for overwritten victim pool evidence.
+2. Determine whether the six-byte target lands at the intended cleanup pointer or corrupts an earlier/later field in same-port mode.
+3. Commit the next stable checkpoint after this result is documented.

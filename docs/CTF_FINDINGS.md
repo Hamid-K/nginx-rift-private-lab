@@ -1,6 +1,6 @@
 # Nginx Rift CTF Findings
 
-Last updated: 2026-05-14 23:02:52 CEST
+Last updated: 2026-05-14 23:06:13 CEST
 
 ## Working Findings
 
@@ -55,6 +55,10 @@ The lab currently produces `/app/tmp/core` after nginx worker crashes. Because t
 This is a plausible lab CTF path but a realism caveat. Many production systems disable core dumps, write them outside web-readable paths, or restrict access through service managers and kernel settings.
 
 First same-port core-guided result: the driver successfully located two sprayed-body addresses in the core, but using them directly as overwrite targets did not execute the marker command. The remaining unknown is the exact pointer relationship needed by the corrupted nginx cleanup object.
+
+PoC mechanics review confirmed that a fake-structure address is the correct value to write into the victim pool `cleanup` pointer, while the fake structure's `data` field should point 24 bytes later at the command string. The next hypothesis is not pointer type, but worker state: large same-port LFI reads may perturb the fresh worker before the final retry.
+
+Worker-reset testing did not change the outcome. The stronger current hypothesis is that same-port mode changes where the overflow lands relative to the victim pool, so a valid fake cleanup address still does not become a valid `pool->cleanup` pointer at the exact destruction point.
 
 ### Platform Caveat
 

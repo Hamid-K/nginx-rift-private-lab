@@ -1,6 +1,6 @@
 # Nginx Rift CTF Tests
 
-Last updated: 2026-05-14 23:02:52 CEST
+Last updated: 2026-05-14 23:06:13 CEST
 
 ## Baseline: Original PoC Command Execution
 
@@ -137,3 +137,32 @@ Core-guided candidates did not produce proof.
 ```
 
 Status: failed proof, but passed core-read and spray-address-discovery subtests.
+
+## Next Test: Core-Guided Mode With Post-Read Worker Reset
+
+Purpose: determine whether same-port LFI core extraction perturbs the worker heap before the final exploit attempts.
+
+Command:
+
+```bash
+./ctf_remote_exploit.py --host 127.0.0.1 --port 19321 --core-guided --tries-per-candidate 10 --verbose
+```
+
+Expected new behavior:
+
+```text
+Resetting nginx worker after LFI core read to restore a clean heap state
+```
+
+Status: queued.
+
+Observed:
+
+```text
+Resetting nginx worker after LFI core read to restore a clean heap state
+Trying core-derived spray address 0x5555556b3477
+Trying core-derived spray address 0x555555754a77
+Core-guided candidates did not produce proof.
+```
+
+Status: failed proof. Worker reset did not improve the result.

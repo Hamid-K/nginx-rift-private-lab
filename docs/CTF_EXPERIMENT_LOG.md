@@ -1,6 +1,6 @@
 # Nginx Rift CTF Experiment Log
 
-Last updated: 2026-05-14 23:02:52 CEST
+Last updated: 2026-05-14 23:06:13 CEST
 
 ## 2026-05-14
 
@@ -84,3 +84,21 @@ Last updated: 2026-05-14 23:02:52 CEST
   - `0x555555754a77`
 - Retrying those addresses produced worker disruption but no LFI-visible marker proof.
 - Current interpretation: core reading and sprayed-body discovery work, but the recovered fake-structure address is not yet sufficient as the overwrite target. The PoC likely requires a more precise relationship between the cleanup pointer, preread buffer layout, and sprayed body.
+
+### PoC Mechanics Review
+
+- Reviewed `poc.py` and the disclosure writeup.
+- Confirmed the URI overwrite target should be the address of a fake `ngx_pool_cleanup_s` structure.
+- Confirmed `data_addr` should be the fake structure address plus 24 bytes, because the command string follows `handler`, `data`, and `next`.
+- The first core-guided attempt therefore used the correct address type in principle.
+- New hypothesis: reading the large core through the same nginx/PHP path perturbs the fresh worker before final exploitation. Added a default worker-reset crash after core parsing and before trying core-derived addresses.
+
+### Same-Port Core-Guided Attempt 2: Worker Reset
+
+- Ran the same core-guided command after adding a post-core-read worker reset.
+- The driver found the same two URI-safe sprayed-body addresses:
+  - `0x5555556b3477`
+  - `0x555555754a77`
+- The driver reset the worker after parsing the core and before final attempts.
+- Result remained worker disruption without marker proof.
+- Current interpretation: the final failure is not simply caused by LFI core-read traffic perturbing the next worker. Next step is inspecting the crash core for the overwritten victim pool/cleanup pointer bytes.
