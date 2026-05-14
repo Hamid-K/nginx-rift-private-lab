@@ -1,6 +1,6 @@
 # Nginx Rift CTF Tests
 
-Last updated: 2026-05-14 23:25:48 CEST
+Last updated: 2026-05-14 23:30:26 CEST
 
 ## Baseline: Original PoC Command Execution
 
@@ -229,6 +229,38 @@ URI-safe candidate cleanup addresses: 0 / 20
 ```
 
 Status: pass for remote derivation, fail for legacy candidate availability in that ASLR layout.
+
+## Vagrant x86_64 ASLR Candidate Sampling
+
+Purpose: measure whether fresh nginx master ASLR layouts commonly produce URI-safe legacy cleanup candidates.
+
+Method:
+
+```text
+For each sample:
+1. restart nginx-rift as lab control,
+2. run ctf_remote_exploit.py --derive-only --no-phpinfo,
+3. record the nginx writable image mapping, libc base, heap ranges, and URI-safe candidate count.
+```
+
+Observed:
+
+```text
+sample=1  safe=0 rw=0x55c59b3ce000 libc=0x7f9652d66000
+sample=2  safe=0 rw=0x55ab22265000 libc=0x7f7682d00000
+sample=3  safe=0 rw=0x55e693dbc000 libc=0x7fb8a9d1d000
+sample=4  safe=0 rw=0x555da1ccc000 libc=0x7fdb37b78000
+sample=5  safe=0 rw=0x55a02cf5a000 libc=0x7f0f73ff6000
+sample=6  safe=0 rw=0x5559cdd81000 libc=0x7fd4560a1000
+sample=7  safe=0 rw=0x55cbe7f0e000 libc=0x7f54a9800000
+sample=8  safe=0 rw=0x558fd8411000 libc=0x7f0e8d491000
+sample=9  safe=0 rw=0x5559c6dfa000 libc=0x7f94c2e3b000
+sample=10 safe=0 rw=0x56040dbbe000 libc=0x7f1e99cad000
+sample=11 safe=0 rw=0x5558fcaae000 libc=0x7fcfedaaf000
+sample=12 safe=0 rw=0x55e899590000 libc=0x7fc750ce4000
+```
+
+Status: pass. Empirical result so far is `0 / 12` fresh master layouts with any URI-safe legacy candidate.
 
 ## Vagrant x86_64 Core-Guided Mode
 

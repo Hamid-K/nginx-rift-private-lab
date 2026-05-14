@@ -1,6 +1,6 @@
 # Vagrant ESXi Lab
 
-Last updated: 2026-05-14 23:25:48 CEST
+Last updated: 2026-05-14 23:30:26 CEST
 
 ## Purpose
 
@@ -108,3 +108,5 @@ guest architecture: x86_64
 ```
 
 Latest core-guided result: the driver recovered 20 sprayed fake-structure addresses from an LFI-readable core, but all 20 were URI-unsafe in the current ASLR layout, so no marker proof was achieved.
+
+Latest ASLR sampling result: 12 fresh nginx master layouts produced `0 / 12` cases with any URI-safe legacy cleanup candidate.

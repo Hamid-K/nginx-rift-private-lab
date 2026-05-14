@@ -178,3 +178,13 @@ Last updated: 2026-05-14 23:14:41 CEST
   - sample unsafe hits included `0x55d484df7477`, `0x55d484dfdeb7`, and `0x55d484e5e1b7`.
 - Interpretation: core-guided LFI can recover sprayed fake-structure addresses on the VM, but this ASLR layout makes all recovered addresses unusable for the PoC's six-byte URI overwrite path.
 - No marker proof has been achieved on the real x86_64 VM.
+
+### VM ASLR Candidate Sampling
+
+- Added `--derive-only` to `ctf_remote_exploit.py` so the driver can print target facts without sending exploit attempts.
+- Sampled 12 fresh nginx master layouts on the VM using lab-control service restarts.
+- Results:
+  - samples `1..12` all had `0 / 20` URI-safe legacy cleanup candidates.
+  - observed nginx writable image mappings included `0x55c59b3ce000`, `0x55ab22265000`, `0x55e693dbc000`, `0x555da1ccc000`, `0x55a02cf5a000`, `0x5559cdd81000`, `0x55cbe7f0e000`, `0x558fd8411000`, `0x5559c6dfa000`, `0x56040dbbe000`, `0x5558fcaae000`, and `0x55e899590000`.
+- A tight restart loop briefly hit systemd's start-rate limit; `systemctl reset-failed nginx-rift` restored the service, and sampling continued with a slower stop/start cadence.
+- Interpretation: real x86_64 ASLR does vary the target bases as expected, and the current PoC candidate model is usually blocked by the URI-safe byte filter before the exploit reaches the cleanup-object precision problem.

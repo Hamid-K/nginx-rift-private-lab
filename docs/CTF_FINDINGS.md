@@ -1,6 +1,6 @@
 # Nginx Rift CTF Findings
 
-Last updated: 2026-05-14 23:25:48 CEST
+Last updated: 2026-05-14 23:30:26 CEST
 
 ## Working Findings
 
@@ -81,6 +81,8 @@ The x86_64 Ubuntu VM removes the Docker Desktop emulation caveat. In the VM:
 The first VM ASLR layout produced zero URI-safe legacy candidate addresses. After enabling local core dumps, the core-guided probe recovered 20 sprayed fake-structure addresses from `/app/tmp/core`, but all 20 were URI-unsafe for the six-byte overwrite path. That is a stronger and more realistic limitation than the Docker result, where emulation-stable addresses happened to include URI-safe candidates.
 
 Current implication: for the VM path, the blocker is not merely finding the sprayed structure. The exploit also needs a way to make or select a sprayed fake-structure address whose low six bytes survive the nginx URI processing constraint. Worker crashes alone do not change the master process layout, so replacement workers are expected to inherit the same broad ASLR layout.
+
+Fresh-master sampling strengthens this: 12 VM nginx master restarts produced 12 layouts with zero URI-safe legacy cleanup candidates. This is lab-control sampling, not an attacker primitive, but it shows that even with full remote derivation of PIE/libc bases, the PoC's address-byte constraint is a major reliability barrier on normal x86_64 ASLR.
 
 ## Current Research Answer Draft
 

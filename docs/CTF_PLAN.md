@@ -1,6 +1,6 @@
 # Nginx Rift CTF Plan
 
-Last updated: 2026-05-14 23:25:48 CEST
+Last updated: 2026-05-14 23:30:26 CEST
 
 ## Goal
 
@@ -47,6 +47,8 @@ Native x86_64 VM is the preferred ASLR-realism track:
 - [x] Smoke-test same-port LFI/phpinfo on the x86_64 Ubuntu VM.
 - [x] Configure the VM to produce local `/app/tmp/core` files for the core-guided lab path.
 - [x] Patch core-guided mode so it can generate a probe core even when ASLR yields no legacy URI-safe candidates.
+- [x] Add derive-only mode for non-destructive remote ASLR layout sampling.
+- [x] Sample fresh VM nginx master layouts for URI-safe candidate availability.
 - [ ] Decide whether core dumps are in-scope as a realistic LFI-assisted primitive or only a lab amplifier.
 - [ ] If core-guided mode succeeds in a later iteration, repeat from a clean container to prove reproducibility.
 - [x] If core-guided mode fails, document the remaining missing primitive precisely.
@@ -55,7 +57,7 @@ Native x86_64 VM is the preferred ASLR-realism track:
 ## Next Actions
 
 1. Commit the ESXi/Vagrant VM recipe, core-dump provisioning, and VM test notes.
-2. Sample several fresh VM nginx master layouts to measure how often core-derived spray addresses are URI-safe under real x86_64 ASLR.
+2. Extend sampling to core-derived sprayed-body addresses if needed; the first VM core run was `0 URI-safe / 20 total`.
 3. Compare core-derived fake-structure addresses against the original preread candidate set and inspect the crash core for overwritten victim pool evidence.
 4. Determine whether the six-byte target lands at the intended cleanup pointer or corrupts an earlier/later field in same-port mode.
 5. Decide whether LFI-readable core dumps are a realistic primitive or a lab-only amplifier.
