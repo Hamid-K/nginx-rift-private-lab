@@ -130,3 +130,11 @@ Attempts to move the marker the final distance caused nginx to cross allocation 
 ### Debugger Data Is Not A Target Oracle
 
 The new VM at `192.168.1.89` is a debug twin. GDB output from that VM can explain source-level behavior and guide lab design, but it cannot supply target-specific ASLR addresses for the CTF win on `192.168.1.205`.
+
+### Delayed Upload Does Not Currently Bypass The Early Crash
+
+The delayed-upload variant creates the victim request first, triggers the rewrite overflow, and then sends the large upload body that would normally create a temp-file cleanup record.
+
+On the tuned debug layout, nginx segfaults in `ngx_http_request_handler()` immediately after the vulnerable copy, before the delayed body can become the next useful allocation event. This means nearby pool/request/log corruption is currently fatal earlier than the cleanup-allocation idea can help.
+
+Current implication: the next useful work is avoiding or weaponizing the earlier request/log corruption, not further delayed-body variants.

@@ -80,4 +80,4 @@ This still does not count as a realistic default-production exploit path unless 
 1. Reset the debug/twin VM out of the failed split-capture config and back to a known single-capture layout.
 2. Add automated core parsing for victim cleanup pointer high-byte recovery.
 3. Re-run 2-byte slot scan and only try fake-structure addresses whose high bytes match the recovered cleanup pointer mask.
-4. If this still misses, add a delayed-victim-body mode so the vulnerable overflow can corrupt request/pool metadata before the upload body forces temp-file cleanup allocation.
+4. Investigate the earlier request/log corruption path, because delayed victim body crashed before cleanup allocation could become useful.

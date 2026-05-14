@@ -293,3 +293,30 @@ Last updated: 2026-05-15 00:58:38 CEST
 - A bounded brute-force path is acceptable if each attempt is remote-only, uses HTTP/LFI-derived facts, and has a clear success proof.
 - Nginx worker crashes are normally recovered by the master spawning a replacement worker, so single attempts are not permanent process loss.
 - Practical caveats remain: rapid repeated crashes are service disruption, master start-rate/systemd limits can be hit in lab control scenarios, and core dumps can fill disk if enabled.
+
+### Cleanup-Window Filter And Delayed Upload Test
+
+- Added cleanup-window filtering for partial overwrite slot scans:
+  - scan the LFI-readable core for plausible `ngx_pool_t` objects,
+  - collect non-NULL `pool->cleanup` pointers,
+  - for partial overwrites, keep only sprayed fake-structure slots whose preserved high bytes match an observed cleanup pointer window.
+- Default single-capture debug run (`target_len=2`, upload victim, `a_count=349`, `plus_count=2600`) found:
+  - 737 URI-safe slot candidates out of 9940 slot markers,
+  - 4 plausible cleanup-bearing pools,
+  - 0 cleanup pointers whose low bytes matched the probe overwrite,
+  - 125 slot candidates matching some observed cleanup pointer window,
+  - no marker proof from the first 20 filtered attempts.
+- Interpretation: the default layout still crashes before proving control of `pool->cleanup`; brute-forcing low bytes here is mostly noise.
+- Added `--delay-victim-body` so the victim upload headers are sent before the overflow and the large body is sent after the overflow.
+- Default delayed-upload run found:
+  - 737 URI-safe slot candidates,
+  - 2 plausible cleanup-bearing pools,
+  - 0 cleanup pointers with probe low bytes,
+  - 0 safe slots matching observed cleanup windows.
+- Tuned near-miss delayed-upload run (`request_pool_size=4096`, `connection_pool_size=1456`, 11-byte set-prefix, `a_count=128`, `plus_count=2800`) found:
+  - 940 URI-safe slot candidates,
+  - 2 plausible cleanup-bearing pools,
+  - 0 cleanup pointers with probe low bytes,
+  - 0 safe slots matching observed cleanup windows.
+- Live gdb on the tuned delayed-upload run showed the worker segfaults in `ngx_http_request_handler()` immediately after the vulnerable copy and before the delayed body can register a temp-file cleanup.
+- Current conclusion: delayed upload is not useful unless another layout lever avoids the earlier request/log corruption.

