@@ -1,6 +1,6 @@
 # Nginx Rift CTF Plan
 
-Last updated: 2026-05-15 05:06:15 CEST
+Last updated: 2026-05-15 05:17:45 CEST
 
 ## Goal
 
@@ -55,13 +55,16 @@ Native x86_64 VM is the preferred ASLR-realism track:
 - [x] Achieve marker-verified CTF win against the target VM with HTTP/LFI-only exploit inputs.
 - [x] Add separate v1.1 demo runner with preflight, artifacts, core PID freshness, and calibration.
 - [x] Add separate v1.2 demo runner that requires and uses reset-core candidates before final exploitation.
+- [x] Add separate v1.3 demo runner with strict core PID checks and layout drift detection.
+- [x] Add separate v1.4 demo runner with strict preflight and final candidate sanity filtering.
+- [x] Add separate v1.5 demo runner with bounded multi-round campaign mode.
 - [x] If core-guided mode fails, document the remaining missing primitive precisely.
 - [x] Commit first stable checkpoint before deeper changes: `12956c1`.
 
 ## Next Actions
 
-1. Preserve the new demo runners and notes in version control.
-2. Use `demo_ctf_exploit_v1_2.py --require-reset-core` for the next recorded terminal demo.
+1. Preserve the new v1.3-v1.5 demo runners and notes in version control.
+2. Use `demo_ctf_exploit_v1_5.py --require-reset-core --rounds 2` for the next recorded terminal demo.
 3. Summarize the research answer: this is exploitable in the updated lab with ASLR enabled when a strong local-file-read primitive can also read crash cores; phpinfo or `/proc/<pid>/maps` alone is not enough for this exact chain.
 
 Current status: won in the updated HTTP/2 same-port lab. A debug/twin VM exists at `192.168.1.89`, separate from the target VM at `192.168.1.205`. The final target win used no target-side debugger or SSH-derived offsets.

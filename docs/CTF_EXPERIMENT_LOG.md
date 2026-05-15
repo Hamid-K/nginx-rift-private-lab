@@ -1,6 +1,6 @@
 # Nginx Rift CTF Experiment Log
 
-Last updated: 2026-05-15 05:06:15 CEST
+Last updated: 2026-05-15 05:17:45 CEST
 
 ## 2026-05-14
 
@@ -377,4 +377,38 @@ Last updated: 2026-05-15 05:06:15 CEST
 
 ```bash
 ./demo_ctf_exploit_v1_2.py --host 192.168.1.205 --port 19321 --clear --require-reset-core
+```
+
+### Continued Demo PoC Improvement Pass
+
+- Added `demo_ctf_exploit_v1_3.py`.
+- v1.3 re-derives target facts before each calibration probe, records target snapshots, enforces strict core PID matching by default, and checks pre-reset/final layout stability for nginx image, libc, and `system()`.
+- Validated v1.3 on target VM `192.168.1.205`:
+  - initial worker PID `2602`.
+  - reset core PID `2604` matched the expected pre-reset worker.
+  - reset core contained `928` URI-safe slots out of `10437`.
+  - pre-reset and final worker layouts kept stable nginx/libc bases and `system()` address.
+  - first final candidate `0x557f3875677a` at body offset `0` executed the marker command.
+  - artifact: `artifacts/demo_v1_3_20260515-051328.json`.
+- Added `demo_ctf_exploit_v1_4.py`.
+- v1.4 adds strict preflight checks for ASLR/core/nginx topology and filters impossible final candidates before trying them.
+- Validated v1.4 on target VM `192.168.1.205`:
+  - strict preflight passed with ASLR enabled, `core_pattern=core`, `suid_dumpable=2`, and one nginx worker.
+  - reset core PID `2681` matched the expected worker.
+  - candidate sanity filter kept `45` candidates and dropped `0`.
+  - first final candidate `0x55b9f862777a` at body offset `0` executed the marker command.
+  - artifact: `artifacts/demo_v1_4_20260515-051517.json`.
+- Added `demo_ctf_exploit_v1_5.py`.
+- v1.5 adds bounded campaign mode with `--rounds` and per-round artifact records.
+- Validated v1.5 with `--rounds 2` on target VM `192.168.1.205`:
+  - round 1 reset core PID `2759` matched the expected worker.
+  - reset core contained `928` URI-safe slots out of `10437`.
+  - candidate sanity filter kept `166` candidates and dropped `0`.
+  - first final candidate `0x557c5768677a` at body offset `0` executed the marker command.
+  - round 2 was not needed.
+  - artifact: `artifacts/demo_v1_5_20260515-051730.json`.
+- Current preferred recording command:
+
+```bash
+./demo_ctf_exploit_v1_5.py --host 192.168.1.205 --port 19321 --clear --require-reset-core --rounds 2
 ```

