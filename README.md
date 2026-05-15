@@ -28,6 +28,8 @@ Full vendor advisory: <https://my.f5.com/manage/s/article/K000160932>
 
 ## Private Research Fork: ASLR-Enabled Remote Lab Chain
 
+![ASLR-enabled remote exploit demo](nginx-aslr-demo.gif)
+
 This fork keeps the original disclosure PoC intact, but adds a second research track focused on a more realistic question:
 
 > Can the bug be exploited against a real x86_64 Linux VM with ASLR enabled, without relying on hardcoded Docker/lab offsets?
