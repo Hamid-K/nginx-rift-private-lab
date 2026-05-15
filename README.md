@@ -30,6 +30,8 @@ Full vendor advisory: <https://my.f5.com/manage/s/article/K000160932>
 
 ![ASLR-enabled remote exploit demo](nginx-aslr-demo.gif)
 
+![Assessment-first nginx_rifter demo](demo4.gif)
+
 This fork keeps the original disclosure PoC intact, but adds a second research track focused on a more realistic question:
 
 > Can the bug be exploited against a real x86_64 Linux VM with ASLR enabled, without relying on hardcoded Docker/lab offsets?
@@ -66,6 +68,22 @@ This fork is a controlled research lab. The ASLR-enabled chain relies on strong 
 - HTTP/2 is enabled on the same nginx listener to provide the connection-pool cleanup target used by the final chain.
 
 `phpinfo()` and `/proc/<pid>/maps` are enough to recover PIE/libc base addresses, but they are not enough by themselves to recover the exact heap object/window needed for this exploit. In this fork, the readable crash core is the extra memory disclosure that makes the final target selection reliable.
+
+### Current Tooling
+
+The latest development is `nginx_rifter.py`, an assessment-first tool intended to be closer to how an authorized tester would evaluate a known vulnerable nginx deployment with an HTTP-accessible local-file-read primitive.
+
+Compared with the initial demo runner, `nginx_rifter.py` improves the workflow in several ways:
+
+- Assessment is the default. It does not run the crashing exploit unless `--exploit` is explicitly supplied.
+- The target is provided as `HOST:PORT`, and the file-read primitive is modular through `--file-read-template`.
+- It profiles the LFI primitive before relying on it, including text reads, binary reads, ranged reads, `/proc/self/status`, and `/proc/self/maps`.
+- It discovers nginx worker maps, libc, `system()`, build IDs, binary hashes, OS details, and kernel/core settings through the remote primitive.
+- It attempts nginx config discovery from master cmdline and common config paths, then flags vulnerable `rewrite` + `set` route candidates.
+- It prints an exploit-chain viability matrix so missing prerequisites are visible before any exploit attempt.
+- Exploit mode is an explicit handoff to the tested `demo_ctf_exploit_v1_9.py` path.
+
+The newer `demo4.gif` shows this flow: `nginx_rifter.py` first performs an assessment and route/config discovery, then an explicit exploit handoff demonstrates command execution. The earlier `nginx-aslr-demo.gif` remains as the original ASLR-enabled exploit demo.
 
 ## Usage
 
