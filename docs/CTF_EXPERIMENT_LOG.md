@@ -492,3 +492,33 @@ Last updated: 2026-05-15 05:32:17 CEST
 ```bash
 ./demo_ctf_exploit_v1_8.py --host 192.168.1.205 --port 19321 --cmd id --clear
 ```
+
+### v1.9 Command Output Rendering
+
+- Added `demo_ctf_exploit_v1_9.py`.
+- v1.9 keeps the v1.8 compact/default behavior and modular file-read adapter, but changes the final command-output renderer:
+  - no border,
+  - no per-line `|` prefix,
+  - no forced text wrapping,
+  - final command output is plain terminal text in a high-contrast color when color is enabled.
+- Validated that `phpinfo()` is not required by running with `--phpinfo-path ''`:
+  - the start banner reported `phpinfo disabled`,
+  - PHP version/API fields reported `not learned`,
+  - OS/nginx/libc/kernel fingerprints were still learned from file reads and headers,
+  - exploit still won through the LFI/core-guided path.
+- Validated command:
+
+```bash
+./demo_ctf_exploit_v1_9.py --host 192.168.1.205 --cmd 'ls -la /app/tmp' --fast --artifact-dir artifacts --phpinfo-path ''
+```
+
+- Observed:
+  - selected geometry `A=127`, `plus=962`,
+  - reset core produced `60` matched candidates before final filtering,
+  - first winning address `0x55e4210b2127`, body offset `1376`,
+  - artifact: `artifacts/demo_v1_9_20260515-060251.json`.
+- Current preferred recording command:
+
+```bash
+./demo_ctf_exploit_v1_9.py --host 192.168.1.205 --port 19321 --cmd id --clear
+```
