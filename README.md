@@ -91,7 +91,7 @@ ASLR-enabled VM research chain:
 Recording-friendly terminal demo:
 
 ```bash
-./demo_ctf_exploit_v1_5.py --host 192.168.1.205 --port 19321 --clear --require-reset-core --rounds 2
+./demo_ctf_exploit_v1_6.py --host 192.168.1.205 --port 19321 --clear --require-reset-core --rounds 2 --exec-cmd id
 ```
 
 Additional lab notes and run logs are under `docs/`, especially:
@@ -101,4 +101,5 @@ Additional lab notes and run logs are under `docs/`, especially:
 - `docs/CTF_TESTS.md`
 - `docs/CTF_EXPERIMENT_LOG.md`
 - `docs/DEMO_POC_IMPROVEMENTS.md`
+- `docs/KNOWN_LAYOUT_PATTERNS.md`
 - `docs/VAGRANT_ESXI.md`

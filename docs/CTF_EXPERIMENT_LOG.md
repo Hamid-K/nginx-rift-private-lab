@@ -1,6 +1,6 @@
 # Nginx Rift CTF Experiment Log
 
-Last updated: 2026-05-15 05:17:45 CEST
+Last updated: 2026-05-15 05:32:17 CEST
 
 ## 2026-05-14
 
@@ -411,4 +411,45 @@ Last updated: 2026-05-15 05:17:45 CEST
 
 ```bash
 ./demo_ctf_exploit_v1_5.py --host 192.168.1.205 --port 19321 --clear --require-reset-core --rounds 2
+```
+
+### v1.6 Reliability And Research Features
+
+- Added `demo_ctf_exploit_v1_6.py`.
+- Implemented hardened command construction:
+  - default token proof uses quoted marker/token values,
+  - `--exec-cmd` runs an arbitrary lab command and captures stdout/stderr plus return code metadata into the marker file,
+  - raw `--cmd` remains available for low-level experiments.
+- Implemented automatic cleanup support:
+  - `--cleanup-delay` schedules delayed marker deletion,
+  - `--cleanup-core` includes `/app/tmp/core` in delayed cleanup,
+  - stale marker checks run before exploitation.
+- Implemented negative-path mode:
+  - `--negative-test bad-candidate --negative-test-only --expected-fail` sends an intentionally bad final candidate and records `negative_pass` when no proof appears.
+- Implemented remote binary fingerprinting:
+  - nginx and libc SHA-256 values are computed through ranged LFI reads,
+  - ELF build IDs are parsed from remote binaries.
+- Implemented best-effort multi-worker handling:
+  - `--worker-mode correlate` can continue in multi-worker topologies,
+  - strict core PID matching remains the primary evidence gate.
+- Added `summarize_demo_artifacts.py` to summarize JSON artifacts.
+- Added `known_layout_patterns.json` and `docs/KNOWN_LAYOUT_PATTERNS.md` as a seed reliability knowledge base. This is explicitly a hint source, not a replacement for live ASLR derivation.
+- Validated v1.6 negative path on target VM `192.168.1.205`:
+  - reset core PID `2850` matched the expected worker.
+  - reset core contained `1010` URI-safe slots out of `10437`.
+  - candidate sanity filter kept `160` candidates and dropped `6`.
+  - bad candidate `0x303030303030` produced no marker proof.
+  - artifact: `artifacts/demo_v1_6_20260515-053017.json`.
+- Validated v1.6 arbitrary command execution and fingerprinting on target VM `192.168.1.205`:
+  - nginx build ID `060e053ab1fa1a2876b7fe0ff4eff0cc777857b6`, SHA-256 `14bebe8937678598b8ebb8449f8c155478a4c49894c9467ce51d54a79352f08f`.
+  - libc build ID `095c7ba148aeca81668091f718047078d57efddb`, SHA-256 `c53819710b163d3f1d2541778590d58d3ef31cb0ed75adcbe059faac68c1e72d`.
+  - reset core PID `2913` matched the expected worker.
+  - first final candidate `0x55a491955627` at body offset `80` executed `id`.
+  - captured output: `uid=65534(nobody) gid=65534(nogroup) groups=65534(nogroup)`.
+  - delayed cleanup removed both the marker and `/app/tmp/core`; both returned HTTP `404` through LFI after the delay.
+  - artifact: `artifacts/demo_v1_6_20260515-053037.json`.
+- Current preferred recording command:
+
+```bash
+./demo_ctf_exploit_v1_6.py --host 192.168.1.205 --port 19321 --clear --require-reset-core --rounds 2 --exec-cmd id
 ```
