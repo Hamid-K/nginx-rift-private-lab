@@ -26,12 +26,76 @@ Read more about this bug in our [technical write-up](https://depthfirst.com/rese
 
 Full vendor advisory: <https://my.f5.com/manage/s/article/K000160932>
 
+## Private Research Fork: ASLR-Enabled Remote Lab Chain
+
+This fork keeps the original disclosure PoC intact, but adds a second research track focused on a more realistic question:
+
+> Can the bug be exploited against a real x86_64 Linux VM with ASLR enabled, without relying on hardcoded Docker/lab offsets?
+
+The answer in this lab is **yes, with important constraints**. The working chain does not disable ASLR and does not use the original hardcoded heap/libc addresses. Instead, it derives runtime state through same-port HTTP-accessible primitives and uses a core-guided partial overwrite to select the correct heap target for the final attempt.
+
+The winning topology is intentionally same-port:
+
+- vulnerable route: `/api/...`
+- PHP local-file-read route: `/lfi.php?file=...`
+- phpinfo hint route: `/phpinfo.php`
+- HTTP/2 victim connection: same nginx listener and worker
+- proof verification: marker file read back through the PHP LFI endpoint
+
+The remote driver performs the following high-level steps:
+
+1. Uses PHP LFI to read PHP identity, nginx pid files, nginx worker `/proc/<pid>/maps`, and the mapped libc file.
+2. Parses the target libc over LFI to compute the absolute `system()` address for that worker.
+3. Uses a URI-safe probe overwrite to generate an nginx worker core file.
+4. Reads the core file through LFI and locates sprayed fake-cleanup slots.
+5. Uses an HTTP/2 connection-pool cleanup record as the partial-overwrite target.
+6. Filters candidate fake structures to the same preserved high-byte window as the corrupted cleanup pointer.
+7. Retries once with a two-byte cleanup-pointer partial overwrite and verifies command execution through LFI.
+
+This is not the same as the original deterministic Docker demo. The real x86_64 VM path leaves normal Linux ASLR enabled and recomputes process-specific addresses on each run. The exploit was validated against the Vagrant/ESXi Ubuntu lab after clean service restarts.
+
+### Scope And Caveats
+
+This fork is a controlled research lab. The ASLR-enabled chain relies on strong conditions that are not default assumptions for production deployments:
+
+- PHP must expose a useful local-file-read primitive.
+- PHP must be able to read same-UID nginx worker `/proc/<pid>/maps`.
+- The lab enables local worker core dumps and leaves `/app/tmp/core` readable through the LFI primitive.
+- HTTP/2 is enabled on the same nginx listener to provide the connection-pool cleanup target used by the final chain.
+
+`phpinfo()` and `/proc/<pid>/maps` are enough to recover PIE/libc base addresses, but they are not enough by themselves to recover the exact heap object/window needed for this exploit. In this fork, the readable crash core is the extra memory disclosure that makes the final target selection reliable.
+
 ## Usage
 
 Tested on Ubuntu 24.04.3 LTS.
+
+Original ASLR-disabled Docker reproduction:
 
 1. `./setup.sh` — build the container.
 2. `docker compose -f env/docker-compose.yml up` — start the vulnerable NGINX server.
 3. `python3 poc.py --shell` — pop a shell.
 
 For the local Docker reproduction flow, see [LAB.md](LAB.md).
+
+ASLR-enabled VM research chain:
+
+```bash
+./ctf_remote_exploit.py --host 192.168.1.205 --port 19321 \
+  --core-guided --target-len 2 --h2-victim \
+  --a-count 127 --plus-count 962 \
+  --tries-per-candidate 1 --max-core-hits 100
+```
+
+Recording-friendly terminal demo:
+
+```bash
+./demo_ctf_exploit.py --host 192.168.1.205 --port 19321 --clear
+```
+
+Additional lab notes and run logs are under `docs/`, especially:
+
+- `docs/CTF_PLAN.md`
+- `docs/CTF_FINDINGS.md`
+- `docs/CTF_TESTS.md`
+- `docs/CTF_EXPERIMENT_LOG.md`
+- `docs/VAGRANT_ESXI.md`
