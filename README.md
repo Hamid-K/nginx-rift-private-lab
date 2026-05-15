@@ -91,7 +91,7 @@ ASLR-enabled VM research chain:
 Recording-friendly terminal demo:
 
 ```bash
-./demo_ctf_exploit_v1_9.py --host 192.168.1.205 --port 19321 --cmd id --clear
+./demo_ctf_exploit_v1_9.py --host 192.168.1.205:19321 --cmd id --clear
 ```
 
 `demo_ctf_exploit_v1_9.py` is the current operator-facing runner. By default it uses the best-tested lab path, keeps console output to key stages and evidence, prints detailed target fingerprints, and leaves captured command output as the final terminal block. Pass `-v` for probe/candidate-level trace output. The final command output is printed as plain terminal text, without borders or per-line prefixes.
@@ -105,7 +105,7 @@ The default file-read primitive is this fork's PHP route:
 For a different known-vulnerable CTF app or testing platform, the file-read vector is modular:
 
 ```bash
-./demo_ctf_exploit_v1_9.py --host 192.168.1.205 --cmd id \
+./demo_ctf_exploit_v1_9.py --host 192.168.1.205:19321 --cmd id \
   --target-profile generic \
   --file-read-template 'http://{host}:{port}/download?path={path_url}{range_query}'
 ```

