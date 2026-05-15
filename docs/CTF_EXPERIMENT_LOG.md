@@ -1,6 +1,6 @@
 # Nginx Rift CTF Experiment Log
 
-Last updated: 2026-05-15 01:16:56 CEST
+Last updated: 2026-05-15 05:06:15 CEST
 
 ## 2026-05-14
 
@@ -352,3 +352,29 @@ Last updated: 2026-05-15 01:16:56 CEST
   - probe found `1` corrupted/probe pool and `45` matching safe slots.
   - first final candidate `0x5612824f777a` at body offset `0` executed the marker command.
 - CTF status: won under the updated lab rules. The final exploit did not use target-side gdb, SSH-derived offsets, or hardcoded ASLR bases.
+
+### Demo PoC Technical Improvement Pass
+
+- Added `demo_ctf_exploit_v1_1.py` as a separate runner, preserving the known-good exploit and demo scripts.
+- v1.1 adds remote preflight checks, PID-correlated core parsing, nonce freshness checks, bounded geometry auto-calibration, structured JSON artifacts, and candidate ranking against corrupted/probe cleanup pools.
+- Fixed v1.1 reset behavior so a non-base calibrated geometry is also used for the pre-final reset crash.
+- Validated v1.1 on target VM `192.168.1.205`:
+  - ASLR remained enabled with `randomize_va_space=2`.
+  - pre-probe worker PID `2394` matched the core PID.
+  - probe core contained `1010` URI-safe slots out of `10437`.
+  - the first ranked candidate `0x5641c34f4627` at body offset `80` executed the marker command.
+  - artifact: `artifacts/demo_v1_1_20260515-050301.json`.
+- Added `demo_ctf_exploit_v1_2.py` as the next minor-version runner.
+- v1.2 adds remote OS/kernel fingerprinting, git/argv artifact metadata, pre-reset worker PID capture, reset-core re-scanning, strict `--require-reset-core` mode, and worker-recovery waits between failed final candidates.
+- Validated v1.2 with `--require-reset-core` on target VM `192.168.1.205`:
+  - pre-probe worker PID `2473` matched the first core.
+  - pre-reset worker PID `2474` matched the reset core.
+  - reset core contained `1204` URI-safe slots out of `10437`.
+  - reset-core filtering produced `155` ranked matching slots.
+  - the first reset-core candidate `0x56389b17277a` at body offset `0` executed the marker command.
+  - artifact: `artifacts/demo_v1_2_20260515-050555.json`.
+- Current preferred recording command:
+
+```bash
+./demo_ctf_exploit_v1_2.py --host 192.168.1.205 --port 19321 --clear --require-reset-core
+```

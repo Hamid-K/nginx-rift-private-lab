@@ -1,6 +1,6 @@
 # Nginx Rift CTF Plan
 
-Last updated: 2026-05-15 01:16:56 CEST
+Last updated: 2026-05-15 05:06:15 CEST
 
 ## Goal
 
@@ -53,13 +53,16 @@ Native x86_64 VM is the preferred ASLR-realism track:
 - [x] If core-guided mode succeeds in a later iteration, repeat from a clean service restart to prove reproducibility.
 - [x] Achieve marker-verified CTF win against the debug clone with HTTP/LFI-only exploit inputs.
 - [x] Achieve marker-verified CTF win against the target VM with HTTP/LFI-only exploit inputs.
+- [x] Add separate v1.1 demo runner with preflight, artifacts, core PID freshness, and calibration.
+- [x] Add separate v1.2 demo runner that requires and uses reset-core candidates before final exploitation.
 - [x] If core-guided mode fails, document the remaining missing primitive precisely.
 - [x] Commit first stable checkpoint before deeper changes: `12956c1`.
 
 ## Next Actions
 
-1. Preserve the winning config and exploit command in version control.
-2. Summarize the research answer: this is exploitable in the updated lab with ASLR enabled when a strong local-file-read primitive can also read crash cores; phpinfo or `/proc/<pid>/maps` alone is not enough for this exact chain.
+1. Preserve the new demo runners and notes in version control.
+2. Use `demo_ctf_exploit_v1_2.py --require-reset-core` for the next recorded terminal demo.
+3. Summarize the research answer: this is exploitable in the updated lab with ASLR enabled when a strong local-file-read primitive can also read crash cores; phpinfo or `/proc/<pid>/maps` alone is not enough for this exact chain.
 
 Current status: won in the updated HTTP/2 same-port lab. A debug/twin VM exists at `192.168.1.89`, separate from the target VM at `192.168.1.205`. The final target win used no target-side debugger or SSH-derived offsets.
 
