@@ -1,0 +1,8 @@
+nginx_version=nginx version: nginx/1.30.1
+os_release=PRETTY_NAME="Debian GNU/Linux 13 (trixie)" NAME="Debian GNU/Linux" VERSION_ID="13"
+master=1 worker=29 worker_uid=101
+worker_status=Name:	nginx;Uid:	101	101	101	101;Gid:	101	101	101	101;CoreDumping:	0;NoNewPrivs:	0;Seccomp:	2;
+same_uid_start=aaaaca700000
+same_uid_mem_read=n=8 hex=7f454c4602010100
+different_uid_maps=head: cannot open '/proc/29/maps' for reading: Permission denied
+different_uid_open:Permission denied

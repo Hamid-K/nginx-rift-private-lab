@@ -95,3 +95,22 @@ timeout 300 python3 -u tools/proc_mem_coreless_exploit.py \
   - all 5 disrupted the worker,
   - none produced proof.
 - Conclusion: static known-offset brute force is not currently enough. The practical brute-force path needs a live disclosure to narrow candidates.
+
+### Official Nginx Docker Proc-Mem Verification
+
+- Verified the same-UID procfs behavior against a clean official `nginx:stable` image.
+- Image details:
+  - `nginx/1.30.1`,
+  - Debian GNU/Linux 13,
+  - worker UID `101` (`nginx`),
+  - `CoreDumping: 0`,
+  - `Seccomp: 2`.
+- Same UID result:
+  - running as `nginx`, `/proc/<worker>/maps` was readable,
+  - running as `nginx`, `/proc/<worker>/mem` at the first mapped offset returned the ELF header bytes `7f454c4602010100`.
+- Different UID result:
+  - running as `nobody`, `/proc/<worker>/maps` failed with `Permission denied`,
+  - running as `nobody`, `/proc/<worker>/mem` failed with `Permission denied`.
+- Artifact: `artifacts/official_nginx_proc_mem_verify_20260518.txt`.
+
+Conclusion: Docker can verify the standard-container case. The result supports the same-UID `/proc/<worker>/mem` path for standard nginx containers on this host/kernel policy, while confirming that different-UID web apps do not get the same access.

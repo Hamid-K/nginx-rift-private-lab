@@ -42,6 +42,19 @@ uid=65534(nobody) gid=65534(nogroup) groups=65534(nogroup)
 
 Artifact: `artifacts/coreless_proc_mem_win_20260518.txt`
 
+Official nginx Docker permission check:
+
+```text
+nginx_version=nginx version: nginx/1.30.1
+os_release=Debian GNU/Linux 13
+worker_uid=101
+same_uid_mem_read=n=8 hex=7f454c4602010100
+different_uid_maps=Permission denied
+different_uid_open=Permission denied
+```
+
+Artifact: `artifacts/official_nginx_proc_mem_verify_20260518.txt`
+
 ## Realism
 
 This is substantially more realistic than readable crash cores in same-UID container deployments, but it is still permission-dependent.
