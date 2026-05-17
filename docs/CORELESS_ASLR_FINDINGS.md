@@ -45,6 +45,8 @@ Artifacts:
 - transcript: `artifacts/coreless_proc_mem_win_20260518.txt`
 - asciicast: `artifacts/coreless_proc_mem_win_20260518.cast`
 - gif: `artifacts/coreless_proc_mem_win_20260518.gif`
+- full Docker-IP asciicast: `artifacts/coreless_proc_mem_docker_ip_full_20260518.cast`
+- full Docker-IP gif: `artifacts/coreless_proc_mem_docker_ip_full_20260518.gif`
 
 Official nginx Docker permission check:
 
