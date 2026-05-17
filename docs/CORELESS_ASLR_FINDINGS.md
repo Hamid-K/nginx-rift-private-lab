@@ -40,7 +40,11 @@ coreless win via /proc/<pid>/mem candidate 1
 uid=65534(nobody) gid=65534(nogroup) groups=65534(nogroup)
 ```
 
-Artifact: `artifacts/coreless_proc_mem_win_20260518.txt`
+Artifacts:
+
+- transcript: `artifacts/coreless_proc_mem_win_20260518.txt`
+- asciicast: `artifacts/coreless_proc_mem_win_20260518.cast`
+- gif: `artifacts/coreless_proc_mem_win_20260518.gif`
 
 Official nginx Docker permission check:
 

