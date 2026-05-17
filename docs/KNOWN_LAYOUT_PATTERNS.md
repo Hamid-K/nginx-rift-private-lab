@@ -9,7 +9,7 @@ The rule for this project remains the same: the exploit runner must derive ASLR-
 ## Current Seed Entry
 
 - `ubuntu-22.04.3-nginx-rift-http2-single-worker`
-- Observed on the ESXi Vagrant lab at `192.168.1.205`.
+- Observed on the ESXi Vagrant lab at `<target-host>`.
 - Uses HTTP/2 same-port victim behavior.
 - v1.6 remote binary fingerprints:
   - nginx build ID `060e053ab1fa1a2876b7fe0ff4eff0cc777857b6`

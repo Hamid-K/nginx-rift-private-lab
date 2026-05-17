@@ -17,8 +17,8 @@ The side-port PHP variant in `env/docker-compose.ctf.yml` is diagnostic only. It
 
 Native x86_64 VM is the preferred ASLR-realism track:
 
-- Use Vagrant to run the x86_64 lab on a real Ubuntu VM on the `Ultra` ESXi host.
-- This removes Docker Desktop amd64 emulation effects on this arm64 host while preserving the published PoC architecture.
+- Use Vagrant to run the x86_64 lab on a real Ubuntu VM on a lab x86_64 hypervisor.
+- This removes non-native amd64 Docker runtime effects on this arm64 host while preserving the published PoC architecture.
 - Docker remains useful for fast local iteration; Vagrant is for validating ASLR/layout conclusions.
 
 ## Rules
@@ -62,7 +62,8 @@ Native x86_64 VM is the preferred ASLR-realism track:
 - [x] Add separate v1.7/v1.8 demo runners with autonomous defaults, compact output, verbose trace mode, final command-output rendering, CVE-aware banner/help, and modular file-read vector support.
 - [x] Add separate v1.9 demo runner with plain final command output and verified no-phpinfo mode.
 - [x] Update v1.9 target parsing so `--host` accepts `HOST:PORT` and `--port` can be omitted.
-- [x] Add `nginx_rifter.py` v2 assessment-first tool with modular file-read profiling, nginx config discovery, viability matrix, and explicit exploit handoff.
+- [x] Add `nginx_rifter.py` v2 assessment-first tool with modular file-read profiling, nginx config discovery, viability matrix, and explicit exploit support.
+- [x] Refactor `nginx_rifter.py` so assessment and exploit paths are self-contained and no longer import or shell out to earlier PoC/demo scripts.
 - [x] Add demo artifact summarizer.
 - [x] Add seed known-pattern reliability knowledge base.
 - [x] If core-guided mode fails, document the remaining missing primitive precisely.
@@ -71,11 +72,12 @@ Native x86_64 VM is the preferred ASLR-realism track:
 ## Next Actions
 
 1. Use `nginx_rifter.py --target <target>:<port> --file-read-template '<template>'` as the default assessment entry point.
-2. Use `demo_ctf_exploit_v1_9.py --host 192.168.1.205:19321 --cmd id --clear` for the recorded exploit-only terminal demo.
-3. Preserve `nginx_rifter.py`, updated docs, and v2 artifacts in version control.
-4. Summarize the research answer: this is exploitable in the updated lab with ASLR enabled when a strong local-file-read primitive can also read crash cores; phpinfo or `/proc/<pid>/maps` alone is not enough for this exact chain.
+2. Use `nginx_rifter.py --target <target>:<port> --exploit --cmd <cmd>` for the self-contained integrated exploit path.
+3. Keep `demo_ctf_exploit_v1_9.py --host <target-host>:19321 --cmd id --clear` only as the older recording-friendly exploit-only terminal demo.
+4. Preserve `nginx_rifter.py`, updated docs, and v2 artifacts in version control.
+5. Summarize the research answer: this is exploitable in the updated lab with ASLR enabled when a strong local-file-read primitive can also read crash cores; phpinfo or `/proc/<pid>/maps` alone is not enough for this exact chain.
 
-Current status: won in the updated HTTP/2 same-port lab. A debug/twin VM exists at `192.168.1.89`, separate from the target VM at `192.168.1.205`. The final target win used no target-side debugger or SSH-derived offsets.
+Current status: won in the updated HTTP/2 same-port lab. A debug/twin VM exists at `<debug-host>`, separate from the target VM at `<target-host>`. The final target win used no target-side debugger or SSH-derived offsets.
 
 ## Current Strategy
 

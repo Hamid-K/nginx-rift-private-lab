@@ -12,7 +12,7 @@ Vagrant.configure("2") do |config|
   end
 
   config.vm.provider :vmware_esxi do |esxi|
-    esxi.esxi_hostname = ENV.fetch("ESXI_HOST", "ultra.home")
+    esxi.esxi_hostname = ENV.fetch("ESXI_HOST", "esxi.example.local")
     esxi.esxi_username = ENV.fetch("ESXI_USERNAME", "root")
     esxi.esxi_password = ENV.fetch("ESXI_PASSWORD_SPEC", "key:")
 

