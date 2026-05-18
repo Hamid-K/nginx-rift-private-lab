@@ -48,7 +48,7 @@ Default special responses use static buffers and fixed lengths. They do not incl
 | --- | --- | --- | --- |
 | P1 | Passive reflected variable | Reflect overflowed `$original_endpoint` via `return` or `add_header` | Tested: no leak observed |
 | P2 | Passive redirect | Trigger overflow in redirect-like rewrite path and inspect `Location` | Tested: no leak observed |
-| A1 | Active body over-read | Corrupt `ngx_buf_t.pos/last` or chain metadata of a live response to extend output | Open |
+| A1 | Active body over-read | Corrupt `ngx_buf_t.pos/last` or chain metadata of a live response to extend output | Initial sweep: no leak observed |
 | A2 | Active header over-read | Corrupt `ngx_table_elt_t.value.len/data` for a header sent to client | Open |
 | A3 | Upstream/proxy buffer over-read | Corrupt proxied response buffer metadata while backend response is pending | Open |
 | B1 | Practical blind brute force | Use worker crash/restart behavior as oracle without a leak | Previously failed for static 5-candidate layout; wider bounded campaign still open |
@@ -103,3 +103,51 @@ Interpretation:
 - No passive response contained pointer-like bytes or non-print memory.
 
 This reduces confidence in passive reflected-variable leaks. It does not rule out active leak gadgets that corrupt response-buffer or header metadata.
+
+## 2026-05-18 Active Response Over-Read Sweep
+
+Source notes:
+
+- `ngx_http_send_response()` creates an `ngx_buf_t` with `ngx_calloc_buf()` after evaluating the return body and sets `pos`, `last`, `memory`, and chain flags explicitly before output.
+- `ngx_http_header_filter()` calculates a header buffer length from initialized header fields, then allocates a fresh temp buffer with `ngx_create_temp_buf()`.
+- `ngx_create_temp_buf()` zeroes the `ngx_buf_t` and initializes `pos`, `last`, `start`, and `end`.
+- `ngx_list_push()` can return unzeroed header slots, but the header-producing code paths reviewed assign the key/value/hash fields before the header filter copies them.
+
+Implication: simply overflowing into unused pool space before a later response allocation is unlikely to become a leak. The more plausible active leak would need to corrupt an already-existing delayed victim request object, such as a proxy/upstream buffer or chain, before it is used.
+
+Added probe:
+
+- `tools/non_lfi_active_response_probe.py`
+
+The probe uses only remote HTTP:
+
+1. open delayed `/spray` proxy victim requests,
+2. trigger the vulnerable `/api/<payload>` request,
+3. collect victim responses,
+4. dechunk normal proxy responses,
+5. flag body changes, non-print bytes, or pointer-like byte sequences.
+
+Recorded runs:
+
+- initial raw active probe, before dechunk normalization:
+  - cast: `artifacts/non_lfi_active_response_probe_20260518.cast`
+  - gif: `artifacts/non_lfi_active_response_probe_20260518.gif`
+- classified active probe:
+  - cast: `artifacts/non_lfi_active_response_probe_classified_20260518.cast`
+  - gif: `artifacts/non_lfi_active_response_probe_classified_20260518.gif`
+
+Classified result:
+
+```text
+summary: clean=12 reset=48 interesting=0
+no active response over-read observed in this sweep
+worker resets/crashes occurred, but victim responses did not leak memory
+```
+
+Interpretation:
+
+- Lower overwrite pressure produced normal delayed proxy responses.
+- Higher overwrite pressure mostly killed the worker or victim connections before a response.
+- No victim response returned pointer-like bytes or memory-looking over-read data.
+
+This is not a complete proof against active non-LFI leak gadgets. It is a first negative sweep against the most direct delayed-proxy body over-read shape.
