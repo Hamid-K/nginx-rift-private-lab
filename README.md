@@ -32,13 +32,20 @@ Full vendor advisory: <https://my.f5.com/manage/s/article/K000160932>
 
 ![Assessment-first nginx_rifter demo](demo4.gif)
 
+![Coreless proc-mem exploit demo](artifacts/coreless_proc_mem_explicit_fileread_20260518.gif)
+
 This fork keeps the original disclosure PoC intact, but adds a second research track focused on a more realistic question:
 
 > Can the bug be exploited against a real x86_64 Linux VM with ASLR enabled, without relying on hardcoded Docker/lab offsets?
 
-The answer in this lab is **yes, with important constraints**. The working chain does not disable ASLR and does not use the original hardcoded heap/libc addresses. Instead, it derives runtime state through same-port HTTP-accessible primitives and uses a core-guided partial overwrite to select the correct heap target for the final attempt.
+The answer in this research fork is **yes, with important constraints**. The working chains do not disable ASLR and do not use the original hardcoded heap/libc addresses. Instead, they derive runtime state through same-port HTTP-accessible primitives, then select the final heap target from remotely obtained disclosure data.
 
-The winning topology is intentionally same-port:
+There are now two working ASLR-enabled tracks:
+
+- `nginx_rifter.py`: the clean, self-contained assessment and integrated exploit entry point. It models an authorized tester evaluating a vulnerable nginx deployment with an HTTP-accessible local-file-read primitive. The integrated exploit path is the VM-tested, core-guided chain.
+- `tools/proc_mem_coreless_exploit.py`: the newer coreless research proof. It replaces the readable crash-core requirement with a same-UID read of `/proc/<nginx-worker>/mem` through the file-read primitive, then scans live worker memory for usable fake-cleanup slots.
+
+The target topology is intentionally same-port:
 
 - vulnerable route: `/api/...`
 - PHP local-file-read route: `/lfi.php?file=...`
@@ -46,7 +53,7 @@ The winning topology is intentionally same-port:
 - HTTP/2 victim connection: same nginx listener and worker
 - proof verification: marker file read back through the PHP LFI endpoint
 
-The remote driver performs the following high-level steps:
+The core-guided path performs the following high-level steps:
 
 1. Uses PHP LFI to read PHP identity, nginx pid files, nginx worker `/proc/<pid>/maps`, and the mapped libc file.
 2. Parses the target libc over LFI to compute the absolute `system()` address for that worker.
@@ -56,22 +63,38 @@ The remote driver performs the following high-level steps:
 6. Filters candidate fake structures to the same preserved high-byte window as the corrupted cleanup pointer.
 7. Retries once with a two-byte cleanup-pointer partial overwrite and verifies command execution through LFI.
 
-This is not the same as the original deterministic Docker demo. The real x86_64 VM path leaves normal Linux ASLR enabled and recomputes process-specific addresses on each run. The exploit was validated against the Vagrant/ESXi Ubuntu lab after clean service restarts.
+The coreless proc-mem path performs the same remote base-address recovery, but avoids crash cores:
+
+1. Uses LFI to identify nginx worker PIDs and read same-UID worker `/proc/<pid>/maps`.
+2. Reads the mapped libc ELF through LFI and computes the live `system()` address.
+3. Sends the normal NGINX Rift spray/probe traffic while keeping the worker state live.
+4. Reads mapped ranges from `/proc/<worker>/mem` through the file-read primitive.
+5. Scans live memory for nonce-marked fake-cleanup structures.
+6. Uses bounded final candidates derived from live worker memory, not hardcoded lab offsets.
+
+This is not the same as the original deterministic Docker demo. The x86_64 VM path leaves normal Linux ASLR enabled and recomputes process-specific addresses on each run. The Docker coreless path also leaves ASLR enabled and removes the unusual readable-core requirement, but it depends on procfs permission behavior that must be verified for the target class.
 
 ### Scope And Caveats
 
-This fork is a controlled research lab. The ASLR-enabled chain relies on strong conditions that are not default assumptions for production deployments:
+This fork is a controlled research lab. The ASLR-enabled chains rely on strong conditions that are not universal production assumptions:
 
 - PHP must expose a useful local-file-read primitive.
-- PHP must be able to read same-UID nginx worker `/proc/<pid>/maps`.
-- The lab enables local worker core dumps and leaves `/app/tmp/core` readable through the LFI primitive.
+- For the core-guided path, PHP must be able to read same-UID nginx worker `/proc/<pid>/maps`, mapped libc, and the generated worker core.
+- For the coreless proc-mem path, PHP must be able to read same-UID nginx worker `/proc/<pid>/maps`, mapped libc, and `/proc/<pid>/mem` at large mapped offsets.
 - HTTP/2 is enabled on the same nginx listener to provide the connection-pool cleanup target used by the final chain.
 
-`phpinfo()` and `/proc/<pid>/maps` are enough to recover PIE/libc base addresses, but they are not enough by themselves to recover the exact heap object/window needed for this exploit. In this fork, the readable crash core is the extra memory disclosure that makes the final target selection reliable.
+`phpinfo()` and `/proc/<pid>/maps` are enough to recover PIE/libc base addresses, but they are not enough by themselves to recover the exact heap object/window needed for this exploit. The older chain used a readable crash core for that final disclosure. The newer Docker proof uses `/proc/<worker>/mem` instead, which is closer to a real arbitrary-file-read consequence in same-UID deployments because it exposes live worker memory without changing core-dump policy.
+
+Important remaining limits:
+
+- `/proc/<pid>/mem` is ptrace-gated. It worked in the Docker lab and in a same-UID check against the official `nginx:stable` image model, but different-UID app processes should fail under default procfs protections.
+- The file-read primitive must support large offsets or an equivalent range API.
+- A real Ubuntu VM retest for the proc-mem path is still pending.
+- A direct non-LFI nginx response memory leak has not been found. Passive reflection, redirect/header/body probes, an initial delayed-proxy over-read sweep, and an SSRF-assisted source review have not produced ASLR-relevant disclosure.
 
 ### Current Tooling
 
-The latest development is `nginx_rifter.py`, an assessment-first tool intended to be closer to how an authorized tester would evaluate a known vulnerable nginx deployment with an HTTP-accessible local-file-read primitive.
+The current clean entry point is `nginx_rifter.py`, an assessment-first tool intended to be closer to how an authorized tester would evaluate a known vulnerable nginx deployment with an HTTP-accessible local-file-read primitive.
 
 Compared with the initial demo runner, `nginx_rifter.py` improves the workflow in several ways:
 
@@ -83,7 +106,11 @@ Compared with the initial demo runner, `nginx_rifter.py` improves the workflow i
 - It prints an exploit-chain viability matrix so missing prerequisites are visible before any exploit attempt.
 - Exploit mode is explicit and integrated into `nginx_rifter.py`.
 
-The newer `demo4.gif` shows this flow: `nginx_rifter.py` first performs an assessment and route/config discovery, then an explicit exploit run demonstrates command execution. The earlier `nginx-aslr-demo.gif` remains as the original ASLR-enabled exploit demo.
+The current `nginx_rifter.py` is self-contained. It no longer imports or shells out to earlier demo PoC versions for assessment or exploitation.
+
+The newest coreless work currently lives in `tools/proc_mem_coreless_exploit.py`. It is intentionally separate while the proc-mem chain is still being validated. It uses the same modular HTTP file-read concept and explicit `--file-read-template`, but it is not yet folded into the all-in-one `nginx_rifter.py` interface.
+
+The newer `demo4.gif` shows the `nginx_rifter.py` assessment and explicit exploit flow. `artifacts/coreless_proc_mem_explicit_fileread_20260518.gif` shows the coreless proc-mem proof using an explicit file-read primitive. The earlier `nginx-aslr-demo.gif` remains as the original ASLR-enabled exploit demo.
 
 ## Usage
 
@@ -132,6 +159,21 @@ Exploit execution is explicit:
 ./nginx_rifter.py --target <target-host>:19321 --exploit --derive-only --cmd id
 ```
 
+Coreless proc-mem research proof:
+
+```bash
+python3 -u tools/proc_mem_coreless_exploit.py \
+  --target <target-host>:19321 \
+  --file-read-template 'http://{host}:{port}/lfi.php?file={path_url}{range_query}' \
+  --phpinfo-path '' \
+  --cmd id \
+  --target-len 6 \
+  --max-region 268435456 \
+  --max-final-candidates 5
+```
+
+This path avoids readable crash cores, but still requires same-UID procfs access to `/proc/<nginx-worker>/mem` and a file-read primitive capable of reading large mapped offsets.
+
 Recording-friendly terminal demo:
 
 ```bash
@@ -154,9 +196,18 @@ For a different known-vulnerable CTF app or testing platform, the file-read vect
   --file-read-template 'http://{host}:{port}/download?path={path_url}{range_query}'
 ```
 
-The template supports `{host}`, `{port}`, `{path_url}`, `{offset}`, `{length}`, and `{range_query}`. The generic profile skips this fork's lab-specific nginx config assertions, but the exploit still needs the same underlying capabilities: readable nginx worker `/proc` maps, readable libc, readable crash core, and a compatible vulnerable nginx/HTTP/2 layout. `phpinfo()` is optional; use `--phpinfo-path ''` to disable it.
+The template supports `{host}`, `{port}`, `{path_url}`, `{offset}`, `{length}`, and `{range_query}`. The generic profile skips this fork's lab-specific nginx config assertions, but the exploit still needs the same underlying capabilities: readable nginx worker `/proc` maps, readable libc, and either a readable crash core for the core-guided path or readable `/proc/<worker>/mem` for the coreless path. `phpinfo()` is optional; use `--phpinfo-path ''` to disable it.
 
-Realism caveat: the LFI/file-read bug class and same-host nginx/PHP-FPM deployment model are realistic. The currently reliable ASLR-bypass chain is stronger than a default production assumption because it needs a readable nginx worker crash core. Standard Ubuntu/nginx deployments commonly disable or redirect cores through apport/systemd-coredump, and application users usually cannot read worker cores unless service/core policy and filesystem permissions allow it.
+Realism caveat: the LFI/file-read bug class and same-host nginx/PHP-FPM deployment model are realistic. The proc-mem chain is more realistic than the earlier crash-core chain because it does not require enabling or reading worker core dumps. It is still not a universal default-production assumption: same-UID process layout, procfs/Yama policy, container namespace settings, and the quality of the file-read primitive decide whether `/proc/<worker>/mem` is reachable.
+
+No-LFI research probes:
+
+```bash
+python3 tools/non_lfi_leak_probe.py --target <target-host>:19321
+python3 tools/non_lfi_active_response_probe.py --target <target-host>:19321
+```
+
+These are negative research probes, not exploit entry points. They exercise passive reflected sinks and an initial delayed-response over-read shape without using LFI, phpinfo, procfs, cores, debugger access, or hardcoded live ASLR bases.
 
 Additional lab notes and run logs are under `docs/`, especially:
 
@@ -167,3 +218,7 @@ Additional lab notes and run logs are under `docs/`, especially:
 - `docs/DEMO_POC_IMPROVEMENTS.md`
 - `docs/KNOWN_LAYOUT_PATTERNS.md`
 - `docs/VAGRANT_ESXI.md`
+- `docs/CORELESS_ASLR_PLAN.md`
+- `docs/CORELESS_ASLR_FINDINGS.md`
+- `docs/NON_LFI_ASLR_BYPASS_LOG.md`
+- `docs/DEMO_RECORDING_WORKFLOW.md`
