@@ -72,4 +72,4 @@ Remaining work before treating this as broadly real-world:
 
 - Re-test on a real Ubuntu VM with default Yama/procfs policy.
 - Re-test against official nginx image patterns with the vulnerable app running as nginx UID 101.
-- Add a clean `nginx_rifter.py` mode for proc-mem capability detection and coreless exploitation, instead of keeping the proof in `tools/proc_mem_coreless_exploit.py`.
+- Done 2026-05-19: add a clean `nginx_rifter.py` mode for proc-mem capability detection and coreless exploitation. The proc-mem method is now the default `nginx_rifter.py` exploit path; the prior core-guided implementation is preserved as `nginx_rifter_core_v2_1.py`.

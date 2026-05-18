@@ -4,9 +4,17 @@ This file records candidate vectors and conclusions for replacing the readable c
 
 ## Summary
 
-Status: coreless replacement proven in Docker with a standard procfs memory-read primitive.
+Status: coreless replacement proven in Docker with a standard procfs memory-read primitive, then promoted into the main `nginx_rifter.py` PoC path.
 
 The successful replacement is not a new NGINX response leak. It is a same-UID local-file-read escalation into `/proc/<nginx-worker>/mem`, verified through the HTTP LFI endpoint. When readable, `/proc/<worker>/mem` is stronger than a crash core because it exposes live worker memory without requiring non-standard core-dump policy.
+
+As of 2026-05-19, `nginx_rifter.py` defaults to this coreless proc-mem method. The older core-guided all-in-one implementation is preserved as `nginx_rifter_core_v2_1.py` for replaying the readable-core research path.
+
+Recorded v3 integration proof:
+
+- asciicast: `artifacts/nginx_rifter_v3_coreless_exploit_20260519.cast`
+- gif: `artifacts/nginx_rifter_v3_coreless_exploit_20260519.gif`
+- JSON artifact: `artifacts/nginx_rifter_v3_coreless_recorded.json`
 
 ## Candidate Matrix
 
