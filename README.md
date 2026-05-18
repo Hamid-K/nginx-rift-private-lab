@@ -4,7 +4,7 @@ RCE Proof of concept for **CVE-2026-42945**, a critical heap buffer overflow in 
 
 This fork extends the original PoC with an ASLR-bypass chain that combines the NGINX overflow with a common same-host LFI/arbitrary-file-read primitive. The file-read primitive is used to recover nginx worker maps, libc, and live `/proc/<worker>/mem`, then derive the `system()` address and usable heap targets remotely.
 
-Earlier versions of this lab used an nginx worker crash core dump as the heap disclosure needed to bypass ASLR. In this repo, **coreless** is only shorthand for "without a readable crash core dump": the current default path replaces that crash-core dependency with live procfs memory reads, while the preserved legacy **core-guided** path still uses a generated worker core dump.
+Earlier versions of this lab intentionally crashed an nginx worker to make the service write a core dump, then fetched and parsed that core dump through the file-read primitive to recover ASLR-sensitive process state, including heap targets. In this repo, **coreless** is only shorthand for "without a readable crash core dump": the current default path replaces that crash-core dependency with live procfs memory reads, while the preserved legacy **core-guided** path still uses the generated worker core dump.
 
 This vulnerability — along with three other memory corruption issues (CVE-2026-42946, CVE-2026-40701, CVE-2026-42934) — was autonomously discovered by [depthfirst](https://depthfirst.com)'s security analysis system after a single click of onboarding the NGINX source.
 
