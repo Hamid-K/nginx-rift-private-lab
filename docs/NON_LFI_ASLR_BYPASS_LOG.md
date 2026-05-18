@@ -51,6 +51,7 @@ Default special responses use static buffers and fixed lengths. They do not incl
 | A1 | Active body over-read | Corrupt `ngx_buf_t.pos/last` or chain metadata of a live response to extend output | Initial sweep: no leak observed |
 | A2 | Active header over-read | Corrupt `ngx_table_elt_t.value.len/data` for a header sent to client | Open |
 | A3 | Upstream/proxy buffer over-read | Corrupt proxied response buffer metadata while backend response is pending | Open |
+| S1 | SSRF-assisted leak | Use SSRF/proxying to trigger upstream/resolver/proxy paths that disclose ASLR state | Source review: no default memory leak found |
 | B1 | Practical blind brute force | Use worker crash/restart behavior as oracle without a leak | Previously failed for static 5-candidate layout; wider bounded campaign still open |
 
 ## Next Tests
@@ -151,3 +152,32 @@ Interpretation:
 - No victim response returned pointer-like bytes or memory-looking over-read data.
 
 This is not a complete proof against active non-LFI leak gadgets. It is a first negative sweep against the most direct delayed-proxy body over-read shape.
+
+## 2026-05-18 SSRF-Assisted Leak Review
+
+Question: if the attacker has SSRF instead of LFI, is there a default NGINX proxy/upstream/resolver path that leaks useful process memory or ASLR pointers?
+
+Current answer: no useful default NGINX memory/pointer leak found. SSRF remains useful for reaching internal services and metadata, but in the reviewed NGINX paths it does not become an ASLR disclosure by itself.
+
+Reviewed paths:
+
+- Variable `proxy_pass` / dynamic upstream selection.
+- DNS resolver failures and upstream connect failures.
+- Upstream response header forwarding.
+- `proxy_redirect` / upstream `Location` and `Refresh` rewriting.
+- `$upstream_addr`, `$upstream_status`, `$upstream_response_time`, `$upstream_connect_time`, `$upstream_response_length`, and related upstream variables.
+- `X-Accel-Redirect` handling as an SSRF-controlled upstream response header.
+
+Findings:
+
+- Dynamic `proxy_pass` resolves attacker-controlled hostnames and connects to attacker-selected upstreams, but resolver/connect failures are logged and clients receive normal special responses such as 502. The response body is static and does not include pointers.
+- `$upstream_addr` is built from `state[i].peer->data`, which is the peer name/address string, not an address of the `peer` object. Related upstream variables format status codes, times, and lengths as decimal strings.
+- Upstream headers are copied with `ngx_http_upstream_copy_header_line()` / related helpers by copying the parsed `ngx_table_elt_t`. The bytes exposed to the client are upstream-controlled header bytes or configured rewrites, not NGINX heap/code pointers.
+- `proxy_redirect` rewrites upstream `Location` / `Refresh` strings. The source and rewritten values are attacker/upstream/config-derived strings.
+- `X-Accel-Redirect` can turn SSRF into access to configured internal NGINX locations. That can matter if the deployment has an internal location exposing sensitive files or debug/status data, but that is an auxiliary disclosure/config issue, not a default NGINX memory leak.
+
+Practical implication:
+
+- SSRF could help discover versions, reach internal status endpoints, or hit a separate file/debug/info disclosure service.
+- SSRF alone does not currently replace LFI/procfs/core/memory disclosure for calculating NGINX worker ASLR in this exploit chain.
+- A successful SSRF-assisted bypass would likely need an additional internal disclosure target, such as a misconfigured internal file server, app debug endpoint, phpinfo/status endpoint, exposed crash artifacts, or a separate memory disclosure bug.
