@@ -1,0 +1,6 @@
+services:
+  nginx:
+    environment:
+      NGINX_CONF: /app/nginx-nonlfi-leak-harness.conf
+    volumes:
+      - ./nginx-nonlfi-leak-harness.conf:/app/nginx-nonlfi-leak-harness.conf:ro
