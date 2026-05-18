@@ -2,6 +2,10 @@
 
 RCE Proof of concept for **CVE-2026-42945**, a critical heap buffer overflow in NGINX's `ngx_http_rewrite_module` introduced in 2008. The bug enables unauthenticated remote code execution against servers using `rewrite` and `set` directives.
 
+This fork's current PoC is a **coreless ASLR-bypass chain**: it combines the NGINX overflow with a common same-host LFI/arbitrary-file-read primitive, uses that file read to recover nginx worker maps, libc, and live `/proc/<worker>/mem`, then derives the `system()` address and usable heap targets remotely.
+
+In this repo, **coreless** means the exploit does not need nginx to write an attacker-readable crash core. The preserved legacy **core-guided** path uses a generated worker core as the heap disclosure needed to bypass ASLR; the current default path replaces that with live procfs memory reads.
+
 This vulnerability — along with three other memory corruption issues (CVE-2026-42946, CVE-2026-40701, CVE-2026-42934) — was autonomously discovered by [depthfirst](https://depthfirst.com)'s security analysis system after a single click of onboarding the NGINX source.
 
 > Want to find issues like this in your own code? Try the same system at **<https://depthfirst.com/open-defense>**.
