@@ -1,0 +1,7 @@
+services:
+  nginx:
+    environment:
+      NGINX_CONF: /app/nginx-charset-oob.conf
+    volumes:
+      - ./nginx-charset-oob.conf:/app/nginx-charset-oob.conf:ro
+      - ./charset_oob_server.py:/app/server.py:ro

