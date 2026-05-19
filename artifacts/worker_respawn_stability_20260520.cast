@@ -1,0 +1,8 @@
+{"version":3,"term":{"cols":132,"rows":34},"timestamp":1779229220,"idle_time_limit":1.0,"command":"python3 tools/worker_respawn_stability_probe.py --target 127.0.0.1:19321 --cycles 2","title":"NGINX worker respawn layout stability probe","env":{"SHELL":"/opt/homebrew/bin/fish"}}
+[0.048, "o", "target      127.0.0.1:19321\r\nprimitive   LFI maps only; no /proc/<pid>/mem or core parsing\r\ncycles      2\r\n\r\n"]
+[0.017, "o", "before 1   pid=18     master=7      nginx_rw=0x555555659000 libc=0x7ffffefc0000 heap=none stack=0xfffff312b000\r\n"]
+[1.070, "o", "after 1    pid=19     master=7      nginx_rw=0x555555659000 libc=0x7ffffefc0000 heap=none stack=0xfffff312b000\r\ncycle 1  crashed=true worker_changed=true master_stable=true nginx_stable=true libc_stable=true heap_stable=true stack_stable=true\r\n\r\n"]
+[0.006, "o", "before 2   pid=19     master=7      nginx_rw=0x555555659000 libc=0x7ffffefc0000 heap=none stack=0xfffff312b000\r\n"]
+[1.070, "o", "after 2    pid=20     master=7      nginx_rw=0x555555659000 libc=0x7ffffefc0000 heap=none stack=0xfffff312b000\r\ncycle 2  crashed=true worker_changed=true master_stable=true nginx_stable=true libc_stable=true heap_stable=true stack_stable=true\r\n\r\nsummary\r\n"]
+[0.000, "o", "  crash oracle observed      2/2\r\n  same_master              2/2\r\n  same_nginx_rw            2/2\r\n  same_libc                2/2\r\n  same_heap                2/2\r\n  same_stack               2/2\r\n"]
+[0.014, "x", "0"]

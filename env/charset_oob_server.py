@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 import socketserver
+import http.server
+import threading
 import time
 from urllib.parse import parse_qs, urlparse
 
@@ -79,7 +81,41 @@ class ReuseTCPServer(socketserver.TCPServer):
     allow_reuse_address = True
 
 
-if __name__ == "__main__":
+class DelayBackendHandler(http.server.BaseHTTPRequestHandler):
+    def do_GET(self):
+        self._respond()
+
+    def do_POST(self):
+        length = int(self.headers.get("Content-Length", "0"))
+        if length:
+            self.rfile.read(length)
+        self._respond()
+
+    def _respond(self):
+        delay = float(self.headers.get("X-Delay", "5"))
+        if delay:
+            time.sleep(delay)
+        self.send_response(200)
+        self.send_header("Content-Type", "text/plain")
+        self.end_headers()
+        self.wfile.write(b"backend ok\n")
+
+    def log_message(self, _fmt, *_args):
+        return
+
+
+def serve_delay_backend():
+    with ReuseTCPServer(("127.0.0.1", 19323), DelayBackendHandler) as server:
+        print("Delay backend on :19323", flush=True)
+        server.serve_forever()
+
+
+def serve_charset_backend():
     with ReuseTCPServer(("127.0.0.1", 19325), CharsetOobHandler) as server:
         print("Charset OOB backend on :19325", flush=True)
         server.serve_forever()
+
+
+if __name__ == "__main__":
+    threading.Thread(target=serve_delay_backend, daemon=True).start()
+    serve_charset_backend()

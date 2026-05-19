@@ -39,6 +39,9 @@ The same write-up describes CVE-2026-42934 as an out-of-bounds read in `ngx_http
   - `length`: stable leaked byte `00`.
   - 4-byte UTF-8 split tests returned replacement bytes (`3f 3f 58`) and did not produce a better disclosure primitive.
 - 2026-05-20: Recorded live charset OOB proof: [cast](../artifacts/charset_oob_probe_20260520.cast), [gif](../artifacts/charset_oob_probe_20260520.gif).
+- 2026-05-20: Adjusted the research backend to serve both the original delayed HTTP backend on `127.0.0.1:19323` and the charset OOB backend on `127.0.0.1:19325`. This keeps `/spray`, `/internal`, and the Rift crash/oracle path realistic while the charset harness is enabled.
+- 2026-05-20: Added `tools/worker_respawn_stability_probe.py` to measure the blog's worker-respawn hint using only HTTP/LFI-readable `/proc/<pid>/maps` snapshots. It intentionally does not read `/proc/<pid>/mem` or crash cores.
+- 2026-05-20: Live respawn measurement on Docker (`127.0.0.1:19321`) showed 3/3 controlled crashes, a stable master PID, stable NGINX writable image base, stable libc base, and stable stack base across replacement workers. Recorded proof: [cast](../artifacts/worker_respawn_stability_20260520.cast), [gif](../artifacts/worker_respawn_stability_20260520.gif).
 
 ## Interim Findings
 
@@ -51,3 +54,13 @@ The bug is reproducible in the Docker lab and produces client-visible bytes from
 - tested split patterns did not expose heap, binary, libc, or stack-looking pointer bytes.
 
 Current status: confirmed disclosure bug, but not yet a practical ASLR bypass for the NGINX Rift RCE chain.
+
+### Worker Respawn Crash Oracle
+
+The master/worker model does preserve broad address layout across worker crashes in the current lab. This makes the write-up's byte-wise probing idea plausible as an oracle primitive:
+
+- a bad guess can crash one worker and the master respawns another;
+- the replacement worker keeps the same mapped NGINX and libc bases in this lab;
+- a stable base means guesses do not need to restart from zero after each crash.
+
+Current status: useful for bounded brute-force campaigns, but not a complete ASLR bypass by itself. It still needs either a small candidate set, a stronger success oracle than "worker died", or a way to locate the live request body/cleanup slot without reading worker memory.
