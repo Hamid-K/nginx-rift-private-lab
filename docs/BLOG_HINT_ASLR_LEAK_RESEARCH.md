@@ -45,6 +45,8 @@ The same write-up describes CVE-2026-42934 as an out-of-bounds read in `ngx_http
 - 2026-05-20: Re-ran the active delayed-proxy response sweep against the combined backend. Larger sweep result: `clean=0 reset=96 interesting=0`. Compact recorded proof: [cast](../artifacts/blog_hint_active_response_negative_20260520.cast), [gif](../artifacts/blog_hint_active_response_negative_20260520.gif).
 - 2026-05-20: Added `tools/stock_nginx_procfs_probe.sh` to verify procfs behavior in a plain `nginx:stable` container without lab `cap_add` or custom seccomp settings.
 - 2026-05-20: Stock `nginx:stable` procfs check: a same-UID `nginx` process could read worker `/proc/<pid>/maps` and `/proc/<pid>/mem` at a mapped offset (`7f 45 4c 46`), while `nobody` was denied for both. Recorded proof: [cast](../artifacts/stock_nginx_procfs_probe_20260520.cast), [gif](../artifacts/stock_nginx_procfs_probe_20260520.gif).
+- 2026-05-20: Added `tools/replay_learned_candidate.py` to replay a candidate learned from an identical clone. The replay script can derive target `system()` from LFI-readable maps/libc, but intentionally does not read target `/proc/<pid>/mem` or target cores.
+- 2026-05-20: Clone-assisted replay succeeded. A second identical Docker instance on `127.0.0.1:19331` was used to recover candidate `0x5555556b2167` at body offset `3136` through clone `/proc/<worker>/mem`. The target on `127.0.0.1:19321` was then exploited with `tools/replay_learned_candidate.py`, deriving only target `system()` from target maps/libc and not reading target memory/core. Recorded target RCE proof: [cast](../artifacts/clone_learned_replay_rce_20260520.cast), [gif](../artifacts/clone_learned_replay_rce_20260520.gif).
 
 ## Interim Findings
 
@@ -67,6 +69,26 @@ The master/worker model does preserve broad address layout across worker crashes
 - a stable base means guesses do not need to restart from zero after each crash.
 
 Current status: useful for bounded brute-force campaigns, but not a complete ASLR bypass by itself. It still needs either a small candidate set, a stronger success oracle than "worker died", or a way to locate the live request body/cleanup slot without reading worker memory.
+
+### Clone-Assisted Pattern Replay
+
+This path produced RCE against the target without using target memory or target core dumps:
+
+1. Run an identical clone with the same vulnerable NGINX build/config.
+2. Use the clone as the expensive oracle to recover a fake-cleanup address/body-slot pair.
+3. Replay that learned pair against the target.
+4. Derive target `system()` from target maps/libc through ordinary file read; do not read target `/proc/<worker>/mem`.
+
+Result in Docker:
+
+```text
+clone learned address: 0x5555556b2167
+clone learned body offset: 3136
+target derived system(): 0x7fffff010d70
+target proof: uid=65534(nobody) gid=65534(nogroup) groups=65534(nogroup)
+```
+
+Current status: successful under an identical-container assumption. This is stronger than hardcoding live target offsets, but it is still not a universal remote exploit strategy. It depends on high layout reproducibility across clone and target for the heap/request-body slot, which is plausible in tightly controlled container fleets and CTF/lab deployments, but fragile across different worker counts, allocator state, traffic, build flags, libc, config, and kernel/container runtime behavior.
 
 ### Active Response/Header Over-Read
 

