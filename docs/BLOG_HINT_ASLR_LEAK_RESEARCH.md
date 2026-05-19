@@ -42,6 +42,9 @@ The same write-up describes CVE-2026-42934 as an out-of-bounds read in `ngx_http
 - 2026-05-20: Adjusted the research backend to serve both the original delayed HTTP backend on `127.0.0.1:19323` and the charset OOB backend on `127.0.0.1:19325`. This keeps `/spray`, `/internal`, and the Rift crash/oracle path realistic while the charset harness is enabled.
 - 2026-05-20: Added `tools/worker_respawn_stability_probe.py` to measure the blog's worker-respawn hint using only HTTP/LFI-readable `/proc/<pid>/maps` snapshots. It intentionally does not read `/proc/<pid>/mem` or crash cores.
 - 2026-05-20: Live respawn measurement on Docker (`127.0.0.1:19321`) showed 3/3 controlled crashes, a stable master PID, stable NGINX writable image base, stable libc base, and stable stack base across replacement workers. Recorded proof: [cast](../artifacts/worker_respawn_stability_20260520.cast), [gif](../artifacts/worker_respawn_stability_20260520.gif).
+- 2026-05-20: Re-ran the active delayed-proxy response sweep against the combined backend. Larger sweep result: `clean=0 reset=96 interesting=0`. Compact recorded proof: [cast](../artifacts/blog_hint_active_response_negative_20260520.cast), [gif](../artifacts/blog_hint_active_response_negative_20260520.gif).
+- 2026-05-20: Added `tools/stock_nginx_procfs_probe.sh` to verify procfs behavior in a plain `nginx:stable` container without lab `cap_add` or custom seccomp settings.
+- 2026-05-20: Stock `nginx:stable` procfs check: a same-UID `nginx` process could read worker `/proc/<pid>/maps` and `/proc/<pid>/mem` at a mapped offset (`7f 45 4c 46`), while `nobody` was denied for both. Recorded proof: [cast](../artifacts/stock_nginx_procfs_probe_20260520.cast), [gif](../artifacts/stock_nginx_procfs_probe_20260520.gif).
 
 ## Interim Findings
 
@@ -64,3 +67,23 @@ The master/worker model does preserve broad address layout across worker crashes
 - a stable base means guesses do not need to restart from zero after each crash.
 
 Current status: useful for bounded brute-force campaigns, but not a complete ASLR bypass by itself. It still needs either a small candidate set, a stronger success oracle than "worker died", or a way to locate the live request body/cleanup slot without reading worker memory.
+
+### Active Response/Header Over-Read
+
+The current source audit and live sweeps do not show a usable response leak from corrupting nearby request state:
+
+- `ngx_http_header_filter()` first sums initialized header key/value lengths, then allocates a fresh temp buffer and copies exactly those lengths into the response header buffer.
+- `ngx_http_send_response()` / static response paths similarly build fresh output buffers from initialized string lengths.
+- Proxy response filters expose upstream body/header bytes or configured rewrites; the obvious delayed `/spray` victim shape reset connections instead of extending body output into process memory.
+
+Current status: negative for the direct body/header over-read shapes tested. A leak would likely require a much more precise corruption target than the broad delayed-proxy sweep, such as a known live `ngx_buf_t` or `ngx_table_elt_t` object adjacent to the overflowed allocation and still used after corruption.
+
+### File-Read Procfs Path
+
+The current best practical ASLR bypass remains a strong arbitrary local file read in a same-UID deployment where procfs allows reads of the NGINX worker:
+
+- In a plain official `nginx:stable` Docker container, same-UID reads of `/proc/<worker>/maps` and `/proc/<worker>/mem` succeeded without adding `SYS_PTRACE` or custom seccomp options.
+- A different UID in the same stock container was denied for both maps and mem.
+- This supports the existing `nginx_rifter.py` proc-mem path as realistic for some single-container or same-UID web deployments.
+
+Important limitation: this is not universal for standard Ubuntu host deployments. Ubuntu systems commonly enable Yama `ptrace_scope=1`; in that setup, same-UID `/proc/<worker>/maps` may still be useful, but `/proc/<worker>/mem` can be denied unless the web worker has a permitted ptrace relationship/capability or the host/container policy allows it. That means the file-read procfs path is realistic in common container patterns, but not a guaranteed default on all Ubuntu/nginx/PHP installations.

