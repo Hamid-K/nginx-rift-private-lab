@@ -100,3 +100,67 @@ Current ASLR-bypass status:
 - Crash reproduction is confirmed.
 - No ASLR bypass claim has been made yet on this branch.
 - Next work item is to audit whether this overflow can be turned into a remotely observable leak or reliable code execution primitive without weakening ASLR.
+
+## 2026-05-20 Non-ASAN Behavior Sweep
+
+Tool:
+
+- `tools/njs_fetch_proxy_len_sweep.py`
+
+Runtime:
+
+- Vulnerable non-ASAN image: `njs-fetch-proxy-098`, host port `19431`.
+- ASLR was left enabled.
+
+Observed over HTTP:
+
+- Credential lengths up to 127 bytes reach the local proxy endpoint and return `PROXY:Basic ...`.
+- Any tested username or password length of 128 bytes or more returns the fixed 28-byte JS error body: `failed to evaluate proxy URL`.
+- The target remains externally healthy after each request because the NGINX master process starts a replacement worker when a worker dies.
+
+Observed in local container logs:
+
+- Some over-127 requests only log `js_fetch_proxy username/password invalid or too long`.
+- Larger or differently shaped overflows corrupt allocator state and the worker exits after the HTTP response has already been sent.
+- Crash signatures in the non-ASAN run included glibc `free(): invalid next size (normal)` and worker exits by signal.
+
+Artifacts:
+
+- `artifacts/njs_fetch_proxy_cve_2026_8711_len_sweep_20260520.cast`
+- `artifacts/njs_fetch_proxy_cve_2026_8711_len_sweep_20260520.gif`
+
+ASLR-bypass implication from this sweep:
+
+- The standard HTTP response does not include pointer-bearing data.
+- The remotely visible result is a boundary oracle (`<=127` reaches proxy, `>=128` returns fixed error) plus an optional worker-restart oracle.
+- This does not by itself bypass ASLR. Turning this into ASLR-bypassing exploitation would require either an additional memory disclosure primitive or a reliable address-independent corruption target.
+
+## ASLR Bypass Audit Notes
+
+Source constraints:
+
+- `ngx.fetch()` allocates the fetch object from the request pool before evaluating `js_fetch_proxy`.
+- The dynamic proxy URL is generated through `ngx_http_complex_value()` and stored in the request pool.
+- njs `0.9.8` then allocates fixed 128-byte `decoded_user` and `decoded_pass` buffers in the same request pool.
+- If raw decoded username length exceeds 127, the function returns before password decode and before `ngx_js_build_proxy_auth_header()`.
+- If raw decoded password length exceeds 127, the function returns before `ngx_js_build_proxy_auth_header()`.
+
+Practical consequence:
+
+- The overlong credential path does not normally reach proxy connection setup, resolver processing, origin fetch, or proxy auth header reflection.
+- Valid credentials are reflected through `Proxy-Authorization`, but only attacker-controlled bytes are reflected.
+- Parse failure is surfaced to JavaScript as the fixed message `failed to evaluate proxy URL`.
+
+Current candidate list:
+
+- Real: crash/restart oracle.
+- Real: proxy-reachability and 127-byte boundary oracle.
+- Real but not a leak: `Proxy-Authorization` reflection for valid credentials.
+- Weak: allocator-state survival oracle through request-pool or glibc metadata corruption.
+- Not found yet: an HTTP-only address leak in the standard NGINX+njs path.
+
+Next tests:
+
+- Let the independent pool-corruption side-track finish source review.
+- If a specific corrupted follow-on allocation target is identified, add a dedicated HTTP-only harness for that target.
+- If no target is identified, document the result as crash-only without ASLR bypass for the standard deployment model, while keeping the branch available for any new external hint.
