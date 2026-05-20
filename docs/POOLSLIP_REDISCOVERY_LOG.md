@@ -16,6 +16,8 @@ Important correction from 2026-05-20: do not assume the Nebusec video is CVE-202
 - Track experiments and live results in markdown.
 - For Vagrant, treat stock Ubuntu `kernel.yama.ptrace_scope=1` as the realistic baseline.
 - Do not count `/proc/<worker>/mem` as a viable Vagrant coreless vector. Standard Ubuntu has `kernel.yama.ptrace_scope=1`, and weakening that setting is equivalent to changing the target security posture for the exploit.
+- For the two new vulnerability tracks, do not use LFI, arbitrary file read, phpinfo, `/proc/<pid>/maps`, coredumps, ptrace, debugger output, or target-side filesystem reads as the ASLR leak.
+- Any ASLR bypass claim for the poolslip/video track must come from remote HTTP-visible behavior or a newly discovered NGINX-side memory disclosure/oracle.
 - Prefer crash/leak classifiers and minimized harnesses over writing a weaponized public exploit for an undisclosed issue.
 
 ## Video Clues
@@ -60,9 +62,13 @@ Interpretation: the heap stage looks like a remote crash/success or response-dif
 - 2026-05-20 added `tools/no_lfi_heap_oracle_probe.py`, a crash/no-crash probe for the blog/video ASLR idea. It uses no file-read primitive at all: it sprays zeroed request bodies, partially overwrites the cleanup pointer, and treats a non-crashing worker as a possible mapped cleanup-list landing. Docker smoke over 20 low-byte candidates found no no-crash hit, which is expected for a small cap. Artifacts: `artifacts/no_lfi_heap_oracle_docker_smoke_20260520.cast` and `artifacts/no_lfi_heap_oracle_docker_smoke_20260520.gif`.
 - 2026-05-20 added `tools/no_lfi_http_module_probe.py`, an HTTP-only probe suite for default-module source-audit leads. The Docker lab now exposes deterministic static content, a fixed-version rewrite/set route, and backend cases for malformed upstream charset headers, early hints, and chunked trailers. Recorded run against `nginx/1.31.1` produced no HTTP-visible leak/crash anomaly across range/static, upstream header/chunking, rewrite/set, and large-header keepalive probes. Artifacts: `artifacts/no_lfi_http_module_probe_20260520.cast` and `artifacts/no_lfi_http_module_probe_20260520.gif`.
 
-## Current Brute-Force Design
+## Rejected Legacy Side-Track: LFI Maps Brute Force
 
-The maps-only campaign is a practical substitute for target memory reads if the candidate space is small enough:
+The maps-only campaign below is retained as historical Rift-side research only.
+It is no longer admissible for the new poolslip/video vulnerability claim because
+it depends on LFI-derived worker maps and file-derived libc facts.
+
+Legacy design:
 
 1. Use LFI to find a same-UID NGINX worker and read `/proc/<worker>/maps`.
 2. Use LFI to read libc from disk and derive `system()`.
@@ -70,7 +76,7 @@ The maps-only campaign is a practical substitute for target memory reads if the 
 4. Build a dense fake `ngx_pool_cleanup_t` sled in each request body. The current version stores the command once near the end of the body and points each candidate cleanup record at that shared command, avoiding the earlier low-density per-slot command layout.
 5. Overwrite only the low two bytes of the victim pool cleanup pointer and use crash/respawn plus marker-file readback as the oracle.
 
-This is not a memory leak. It is a bounded remote brute-force strategy using stable worker respawns and ordinary file-read-derived process maps.
+This is not a remote ASLR leak. It is a bounded brute-force strategy using stable worker respawns and ordinary file-read-derived process maps, so it is out of scope for the two new vulnerability tracks.
 
 Open risk: if the original cleanup pointer's high bytes do not point into a heap window containing one of the sled slots, this pass will only cause crashes and no marker proof. In that case, the next refinements are to scan additional address modulo classes, vary the sled phase/stride, and add a body-placement classifier that still uses only maps and response/crash behavior.
 

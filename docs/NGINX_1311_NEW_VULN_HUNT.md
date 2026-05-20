@@ -37,7 +37,8 @@ Working assumption: the exploit uses a new HTTP/1/default-module bug or oracle i
 
 - Do not assume `CVE-2026-42945` is the exploited corruption primitive.
 - Do not rely on core dumps, `/proc/<pid>/mem`, ptrace relaxation, or disabled ASLR.
-- Do not count LFI-derived NGINX worker maps as the video-equivalent path unless explicitly studying the LFI-assisted variant.
+- Do not use LFI, arbitrary file read, phpinfo, `/proc/<pid>/maps`, local files, or target-side introspection for the video-equivalent ASLR bypass.
+- LFI-derived NGINX worker maps are now rejected for this new-vulnerability hunt; they belong only to the older Rift lab track.
 
 ## 2026-05-20 Progress
 
