@@ -1,0 +1,10 @@
+{"version":3,"term":{"cols":80,"rows":24},"timestamp":1779312405,"command":"python3 tools/worker_respawn_stability_probe.py --target 192.168.1.205:19321 --cycles 3 --recovery-timeout 25 --post-recovery-delay 0.2 --timeout 5","title":"Vagrant worker respawn stability under ptrace_scope=1","env":{"SHELL":"/opt/homebrew/bin/fish"}}
+[0.042, "o", "target      192.168.1.205:19321\r\nprimitive   LFI maps only; no /proc/<pid>/mem or core parsing\r\ncycles      3\r\n\r\n"]
+[0.017, "o", "before 1   pid=26416  master=3044   nginx_rw=0x55e420b83000 libc=0x7fca47a6d000 heap=0x55e420ff3000 stack=0x7ffce22c4000\r\n"]
+[1.014, "o", "after 1    pid=26417  master=3044   nginx_rw=0x55e420b83000 libc=0x7fca47a6d000 heap=0x55e420ff3000 stack=0x7ffce22c4000\r\ncycle 1  crashed=true worker_changed=true master_stable=true nginx_stable=true libc_stable=true heap_stable=true stack_stable=true\r\n\r\n"]
+[0.005, "o", "before 2   pid=26417  master=3044   nginx_rw=0x55e420b83000 libc=0x7fca47a6d000 heap=0x55e420ff3000 stack=0x7ffce22c4000\r\n"]
+[1.023, "o", "after 2    pid=26418  master=3044   nginx_rw=0x55e420b83000 libc=0x7fca47a6d000 heap=0x55e420ff3000 stack=0x7ffce22c4000\r\ncycle 2  crashed=true worker_changed=true master_stable=true nginx_stable=true libc_stable=true heap_stable=true stack_stable=true\r\n\r\n"]
+[0.006, "o", "before 3   pid=26418  master=3044   nginx_rw=0x55e420b83000 libc=0x7fca47a6d000 heap=0x55e420ff3000 stack=0x7ffce22c4000\r\n"]
+[1.023, "o", "after 3    pid=26419  master=3044   nginx_rw=0x55e420b83000 libc=0x7fca47a6d000 heap=0x55e420ff3000 stack=0x7ffce22c4000\r\ncycle 3  crashed=true worker_changed=true master_stable=true nginx_stable=true libc_stable=true heap_stable=true stack_stable=true\r\n\r\nsummary\r\n  crash oracle observed      3/3\r\n  same_master              3/3\r\n  same_nginx_rw            3/3\r\n"]
+[0.000, "o", "  same_libc                3/3\r\n  same_heap                3/3\r\n  same_stack               3/3\r\n"]
+[0.008, "x", "0"]

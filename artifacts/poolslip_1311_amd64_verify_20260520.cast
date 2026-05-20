@@ -1,0 +1,5 @@
+{"version":3,"term":{"cols":80,"rows":24},"timestamp":1779313300,"command":"docker ps --filter name=nginx-poolslip-1311-amd64 --format \"{{.Names}} {{.Status}} {{.Ports}}\"; docker exec nginx-poolslip-1311-amd64 /nginx-src/build/nginx -V; curl -i --max-time 5 http://127.0.0.1:19331/","title":"NGINX 1.31.1 amd64 poolslip lab verification","env":{"SHELL":"/opt/homebrew/bin/fish"}}
+[0.020, "o", "nginx-poolslip-1311-amd64 Up 25 seconds 0.0.0.0:19331->19331/tcp, [::]:19331->19331/tcp\r\n"]
+[0.057, "o", "nginx version: nginx/1.31.1\r\nbuilt by clang 18.1.3 (1ubuntu1)\r\nconfigure arguments: --builddir=build --with-cc=clang --with-cc-opt='-O1 -g -fno-omit-frame-pointer' --without-http_gzip_module\r\n"]
+[0.098, "o", "HTTP/1.1 200 OK\r\r\n\u001b[1mServer\u001b[0m: nginx/1.31.1\r\r\n\u001b[1mDate\u001b[0m: Wed, 20 May 2026 21:41:40 GMT\r\r\n\u001b[1mContent-Type\u001b[0m: text/plain\r\r\n\u001b[1mContent-Length\u001b[0m: 16\r\r\n\u001b[1mConnection\u001b[0m: keep-alive\r\r\n\r\r\npoolslip lab ok\r\n"]
+[0.001, "x", "0"]
