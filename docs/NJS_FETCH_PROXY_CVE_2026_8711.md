@@ -164,3 +164,52 @@ Next tests:
 - Let the independent pool-corruption side-track finish source review.
 - If a specific corrupted follow-on allocation target is identified, add a dedicated HTTP-only harness for that target.
 - If no target is identified, document the result as crash-only without ASLR bypass for the standard deployment model, while keeping the branch available for any new external hint.
+
+## Pool-Corruption Side-Track Result
+
+Independent source and HTTP-only review did not find an intrinsic pointer leak in the standard `js_fetch_proxy` overflow path.
+
+Confirmed:
+
+- Username overflow around the low hundreds can return the fixed `500 failed to evaluate proxy URL` response and then kill the worker on cleanup.
+- Password overflow has a similar fixed-error/crash boundary at larger sizes.
+- Keepalive survival versus EOF is a real allocator-state oracle, but it exposes pool-tail phase, not an address.
+- Because NGINX request-pool metadata lives before pool allocations, the forward overflow from `decoded_user` or `decoded_pass` does not directly overwrite the owning pool header.
+
+Current verdict for the standalone CVE:
+
+- Crash/restart: confirmed.
+- Fixed boundary/proxy-reachability oracle: confirmed.
+- Direct HTTP memory leak: not found.
+- Standalone ASLR bypass: not proven.
+
+## ASLR Bypass Composition: Same-Worker File Read
+
+The lab now also includes an intentionally vulnerable njs file-read endpoint:
+
+- Config: `location /file_read { js_content njs_fetch_proxy.file_read; }`
+- Implementation: `env/njs-fetch-proxy.js` imports `fs` and calls `fs.readFileSync(r.args.path)`.
+- Tool: `tools/njs_fetch_proxy_maps_leak.py`
+
+This is not part of the CVE itself. It models a second bug class in the same NGINX worker process. Because njs handlers execute inside the NGINX worker, reading `/proc/self/maps` leaks the exact address space of the process that contains the vulnerable `js_fetch_proxy` code path.
+
+Verified over HTTP:
+
+- `/proc/sys/kernel/randomize_va_space` returned `2`, so ASLR was enabled.
+- `/proc/self/maps` returned live mappings for:
+  - NGINX executable
+  - `ngx_http_js_module.so`
+  - libc
+  - dynamic loader
+  - writable anonymous mappings
+  - stack
+
+Artifacts:
+
+- `artifacts/njs_fetch_proxy_cve_2026_8711_maps_leak_20260520.cast`
+- `artifacts/njs_fetch_proxy_cve_2026_8711_maps_leak_20260520.gif`
+
+Important boundary:
+
+- This same-worker file-read composition is ASLR-bypass-relevant because it leaks the NGINX worker's own maps.
+- A file-read bug in a separate PHP-FPM worker would normally leak the PHP-FPM process maps, not the NGINX worker maps, and would not directly bypass ASLR for this njs/NGINX-worker overflow.
