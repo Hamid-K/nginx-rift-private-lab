@@ -79,6 +79,45 @@ def range_probe(host: str, port: int) -> bool:
     return ok and alive(host, port)
 
 
+def range_upstream_probe(host: str, port: int) -> bool:
+    print("[range/upstream]")
+    expected_status, _headers, expected = request(
+        host, port, "GET", "/forced-range?case=pattern-length"
+    )
+    if expected_status != 200 or len(expected) != 65536:
+        print(f"  forced-range baseline: status={expected_status} len={len(expected)} unexpected")
+        return False
+
+    tests = [
+        ("/forced-range?case=pattern-length", "bytes=0-15", expected[0:16]),
+        ("/forced-range?case=pattern-length", "bytes=65520-65535", expected[65520:65536]),
+        ("/forced-range?case=pattern-length", "bytes=0-0,2-3", None),
+        ("/stream?case=pattern-length", "bytes=0-15", None),
+        ("/stream?case=pattern-chunked", "bytes=0-15", None),
+    ]
+    ok = True
+    for path, header, exact in tests:
+        try:
+            status, headers, out = request(host, port, "GET", path, {"Range": header})
+        except Exception as exc:
+            ok = False
+            print(f"  {path:34} {header:18} exception={exc!r}")
+            continue
+
+        verdict = "ok"
+        if exact is not None and (status != 206 or out != exact):
+            verdict = "mismatch"
+            ok = False
+        if b"POOLSLIP" in out or b"\x00" * 24 in out:
+            verdict = "suspicious-body"
+            ok = False
+        print(
+            f"  {path:34} {header:18} status={status:<3} len={len(out):<6} "
+            f"cl={headers.get('Content-Length', '-'):<6} sha={digest(out)} {verdict}"
+        )
+    return ok and alive(host, port)
+
+
 def upstream_probe(host: str, port: int) -> bool:
     print("[upstream headers/chunking]")
     paths = [
@@ -165,6 +204,7 @@ def main() -> int:
 
     results = [
         ("range/static", range_probe(host, port)),
+        ("range/upstream", range_upstream_probe(host, port)),
         ("upstream", upstream_probe(host, port)),
         ("rewrite", rewrite_probe(host, port)),
         ("large-header", pipelined_large_header_probe(host, port)),

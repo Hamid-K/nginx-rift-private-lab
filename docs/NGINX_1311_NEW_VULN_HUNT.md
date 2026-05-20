@@ -38,3 +38,36 @@ Working assumption: the exploit uses a new HTTP/1/default-module bug or oracle i
 - Do not assume `CVE-2026-42945` is the exploited corruption primitive.
 - Do not rely on core dumps, `/proc/<pid>/mem`, ptrace relaxation, or disabled ASLR.
 - Do not count LFI-derived NGINX worker maps as the video-equivalent path unless explicitly studying the LFI-assisted variant.
+
+## 2026-05-20 Progress
+
+### Source-Audit Leads
+
+- `1.31.1` is not a narrow HTTP/1 security diff from `1.31.0`: the local upstream tree only changes HTTP/2 header limits, MP4 null-pointer arithmetic, mail cleanup/style, and version metadata after `release-1.31.0`.
+- The video build does not visibly enable HTTP/2, SSL, or MP4, so the hunt remains broader than the `1.31.0..1.31.1` diff.
+- Range/static remains the highest-priority response-shape lead because gzip is disabled in the video and byte-range responses can expose precise body/filter length mistakes. Current source guards range numeric overflow and clamps ranges to `content_length`, but multipart range output still deserves live testing across static and upstream-backed bodies.
+- `ngx_http_tunnel_module` is default-built in this tree, but it is only reachable when `tunnel_pass` is configured and only accepts `CONNECT`. It remains a config-dependent candidate, not a default-route lead.
+- `ngx_http_upstream_sticky_module` has shared-memory state and route/session IDs, but configured server route IDs are bounded to `NGX_HTTP_UPSTREAM_SID_LEN` before runtime use. No remote pointer leak has been identified in the first pass.
+
+### Live-Test Plan Updates
+
+- Extended `env/nginx-poolslip.conf` with `/stream` and `/forced-range` locations to exercise upstream bodies with `proxy_buffering off` and `proxy_force_ranges on`.
+- Extended `env/server.py` with deterministic 64 KiB upstream bodies using both `Content-Length` and chunked transfer.
+- Extended `tools/no_lfi_http_module_probe.py` with `range/upstream` probes. These are still HTTP-only: no LFI, procfs, cores, debugger, or ASLR weakening.
+
+### Live-Test Results
+
+- `artifacts/no_lfi_http_module_probe_range_upstream_clean_20260520.cast`
+- `artifacts/no_lfi_http_module_probe_range_upstream_clean_20260520.gif`
+
+Clean result:
+
+- Static range requests returned expected 206/416 responses only.
+- Upstream `proxy_force_ranges` returned exact expected single-range bytes.
+- Multi-range on forced upstream declined to full 200 body instead of exposing unexpected multipart data.
+- `proxy_buffering off` stream paths returned full upstream bodies and did not apply unsafe range slicing.
+- Malformed upstream charset, early hints with malformed charset, and chunked trailers did not crash or leak.
+- Rewrite regression probes against fixed `1.31.1` did not crash.
+- Large-header keepalive returned two normal response markers.
+
+Current conclusion for this hypothesis: range/static/upstream output filtering remains a useful source-audit shape, but the tested HTTP-only configurations did not reproduce a leak/crash oracle.
