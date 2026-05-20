@@ -262,3 +262,43 @@ Sidecar source-audit result:
 - The best remaining CVE-local lead is a pattern-dependent liveness oracle:
   vary decoded bytes after offset `128` and classify fixed-error survival,
   keepalive EOF, no first response, and recovery timing.
+
+## 2026-05-20 Decoded-Byte Matrix
+
+Tool:
+
+- `tools/njs_fetch_proxy_pattern_matrix.py`
+
+Purpose:
+
+- Test whether the keepalive/crash oracle depends on attacker-controlled bytes
+  written past decoded offset `128`, which would be a prerequisite for a useful
+  remote address/progressive pointer oracle.
+- The tool percent-encodes every credential byte so the tested byte value is
+  exactly the decoded value passed to `ngx_unescape_uri()`.
+
+Live result:
+
+- Username overflow classes were length-driven, not byte-driven. In the tested
+  matrix, decoded lengths through `160` kept the same TCP connection usable,
+  while `192` and above returned the fixed error and then lost keepalive. Every
+  tested overflow byte produced the same class at a given length.
+- Password overflow classes were also length-driven. Most tested lengths kept
+  the connection usable; a tested `512`-byte password region lost keepalive.
+  Every tested overflow byte produced the same class at a given length.
+
+Implication:
+
+- The current CVE-2026-8711 lab exposes a useful remote stability oracle, but
+  this matrix did not show byte-sensitive behavior that could be driven into a
+  progressive ASLR leak.
+- This reduces the plausibility of a standalone ASLR bypass for the standard
+  `js_fetch_proxy` overflow path unless another NGINX/njs memory disclosure or
+  dereference sink is found.
+
+Artifacts:
+
+- `artifacts/njs_fetch_proxy_pattern_matrix_user_20260520.cast`
+- `artifacts/njs_fetch_proxy_pattern_matrix_user_20260520.gif`
+- `artifacts/njs_fetch_proxy_pattern_matrix_pass_20260520.cast`
+- `artifacts/njs_fetch_proxy_pattern_matrix_pass_20260520.gif`
