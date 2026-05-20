@@ -23,7 +23,13 @@ RUN cd /nginx-src && ./auto/configure \
 
 WORKDIR /app
 COPY nginx-poolslip.conf server.py entrypoint-poolslip.sh ./
-RUN chmod +x entrypoint-poolslip.sh && mkdir -p logs tmp
+RUN chmod +x entrypoint-poolslip.sh \
+    && mkdir -p logs tmp www \
+    && python3 - <<'PY'
+from pathlib import Path
+data = bytes((i * 37 + 11) & 0xff for i in range(65536))
+Path("/app/www/pattern.bin").write_bytes(data)
+PY
 
 ENTRYPOINT ["/app/entrypoint-poolslip.sh"]
 EXPOSE 19331
