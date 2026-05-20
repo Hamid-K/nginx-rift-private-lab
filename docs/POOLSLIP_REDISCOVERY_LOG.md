@@ -1,7 +1,7 @@
 # NGINX Poolslip Rediscovery Log
 
 Started: 2026-05-20
-Branch: `research/nginx-poolslip-rediscovery`
+Branch: `research/poolslip-remote-only-oracles`
 
 ## Goal
 
@@ -16,6 +16,12 @@ Important correction from 2026-05-20: do not assume the Nebusec video is CVE-202
 - Track experiments and live results in markdown.
 - For Vagrant, treat stock Ubuntu `kernel.yama.ptrace_scope=1` as the realistic baseline.
 - Do not count `/proc/<worker>/mem` as a viable Vagrant coreless vector. Standard Ubuntu has `kernel.yama.ptrace_scope=1`, and weakening that setting is equivalent to changing the target security posture for the exploit.
+- For this new-vulnerability track, do not use LFI, arbitrary file read,
+  phpinfo, `/proc/<pid>/maps`, coredumps, ptrace, debugger output, or
+  target-side filesystem reads as the ASLR leak.
+- Any ASLR bypass claim for the poolslip/video track must come from remote
+  HTTP-visible behavior or a newly discovered NGINX-side memory disclosure or
+  mapped-address oracle.
 - Prefer crash/leak classifiers and minimized harnesses over writing a weaponized public exploit for an undisclosed issue.
 
 ## Video Clues
@@ -59,10 +65,29 @@ Interpretation: the heap stage looks like a remote crash/success or response-dif
 - 2026-05-20 built an amd64 Docker lab matching the Nebusec video profile closely: Ubuntu 24.04, NGINX `1.31.1`, clang `18.1.3`, `--with-cc-opt='-O1 -g -fno-omit-frame-pointer'`, and `--without-http_gzip_module`. It serves on `127.0.0.1:19331` and responds with `Server: nginx/1.31.1`. Verification artifacts: `artifacts/poolslip_1311_amd64_verify_20260520.cast` and `artifacts/poolslip_1311_amd64_verify_20260520.gif`.
 - 2026-05-20 added `tools/no_lfi_heap_oracle_probe.py`, a crash/no-crash probe for the blog/video ASLR idea. It uses no file-read primitive at all: it sprays zeroed request bodies, partially overwrites the cleanup pointer, and treats a non-crashing worker as a possible mapped cleanup-list landing. Docker smoke over 20 low-byte candidates found no no-crash hit, which is expected for a small cap. Artifacts: `artifacts/no_lfi_heap_oracle_docker_smoke_20260520.cast` and `artifacts/no_lfi_heap_oracle_docker_smoke_20260520.gif`.
 - 2026-05-20 added `tools/no_lfi_http_module_probe.py`, an HTTP-only probe suite for default-module source-audit leads. The Docker lab now exposes deterministic static content, a fixed-version rewrite/set route, and backend cases for malformed upstream charset headers, early hints, and chunked trailers. Recorded run against `nginx/1.31.1` produced no HTTP-visible leak/crash anomaly across range/static, upstream header/chunking, rewrite/set, and large-header keepalive probes. Artifacts: `artifacts/no_lfi_http_module_probe_20260520.cast` and `artifacts/no_lfi_http_module_probe_20260520.gif`.
+- 2026-05-20 added `tools/poolslip_header_sink_probe.py`, a remote-only
+  header/trailer/early-hints sink stress probe. The lab backend can now emit
+  large final headers, real `103 Early Hints`, and chunked trailers through
+  NGINX with `proxy_pass_trailers on` and `early_hints $http_early_hints`.
+  Recorded Docker run saw clean ASCII responses, no text or binary
+  pointer-shaped disclosures, and stable worker health across 15 cases.
+  Artifacts: `artifacts/poolslip_header_sink_probe_20260520.cast` and
+  `artifacts/poolslip_header_sink_probe_20260520.gif`.
+- 2026-05-20 added `tools/poolslip_large_header_matrix.py`, a remote-only
+  large-header and pipelining matrix around `client_header_buffer_size` and
+  `large_client_header_buffers`. Single large headers, multiple large headers,
+  and POST-plus-pipelined follow-up requests produced expected `200,200` or
+  clean `400` boundary responses, with no worker instability or response-shape
+  anomaly. Artifacts: `artifacts/poolslip_large_header_matrix_20260520.cast`
+  and `artifacts/poolslip_large_header_matrix_20260520.gif`.
 
-## Current Brute-Force Design
+## Rejected Legacy Side-Track: LFI Maps Brute Force
 
-The maps-only campaign is a practical substitute for target memory reads if the candidate space is small enough:
+The maps-only campaign below is retained as historical Rift-side research only.
+It is no longer admissible for the new poolslip/video vulnerability claim because
+it depends on LFI-derived worker maps and file-derived libc facts.
+
+Legacy design:
 
 1. Use LFI to find a same-UID NGINX worker and read `/proc/<worker>/maps`.
 2. Use LFI to read libc from disk and derive `system()`.
@@ -70,7 +95,9 @@ The maps-only campaign is a practical substitute for target memory reads if the 
 4. Build a dense fake `ngx_pool_cleanup_t` sled in each request body. The current version stores the command once near the end of the body and points each candidate cleanup record at that shared command, avoiding the earlier low-density per-slot command layout.
 5. Overwrite only the low two bytes of the victim pool cleanup pointer and use crash/respawn plus marker-file readback as the oracle.
 
-This is not a memory leak. It is a bounded remote brute-force strategy using stable worker respawns and ordinary file-read-derived process maps.
+This is not a remote ASLR leak. It is a bounded brute-force strategy using
+stable worker respawns and ordinary file-read-derived process maps, so it is
+out of scope for the two new vulnerability tracks.
 
 Open risk: if the original cleanup pointer's high bytes do not point into a heap window containing one of the sled slots, this pass will only cause crashes and no marker proof. In that case, the next refinements are to scan additional address modulo classes, vary the sled phase/stride, and add a body-placement classifier that still uses only maps and response/crash behavior.
 
@@ -87,6 +114,54 @@ The first local probe for this track is deliberately minimal:
 This is weaker than the LFI-maps strategy but more interesting for a no-file-read real-world exploit. Current limitation: on normal x86_64 layouts, heap address bytes often include URI-unsafe values. A pure progressive overwrite can only set bytes that survive URI escaping, so it may need a placement trick, alternate target pointer, or response-side oracle that does not require writing every heap byte literally.
 
 Potential next direction: use the pool header fields before `cleanup` as the oracle rather than avoiding them. The public Rift exploit closes the victim quickly because corrupted `d.last`, `d.end`, `current`, `large`, and related fields make ordinary allocator activity crash before `cleanup` execution. For ASLR discovery, that crashiness can be inverted into a mapped-address oracle: corrupt `d.last`/`d.end` or `current`, then force a small allocation on the victim connection and classify whether the allocator touches mapped writable memory or dies. This better matches the Nebusec video's progressive heap-base display than the current cleanup-only no-LFI probe. It needs clone-debug calibration to find a geometry that hits allocator fields without crossing the large-header allocation discontinuity documented in earlier tests.
+
+## Remote Header/Trailer Sink Track
+
+High-effort sidecar review did not find a passive NGINX `1.31.1` endpoint that
+simply returns heap or code pointers. The best fit to the video remains a
+two-stage remote oracle:
+
+1. Recover heap layout through a mapped/unmapped pool-pointer or allocator-field
+   oracle.
+2. Once heap placement is known, use a header-table or body-buffer metadata
+   corruption as a disclosure sink for heap-resident code pointers.
+
+The header/trailer sink probe tests the second half independently. Source paths
+that make good leak sinks if metadata is corrupted:
+
+- `ngx_http_header_filter_module.c`: final response headers copy
+  `ngx_table_elt_t.value.data/value.len` directly to the client.
+- `ngx_http_upstream.c`: proxied headers, Early Hints, and trailers populate
+  `headers_out`.
+- `ngx_http_chunked_filter_module.c`: trailers are copied into the chunked
+  response body.
+- Range/body filters similarly trust `ngx_buf_t.pos/last` once a response chain
+  has been built.
+
+Live result so far: the sink paths are reachable and clean without a preceding
+corruption. Large upstream headers correctly produce `502` boundary responses;
+moderate `103 Early Hints` and chunked trailers are forwarded without
+pointer-like bytes or worker instability.
+
+## Remote Large-Header / Keepalive Matrix
+
+`tools/poolslip_large_header_matrix.py` tests another pool-adjacent candidate
+from the sidecar review: large request header buffers and pipelined request
+reuse. It sends only HTTP traffic and classifies returned statuses, response
+count, connection close, and fresh health.
+
+Live Docker result:
+
+- Single headers below the configured large-header limit returned two expected
+  `200` responses when pipelined with a follow-up request.
+- Single headers at and above the limit returned one clean `400` response.
+- Multiple large headers behaved the same way: within the configured buffer
+  count they returned `200,200`, and beyond the limit they returned clean `400`.
+- POST `/spray` with large headers plus a pipelined follow-up returned expected
+  `200,200` pairs after fixing the probe to avoid half-closing the client write
+  side prematurely.
+- No crash, no timeout after the fix, and no progressive response difference was
+  observed.
 
 ## Working Hypotheses
 
