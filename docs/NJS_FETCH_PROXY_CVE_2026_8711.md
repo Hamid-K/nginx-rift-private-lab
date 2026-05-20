@@ -30,7 +30,8 @@ Root cause from source:
 
 Relevant files:
 
-- `/tmp/nginx-njs-src/nginx/ngx_js.c`
+- `/tmp/nginx-njs-0.9.8-src/nginx/ngx_js.c` for the vulnerable source
+- `/tmp/nginx-njs-src/nginx/ngx_js.c` for the fixed `0.9.9` checkout
 - `/tmp/nginx-njs-src/nginx/ngx_http_js_module.c`
 - `/tmp/nginx-njs-src/nginx/ngx_stream_js_module.c`
 
@@ -202,3 +203,62 @@ Constraint going forward:
 - Do not rely on `/proc/self/maps`, `/proc/<pid>/maps`, local file reads,
   phpinfo, PHP-FPM LFI, coredumps, ptrace, debugger output, or host/container
   introspection for the two new vulnerability tracks.
+
+## 2026-05-20 Remote-Only Keepalive Oracle
+
+Tool:
+
+- `tools/njs_fetch_proxy_keepalive_oracle.py`
+
+Runtime:
+
+- Rebuilt vulnerable non-ASAN image from the cleaned config, with no auxiliary
+  file-read route.
+- Container: `njs-fetch-proxy-098`, host port `19431`.
+- Inputs and observations were HTTP-only. The run did not inspect Docker logs,
+  procfs, coredumps, target files, or local worker state.
+
+Observed over HTTP:
+
+- Username and password lengths up to `127` bytes produce normal proxy traffic
+  and the same TCP keepalive connection remains usable.
+- Lengths at and above `128` return the fixed error response
+  `failed to evaluate proxy URL`.
+- Username overflows around `192` bytes and above return the fixed error, then
+  the same keepalive connection closes before a follow-up `GET /` can complete.
+  A fresh connection remains healthy, so the master/worker service recovers.
+- Password overflows are less direct: most tested lengths return the fixed error
+  and preserve the keepalive connection; a narrow larger region can produce no
+  first response before the fresh health check recovers.
+- Percent-encoded credentials produce the same decoded-length boundary: decoded
+  lengths through `127` survive, decoded lengths at and above `128` enter the
+  invalid/overflow path, and larger decoded username values reproduce the
+  keepalive-loss signal.
+
+Implication:
+
+- This is a real remote crash/survival oracle for allocator-state corruption in
+  the vulnerable code path.
+- It is not yet an ASLR bypass. The signal distinguishes request-pool survival
+  from worker death, but it has not exposed pointer bytes or a progressive
+  mapped-address test.
+
+Artifacts:
+
+- `artifacts/njs_fetch_proxy_keepalive_oracle_20260520.cast`
+- `artifacts/njs_fetch_proxy_keepalive_oracle_20260520.gif`
+- `artifacts/njs_fetch_proxy_keepalive_oracle_percent_20260520.cast`
+- `artifacts/njs_fetch_proxy_keepalive_oracle_percent_20260520.gif`
+
+Sidecar source-audit result:
+
+- The vulnerable path fails before proxy connection setup when a decoded
+  credential exceeds `127` bytes, so resolver, upstream response parsing, and
+  proxy-auth reflection are not reached on the overflowing request.
+- Valid-length proxy-auth reflection only reflects attacker-controlled
+  credentials.
+- The request-pool allocator stores pool metadata before allocations, so this
+  forward overflow does not trivially overwrite the owning pool header.
+- The best remaining CVE-local lead is a pattern-dependent liveness oracle:
+  vary decoded bytes after offset `128` and classify fixed-error survival,
+  keepalive EOF, no first response, and recovery timing.

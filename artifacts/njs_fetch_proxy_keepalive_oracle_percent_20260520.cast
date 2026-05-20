@@ -1,0 +1,13 @@
+{"version":3,"term":{"cols":80,"rows":24},"timestamp":1779317741,"command":"./tools/njs_fetch_proxy_keepalive_oracle.py --target 127.0.0.1:19431 --mode user --lengths 42-44,126-130,160,192 --encoding percent --byte 41","env":{"SHELL":"/opt/homebrew/bin/fish"}}
+[0.029, "o", "target     127.0.0.1:19431\r\nscope      remote HTTP only; no file-read/procfs/log/core/debugger inputs\r\nencoding   percent byte=0x41\r\ncolumns    field len first second fresh class sample\r\n"]
+[0.171, "o", "user      42    200            200            up    same-conn-survived PROXY:Basic QUFBQUFBQUFBQUFBQUFB\r\n"]
+[0.163, "o", "user      43    200            200            up    same-conn-survived PROXY:Basic QUFBQUFBQUFBQUFBQUFB\r\n"]
+[0.163, "o", "user      44    200            200            up    same-conn-survived PROXY:Basic QUFBQUFBQUFBQUFBQUFB\r\n"]
+[0.164, "o", "user      126   200            200            up    same-conn-survived PROXY:Basic QUFBQUFBQUFBQUFBQUFB\r\n"]
+[0.157, "o", "user      127   200            200            up    same-conn-survived PROXY:Basic QUFBQUFBQUFBQUFBQUFB\r\n"]
+[0.160, "o", "user      128   500            200            up    same-conn-survived failed to evaluate proxy URL\r\n"]
+[0.160, "o", "user      129   500            200            up    same-conn-survived failed to evaluate proxy URL\r\n"]
+[0.160, "o", "user      130   500            200            up    same-conn-survived failed to evaluate proxy URL\r\n"]
+[0.161, "o", "user      160   500            200            up    same-conn-survived failed to evaluate proxy URL\r\n"]
+[0.167, "o", "user      192   500            no response    up    first-only         failed to evaluate proxy URL\r\n"]
+[0.004, "x", "0"]
