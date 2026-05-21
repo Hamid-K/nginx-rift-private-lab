@@ -13,6 +13,7 @@ import argparse
 import hashlib
 import re
 import socket
+import subprocess
 import sys
 import time
 import urllib.parse
@@ -21,6 +22,7 @@ from dataclasses import dataclass
 
 STATUS_RE = re.compile(rb"HTTP/1\.[01] ([0-9]{3})")
 HEX_PTR_RE = re.compile(rb"0x[0-9a-fA-F]{10,16}")
+ASAN_RE = re.compile(rb"(AddressSanitizer|runtime error|ERROR:)")
 
 
 @dataclass
@@ -145,6 +147,25 @@ def content_length_request(host_header: str, method: str, path: str, length: int
     ).encode("ascii") + body
 
 
+def content_length_request_with_headers(
+    host_header: str,
+    method: str,
+    path: str,
+    length: int,
+    body: bytes,
+    headers: list[tuple[str, str]],
+) -> bytes:
+    lines = [
+        f"{method} {path} HTTP/1.1",
+        f"Host: {host_header}",
+        f"Content-Length: {length}",
+        "Connection: keep-alive",
+        "X-Delay: 0",
+    ]
+    lines.extend(f"{name}: {value}" for name, value in headers)
+    return ("\r\n".join(lines) + "\r\n\r\n").encode("ascii") + body
+
+
 def tiny_chunks(count: int, byte: bytes = b"a") -> bytes:
     return b"".join(b"1\r\n" + byte + b"\r\n" for _ in range(count)) + b"0\r\n\r\n"
 
@@ -180,10 +201,23 @@ def build_cases(host: str, port: int) -> list[Case]:
     ], delay=0.05))
     cases.append(Case("discard-cl-pipe", [content_length_request(host_header, "GET", "/files/pattern.bin", 8, b"A" * 8) + follow]))
     cases.append(Case("discard-cl-big-follow", [content_length_request(host_header, "GET", "/files/pattern.bin", 8, b"B" * 8) + big_header_follow]))
+    cases.append(Case("discard-cl-short-extra", [content_length_request(host_header, "GET", "/files/pattern.bin", 4, b"B" * 4 + follow)]))
+    cases.append(Case("discard-cl-zero-extra", [content_length_request(host_header, "GET", "/files/pattern.bin", 0, follow)]))
+    cases.append(Case("discard-expect-pipe", [
+        content_length_request_with_headers(
+            host_header,
+            "GET",
+            "/files/pattern.bin",
+            4,
+            b"C" * 4 + follow,
+            [("Expect", "100-continue")],
+        )
+    ]))
 
     cases.append(Case("proxy-chunk-pipe", [chunked_request(host_header, "POST", "/spray", b"5\r\nhello\r\n0\r\n\r\n") + follow]))
     cases.append(Case("proxy-many-tiny", [chunked_request(host_header, "POST", "/spray", tiny_chunks(128, b"p")) + follow]))
     cases.append(Case("proxy-medium", [chunked_request(host_header, "POST", "/spray", medium_chunks(32, 64)) + follow]))
+    cases.append(Case("proxy-final-big-follow", [chunked_request(host_header, "POST", "/spray", b"1\r\nz\r\n0\r\n\r\n") + big_header_follow]))
     cases.append(Case("proxy-split-final", [
         chunked_request(host_header, "POST", "/spray", b"1\r\nz\r\n0", "keep-alive"),
         b"\r\n\r\n" + follow,
@@ -196,6 +230,23 @@ def build_cases(host: str, port: int) -> list[Case]:
 def healthy(host: str, port: int, timeout: float) -> bool:
     data, _closed, _note = send_segments(host, port, [simple_get_request(f"{host}:{port}")], 0.0, timeout)
     return b"HTTP/1.1 200" in data and b"poolslip lab ok" in data
+
+
+def docker_logs(container: str | None) -> bytes:
+    if not container:
+        return b""
+
+    try:
+        proc = subprocess.run(
+            ["docker", "logs", container],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            check=False,
+        )
+    except OSError:
+        return b""
+
+    return proc.stdout
 
 
 def run_case(host: str, port: int, case: Case, timeout: float) -> Result:
@@ -223,6 +274,7 @@ def main() -> int:
     parser.add_argument("--target", default="127.0.0.1:19331", help="HOST:PORT or URL")
     parser.add_argument("--port", type=int, default=19331)
     parser.add_argument("--timeout", type=float, default=8.0)
+    parser.add_argument("--container", help="optional Docker container name for ASAN log detection")
     args = parser.parse_args()
 
     if hasattr(sys.stdout, "reconfigure"):
@@ -231,12 +283,14 @@ def main() -> int:
     host, port = parse_target(args.target, args.port)
     print(f"target      {host}:{port}")
     print("scope       remote HTTP only; no file-read/procfs/log/core/debugger inputs")
+    print("asan        optional Docker log check is local lab instrumentation only")
     print("columns     case statuses markers bytes sha256/16 bin% ptr_words text_ptrs closed health note")
 
     if not healthy(host, port, args.timeout):
         print("preflight   failed")
         return 2
 
+    start_logs = docker_logs(args.container)
     suspicious = 0
     for case in build_cases(host, port):
         result = run_case(host, port, case, args.timeout)
@@ -256,6 +310,16 @@ def main() -> int:
         )
 
     print(f"summary     suspicious={suspicious} cases={len(build_cases(host, port))}")
+    if args.container:
+        end_logs = docker_logs(args.container)
+        delta = end_logs[len(start_logs) :] if end_logs.startswith(start_logs) else end_logs
+        print(f"asan_log_bytes {len(delta)}")
+        if ASAN_RE.search(delta):
+            print("asan_status found")
+            suspicious += 1
+        else:
+            print("asan_status clean")
+
     return 1 if suspicious else 0
 
 

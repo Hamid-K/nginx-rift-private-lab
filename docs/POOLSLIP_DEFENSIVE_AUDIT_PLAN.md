@@ -184,6 +184,10 @@ Candidate surfaces:
   in this pass.
 - [ ] Continue source-guided pass on request-body discard/lingering close and
   range/static body filters with debug-palloc ASAN coverage.
+- [ ] Implement a remote-only allocator/pool metadata oracle harness that does
+  not assume LFI, procfs, coredumps, or debugger access. The first version
+  should classify only HTTP status, connection close/reset, worker recovery
+  timing, and response-shape differences.
 
 ## Instrumentation Notes
 
@@ -535,3 +539,21 @@ redzones for the objects most relevant to pool-corruption hypotheses.
   `asan_status clean`. This narrows the easy SSI/mirror/limit-module theories
   but does not close deeper request-body lifecycle or static/range filter
   hypotheses.
+- 2026-05-21: Extended `tools/poolslip_body_state_probe.py` with optional
+  Docker ASAN log detection and additional `Content-Length` short/zero-body
+  pipeline, `Expect: 100-continue`, and post-chunked large-followup cases.
+  Ran it against `nginx-poolslip-1311-amd64-asan-debugpalloc-subreq`
+  (`127.0.0.1:19343`) and
+  `nginx-poolslip-1310-amd64-asan-debugpalloc-subreq`
+  (`127.0.0.1:19353`). Both runs produced
+  `summary suspicious=0 cases=19`, `asan_log_bytes 0`, and
+  `asan_status clean`.
+- 2026-05-21: Integrated read-only parallel audit feedback. The strongest
+  remaining Poolslip hypothesis is not a passive header/body pointer leak, but
+  a remote allocator or request-pool metadata oracle: corrupt or stress
+  `ngx_pool_t`, cleanup-list, large-header, or response-buffer metadata and
+  recover heap layout through response/crash/survival differences. Source
+  regions to prioritize next: `ngx_palloc_small()` / `ngx_palloc_block()`,
+  request cleanup walk, large-header keepalive reuse, final header filter
+  copying of `ngx_table_elt_t.value`, and range/body write filters copying
+  `ngx_buf_t.pos..last`.
