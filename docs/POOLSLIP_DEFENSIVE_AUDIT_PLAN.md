@@ -463,3 +463,20 @@ redzones for the objects most relevant to pool-corruption hypotheses.
   request-pool allocations now have ASAN redzones. It still does not rule out
   logic-only corruption, uninstrumented shared-memory/slab issues, or module
   paths not represented in the current lab configuration.
+- 2026-05-21: Built the same ASAN + `NGX_DEBUG_PALLOC` comparison image for
+  `release-1.31.0` as `nginx-poolslip-1310-amd64-asan-debugpalloc`, exposed on
+  `127.0.0.1:19352`. It reports `Server: nginx/1.31.0`.
+- 2026-05-21: Ran the 1.31.0 debug-palloc comparison through:
+  - `tools/no_lfi_http_module_probe.py --target 127.0.0.1:19352`
+  - `tools/poolslip_large_header_matrix.py --target 127.0.0.1:19352`
+  - `tools/poolslip_raw_http_mutation_fuzzer.py --target 127.0.0.1:19352
+    --iterations 10000 --seed 71717171 --timeout 0.35 --container
+    nginx-poolslip-1310-amd64-asan-debugpalloc --log-every 1000
+    --stop-on-suspicious`
+  - `tools/poolslip_request_sequence_fuzzer.py --target 127.0.0.1:19352
+    --iterations 1000 --seed 81818181 --timeout 4 --container
+    nginx-poolslip-1310-amd64-asan-debugpalloc --stop-on-suspicious`
+  Results: raw fuzzer `summary suspicious=0 iterations=10000`, sequence fuzzer
+  `summary suspicious=0 iterations=1000`, both with `asan_log_bytes 0` and
+  `asan_status clean`. This gives the same pool-redzone coverage to the older
+  public-hint comparison target.
