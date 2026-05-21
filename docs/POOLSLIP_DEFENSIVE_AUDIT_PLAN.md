@@ -52,6 +52,9 @@ Deferred until a bug is found:
 - [x] Add focused request-body/discard/chunked pipeline probe.
 - [x] Add source-guided request-sequence fuzzer for allocator/pool state.
 - [x] Add lab-backed upstream-response fuzzer for proxy parser state.
+- [x] Run first `nginx/1.31.0` comparison pass because public poolslip
+  references disagree on whether the demo target is `1.31.0` or `1.31.1`.
+- [x] Run a static-dangerous-API scan and triage remote-relevant hits.
 - [ ] Update this plan with new hypotheses and completed tasks after each
   audit/test milestone.
 
@@ -314,3 +317,37 @@ Candidate surfaces:
   run with huge `Content-Type`/`Location` values produced no ASAN finding; this
   matches the upstream fix note that normal module paths may leave enough
   encoded-buffer slack despite the source-level allocation undercount.
+- 2026-05-21: Ran `flawfinder --minlevel=3` over
+  `/tmp/nginx-rift-nginx-src-1311/src/http` and `src/core`. The high-severity
+  output is dominated by local filesystem TOCTOU patterns in file/cache/DAV
+  code and one optional XSLT formatting warning. No result from this pass is a
+  credible unauthenticated HTTP memory-safety candidate in the demo-like
+  no-H2/no-MP4/no-DAV build profile.
+- 2026-05-21: Public web triage of the poolslip teaser found only a repost of
+  the Nebusec claim: "nginx-poolslip" is described as an unreleased NGINX
+  1.31.x RCE with technical details held for 30 days. It does not disclose a
+  trigger, affected module, request shape, or patch commit. Because public
+  references disagree between `1.31.0` and `1.31.1`, the lab now tests both.
+- 2026-05-21: Ran the existing HTTP-only probe set against the
+  `nginx/1.31.0` ASAN comparison image at `127.0.0.1:19350`:
+  - `tools/no_lfi_http_module_probe.py --target 127.0.0.1:19350`
+  - `tools/poolslip_header_sink_probe.py --target 127.0.0.1:19350`
+  - `tools/poolslip_large_header_matrix.py --target 127.0.0.1:19350`
+  - `tools/poolslip_body_state_probe.py --target 127.0.0.1:19350 --timeout 8`
+  These stayed clean: expected `200`, `206`, `400`, `416`, and `502`
+  boundaries; no pointer-looking response bytes; health stayed up.
+- 2026-05-21: Ran
+  `tools/poolslip_request_sequence_fuzzer.py --target 127.0.0.1:19350
+  --iterations 750 --seed 1310 --timeout 4 --container
+  nginx-poolslip-1310-amd64-asan --stop-on-suspicious`. Result:
+  `summary suspicious=0 iterations=750`, `asan_log_bytes 0`, `asan_status
+  clean`. Case mix covered client framing, large headers, pipelining, chunked
+  discard/body paths, rewrite edge cases, CONNECT/tunnel traffic, and upstream
+  edge routes. This rules out the same broad allocator/request-lifecycle
+  hypotheses on the `1.31.0` comparison build as well.
+- 2026-05-21: Started but intentionally interrupted a generated upstream
+  response fuzz run against `1.31.0` because several expected timeout cases
+  made it low-yield. Earlier fixed-case upstream parser coverage against both
+  `1.31.0` and `1.31.1` remains clean; next upstream work should use shorter
+  transcript-specific probes or minimizers rather than another broad timeout-
+  heavy random campaign.

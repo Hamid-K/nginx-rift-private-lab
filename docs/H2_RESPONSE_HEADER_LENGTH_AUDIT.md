@@ -55,6 +55,7 @@ H2-enabled builds.
 - [x] Test large `Content-Type` over HTTP/2 prior knowledge.
 - [x] Test large `Location` over HTTP/2 prior knowledge.
 - [x] Record first ASAN traces or clean negative results.
+- [x] Add source-guided HTTP/2 upstream parser stress cases.
 
 ## Milestone Log
 
@@ -101,3 +102,15 @@ H2-enabled builds.
   negative evidence for the first `ngx_http_proxy_v2_module` frame-parser
   hypotheses; it does not close deeper HPACK/dynamic-table or flow-control
   state-space yet.
+- 2026-05-21: Expanded the raw HTTP/2 upstream generator with HPACK and
+  control-frame stress cases:
+  declared name/value lengths much larger than delivered bytes, truncated
+  literal fields, empty CONTINUATION boundaries, extended dynamic-table and
+  literal-index encodings, bursts of PING/SETTINGS frames, zero WINDOW_UPDATE,
+  initial-window shrink, and HEADERS priority/padding edge cases. Rebuilt
+  `nginx-h2-header-1310-amd64-asan` and ran
+  `tools/poolslip_h2_upstream_probe.py --target 127.0.0.1:19361 --iterations
+  240 --timeout 5 --container nginx-h2-header-1310-amd64-asan
+  --stop-on-suspicious`. Result: `summary suspicious=0 iterations=240`,
+  `asan_log_bytes 0`, `asan_status clean`. NGINX either returned valid
+  responses or clean `502` boundaries, and worker health stayed up.

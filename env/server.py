@@ -395,6 +395,18 @@ H2_MODES = (
     "padded_too_long",
     "rst_after_headers",
     "goaway_after_headers",
+    "hpack_name_len_inflate",
+    "hpack_value_len_inflate",
+    "hpack_name_truncated",
+    "hpack_value_truncated",
+    "hpack_continuation_empty",
+    "hpack_dynamic_table_update_ext",
+    "hpack_index_ext",
+    "many_ping",
+    "many_settings",
+    "zero_window_update",
+    "window_shrink",
+    "priority_padding_edge",
 )
 _h2_counter = 0
 _h2_lock = threading.Lock()
@@ -435,6 +447,10 @@ def hpack_string(value):
     return hpack_int(len(value), 7, 0x00) + value
 
 
+def hpack_len_only(length, huffman=False):
+    return hpack_int(length, 7, 0x80 if huffman else 0x00)
+
+
 def hpack_status(value):
     if value == b"200":
         return b"\x88"
@@ -443,6 +459,18 @@ def hpack_status(value):
 
 def hpack_literal(name, value):
     return b"\x00" + hpack_string(name) + hpack_string(value)
+
+
+def hpack_literal_with_declared_lengths(
+    name_len, name_bytes, value_len, value_bytes, huffman=False
+):
+    return (
+        b"\x00"
+        + hpack_len_only(name_len, huffman)
+        + name_bytes
+        + hpack_len_only(value_len, huffman)
+        + value_bytes
+    )
 
 
 class H2UpstreamHandler(socketserver.BaseRequestHandler):
@@ -519,6 +547,87 @@ class H2UpstreamHandler(socketserver.BaseRequestHandler):
         if mode == "goaway_after_headers":
             send(h2_frame(0x1, 0x4, 1, hpack_status(b"200")))
             send(h2_frame(0x7, 0x0, 0, (1).to_bytes(4, "big") + (0).to_bytes(4, "big")))
+            return
+
+        if mode == "hpack_name_len_inflate":
+            block = hpack_status(b"200") + hpack_literal_with_declared_lengths(
+                0x1fffff, b"x-inflate", 1, b"v"
+            )
+            send(h2_frame(0x1, 0x5, 1, block))
+            return
+
+        if mode == "hpack_value_len_inflate":
+            block = hpack_status(b"200") + hpack_literal_with_declared_lengths(
+                6, b"x-val", 0x1fffff, b"v" * 16
+            )
+            send(h2_frame(0x1, 0x5, 1, block))
+            return
+
+        if mode == "hpack_name_truncated":
+            block = hpack_status(b"200") + b"\x00" + hpack_len_only(4096) + b"x" * 8
+            send(h2_frame(0x1, 0x5, 1, block))
+            return
+
+        if mode == "hpack_value_truncated":
+            block = (
+                hpack_status(b"200")
+                + b"\x00"
+                + hpack_string(b"x-trunc")
+                + hpack_len_only(4096)
+                + b"v" * 8
+            )
+            send(h2_frame(0x1, 0x5, 1, block))
+            return
+
+        if mode == "hpack_continuation_empty":
+            block = hpack_status(b"200") + hpack_literal(b"x-empty", b"E" * 64)
+            send(h2_frame(0x1, 0x0, 1, block[:3]))
+            send(h2_frame(0x9, 0x0, 1, b""))
+            send(h2_frame(0x9, 0x4, 1, block[3:]))
+            return
+
+        if mode == "hpack_dynamic_table_update_ext":
+            block = b"\x3f\x80\x00" + hpack_status(b"200")
+            send(h2_frame(0x1, 0x5, 1, block))
+            return
+
+        if mode == "hpack_index_ext":
+            block = b"\x0f\x2f" + hpack_string(b"v")
+            send(h2_frame(0x1, 0x5, 1, hpack_status(b"200") + block))
+            return
+
+        if mode == "many_ping":
+            for i in range(128):
+                send(h2_frame(0x6, 0x0, 0, i.to_bytes(8, "big")))
+            send(h2_frame(0x1, 0x5, 1, hpack_status(b"200")))
+            return
+
+        if mode == "many_settings":
+            for i in range(128):
+                payload = (
+                    (0x04).to_bytes(2, "big")
+                    + (65535 + (i % 3)).to_bytes(4, "big")
+                )
+                send(h2_frame(0x4, 0x0, 0, payload))
+            send(h2_frame(0x1, 0x5, 1, hpack_status(b"200")))
+            return
+
+        if mode == "zero_window_update":
+            send(h2_frame(0x8, 0x0, 1, (0).to_bytes(4, "big")))
+            send(h2_frame(0x8, 0x0, 0, (0).to_bytes(4, "big")))
+            send(h2_frame(0x1, 0x5, 1, hpack_status(b"200")))
+            return
+
+        if mode == "window_shrink":
+            payload = (0x04).to_bytes(2, "big") + (0).to_bytes(4, "big")
+            send(h2_frame(0x4, 0x0, 0, payload))
+            send(h2_frame(0x1, 0x5, 1, hpack_status(b"200")))
+            return
+
+        if mode == "priority_padding_edge":
+            block = hpack_status(b"200")
+            payload = b"\x00" + (0).to_bytes(4, "big") + b"\xff" + block
+            send(h2_frame(0x1, 0x2c, 1, payload))
             return
 
         send(h2_frame(0x1, 0x5, 1, hpack_status(b"200")))
