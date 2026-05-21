@@ -837,6 +837,6 @@ socketserver.ThreadingTCPServer.allow_reuse_address = True
 threading.Thread(target=serve_raw_upstream, daemon=True).start()
 threading.Thread(target=serve_h2_upstream, daemon=True).start()
 threading.Thread(target=serve_h2_capture, daemon=True).start()
-with socketserver.ThreadingTCPServer(("127.0.0.1", 19323), BackendHandler) as httpd:
+with socketserver.ThreadingTCPServer(("0.0.0.0", 19323), BackendHandler) as httpd:
     print("Backend on :19323")
     httpd.serve_forever()

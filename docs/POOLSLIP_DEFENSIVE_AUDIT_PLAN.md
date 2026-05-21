@@ -59,6 +59,8 @@ Deferred for this phase until a bug is found and characterized:
   behavior on `CONNECT` requests.
 - [x] Add a focused static file `Range`/body-filter probe for `ngx_buf_t`
   offset manipulation.
+- [x] Add a focused dynamic `tunnel_pass;` probe for `$host:$request_port`
+  authority parsing and upstream evaluation.
 - [x] Add a pool-canary build option that preserves NGINX pool allocation while
   detecting small pool allocation tail corruption.
 - [x] Run first `nginx/1.31.0` comparison pass because public poolslip
@@ -186,6 +188,8 @@ Candidate surfaces:
   code path is small and no unchecked copy or response-visible pointer sink was
   identified in this pass. Existing ASAN probes also produced only clean
   `400`/`405`/tunnel boundaries.
+  - [x] Added live coverage for the no-argument `tunnel_pass;` mode where
+    NGINX derives the upstream from `$host:$request_port`.
 - [x] `ngx_http_upstream_sticky_module`: reviewed session ID storage and
   shared-memory learn-mode updates. The fixed `sid[32]` node copy is protected
   by upstream peer IDs bounded to `NGX_HTTP_UPSTREAM_SID_LEN`; tested dynamic
@@ -727,3 +731,30 @@ redzones for the objects most relevant to pool-corruption hypotheses.
   `summary suspicious=0 cases=21`, `sanitizer_log_bytes 0`,
   `memsafety_status clean`, `ubsan_status clean`. No response-visible pointer
   material, ASAN hit, pool-canary hit, or worker-health loss was observed.
+- 2026-05-21: Source-reviewed the CONNECT request-line path used by
+  `tunnel_pass;`. The current target includes `a43c76b4e`, which adds
+  `sw_port_start` and rejects `CONNECT host:` before normal request
+  processing. Without that fix, request-line host validation could accept an
+  empty port as `r->port = 0`; in the current tree it is rejected at parse time.
+  The default dynamic tunnel route uses `$host:$request_port`, where
+  `$request_port` allocates a 5-byte string and emits only ports in
+  `1..65535`.
+- 2026-05-21: Added a same-NGINX-listener dynamic tunnel vhost for
+  `server_name 127.0.0.2` with no-argument `tunnel_pass;`, and changed the toy
+  backend listener to `0.0.0.0:19323` so loopback `127.0.0.2:19323` is a real
+  backend target inside the lab container. Built
+  `nginx-poolslip-1311-amd64-asan-poolcanary-dyn`, exposed it on
+  `127.0.0.1:19347`, and verified `GET /` with `Host: health.local` returns
+  `Server: nginx/1.31.1`.
+- 2026-05-21: Added and ran `tools/poolslip_dynamic_tunnel_probe.py --target
+  127.0.0.1:19347 --container
+  nginx-poolslip-1311-amd64-asan-poolcanary-dyn --timeout 6`. The probe
+  covered valid dynamic tunnel selection, split request line, mismatched Host
+  vs CONNECT authority, no-port and colon-without-port authorities,
+  non-numeric/zero/oversized ports, trailing-dot IP host, userinfo-shaped
+  authority, IPv6 authority forms, and body-before-tunnel. Result:
+  `summary suspicious=0 cases=13`, `memsafety_status clean`,
+  `ubsan_status clean`. Expected boundaries included `400` for invalid
+  authority shapes, `405` for an IPv6 authority that did not select the
+  dynamic tunnel vhost, and `500` for port zero; no crash, canary overwrite, or
+  response-visible pointer material was observed.
