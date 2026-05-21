@@ -60,6 +60,9 @@ Deferred for this phase until a bug is found and characterized:
   `proxy_set_body $request_body` with `proxy_http_version 2` can corrupt the
   upstream HTTP/2 frame stream for request bodies larger than 16 MiB in the
   pre-fix parent of `c24fb259d`.
+- [x] Add an ASAN + `NGX_DEBUG_PALLOC` build mode so small NGINX pool
+  allocations are individually redzoned instead of hidden inside large pool
+  blocks.
 - [ ] Update this plan with new hypotheses and completed tasks after each
   audit/test milestone.
 
@@ -89,6 +92,7 @@ Candidate surfaces:
 - [x] Record exact source commit, configure output, compiler version, and module
   list in this document.
 - [x] Build ASAN and non-ASAN containers with the same demo flags.
+- [x] Build ASAN + `NGX_DEBUG_PALLOC` container for pool-overwrite detection.
 - [ ] Verify the image still reports `Server: nginx/1.31.1`.
 - [ ] Record baseline clean runs for existing probes:
   - [x] `tools/no_lfi_http_module_probe.py`
@@ -153,6 +157,16 @@ Candidate surfaces:
 - [ ] A finding only counts as an information leak if bytes returned to the
   HTTP client include memory not controlled by the client/upstream and not
   expected by protocol behavior.
+
+## Instrumentation Notes
+
+Plain ASAN is weaker than it looks for NGINX request-pool bugs because small
+`ngx_palloc()` allocations normally live inside a larger pool allocation. An
+overwrite from one pool object into the next can stay inside the same ASAN
+allocation and avoid a redzone. The `NGX_DEBUG_PALLOC` build mode disables
+small-pool allocation for `ngx_palloc()`/`ngx_pnalloc()` and routes those
+allocations through `ngx_palloc_large()`, giving ASAN separate allocations and
+redzones for the objects most relevant to pool-corruption hypotheses.
 
 ## Milestone Log
 
@@ -373,6 +387,17 @@ Candidate surfaces:
   This is negative evidence for generic request-line/header/body parser memory
   safety on both checked versions, but it is still broad fuzzing and not a
   replacement for source-guided module-specific probes.
+- 2026-05-21: Ran longer ordinary-ASAN raw HTTP mutation campaigns:
+  - `tools/poolslip_raw_http_mutation_fuzzer.py --target 127.0.0.1:19341
+    --iterations 20000 --seed 2026052101 --timeout 0.35 --container
+    nginx-poolslip-1311-amd64-asan --log-every 1000 --stop-on-suspicious`
+    produced `summary suspicious=0 iterations=20000`, `asan_log_bytes 0`,
+    `asan_status clean`.
+  - `tools/poolslip_raw_http_mutation_fuzzer.py --target 127.0.0.1:19350
+    --iterations 20000 --seed 2026052102 --timeout 0.35 --container
+    nginx-poolslip-1310-amd64-asan --log-every 1000 --stop-on-suspicious`
+    produced `summary suspicious=0 iterations=20000`, `asan_log_bytes 0`,
+    `asan_status clean`.
 - 2026-05-21: Re-ran the existing charset OOB proof in the current lab as a
   concrete confirmed-bug baseline. Commands:
   - `tools/charset_oob_probe.py 127.0.0.1:19321 --runs 8 --framing chunked`
@@ -400,3 +425,41 @@ Candidate surfaces:
   than `16384` and parsed cleanly. This is an HTTP/2-enabled-build bug, not the
   Poolslip default-module demo bug, but it is a concrete remote-triggered
   protocol corruption/injection issue from the current source-fix set.
+- 2026-05-21: Added `DEBUG_PALLOC=1` support to `env/Dockerfile.poolslip` and
+  built `nginx-poolslip-1311-amd64-asan-debugpalloc` from
+  `eff110885412737aec9b953067b6a670bffdbfa0` with
+  `-fsanitize=address -DNGX_DEBUG_PALLOC`. The image reports
+  `Server: nginx/1.31.1` on `127.0.0.1:19342`.
+- 2026-05-21: Replayed the focused probe suite against the ASAN +
+  `NGX_DEBUG_PALLOC` image on `127.0.0.1:19342`:
+  - `tools/no_lfi_http_module_probe.py`
+  - `tools/poolslip_header_sink_probe.py`
+  - `tools/poolslip_large_header_matrix.py`
+  - `tools/poolslip_tunnel_probe.py`
+  - `tools/poolslip_sticky_probe.py --timeout 5`
+  - `tools/poolslip_upstream_parser_probe.py`
+  - `tools/poolslip_body_state_probe.py --timeout 8`
+  Results stayed clean: expected protocol/status boundaries, worker health up,
+  and no ASAN report in Docker logs.
+- 2026-05-21: Ran the broader fuzzers against the ASAN + `NGX_DEBUG_PALLOC`
+  image:
+  - `tools/poolslip_raw_http_mutation_fuzzer.py --target 127.0.0.1:19342
+    --iterations 10000 --seed 61616161 --timeout 0.35 --container
+    nginx-poolslip-1311-amd64-asan-debugpalloc --log-every 1000
+    --stop-on-suspicious` produced `summary suspicious=0 iterations=10000`,
+    `asan_log_bytes 0`, `asan_status clean`.
+  - `tools/poolslip_request_sequence_fuzzer.py --target 127.0.0.1:19342
+    --iterations 1000 --seed 42424242 --timeout 4 --container
+    nginx-poolslip-1311-amd64-asan-debugpalloc --stop-on-suspicious` produced
+    `summary suspicious=0 iterations=1000`, `asan_log_bytes 0`, `asan_status
+    clean`.
+  - `tools/poolslip_upstream_response_fuzzer.py --target 127.0.0.1:19342
+    --iterations 1000 --seed 51515151 --timeout 5 --container
+    nginx-poolslip-1311-amd64-asan-debugpalloc --stop-on-suspicious` produced
+    `summary suspicious=0 iterations=1000`, `asan_log_bytes 0`, `asan_status
+    clean`.
+  This is stronger negative evidence than previous ordinary-ASAN runs for
+  simple pool-adjacent overwrites in the covered surfaces, because small
+  request-pool allocations now have ASAN redzones. It still does not rule out
+  logic-only corruption, uninstrumented shared-memory/slab issues, or module
+  paths not represented in the current lab configuration.
