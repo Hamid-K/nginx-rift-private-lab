@@ -28,7 +28,7 @@ Allowed outputs in this stage:
 - Non-sensitive artifacts such as asciinema/GIF recordings of crash or clean
   probe runs.
 
-Deferred until a bug is found:
+Deferred for this phase until a bug is found and characterized:
 
 - Weaponized pre-auth exploitation.
 - Functional ASLR-bypass exploit chaining.
@@ -56,6 +56,10 @@ Deferred until a bug is found:
 - [x] Run first `nginx/1.31.0` comparison pass because public poolslip
   references disagree on whether the demo target is `1.31.0` or `1.31.1`.
 - [x] Run a static-dangerous-API scan and triage remote-relevant hits.
+- [x] Confirm one additional source-fixed HTTP/2 bug:
+  `proxy_set_body $request_body` with `proxy_http_version 2` can corrupt the
+  upstream HTTP/2 frame stream for request bodies larger than 16 MiB in the
+  pre-fix parent of `c24fb259d`.
 - [ ] Update this plan with new hypotheses and completed tasks after each
   audit/test milestone.
 
@@ -152,10 +156,10 @@ Candidate surfaces:
 
 ## Milestone Log
 
-- 2026-05-21: Created this defensive audit plan. Functional RCE and ASLR-bypass
-  exploit chains are outside the deliverables I can provide; work continues on
-  source audit, crash reproduction, leak identification, and mitigation-grade
-  evidence.
+- 2026-05-21: Created this defensive audit plan. Current phase is bug
+  discovery and characterization: source audit, crash reproduction, leak
+  identification, and mitigation-grade evidence. Exploit-chain work is
+  intentionally deferred until there is a concrete bug to study.
 - 2026-05-21: Baseline inventory confirmed:
   - Local source: `/tmp/nginx-rift-nginx-src`
   - Commit: `eff110885412737aec9b953067b6a670bffdbfa0`
@@ -380,3 +384,19 @@ Candidate surfaces:
   This confirms the fixed CVE-2026-42934 class is real and client-visible, but
   the leaked byte remains framing/slack (`0a` or `00`) rather than an ASLR-useful
   heap/libc/code pointer in this harness.
+- 2026-05-21: Confirmed another fixed bug from the nearby HTTP/2 source-fix
+  set: commit `c24fb259d` changes `proxy_set_body $request_body` handling for
+  `proxy_http_version 2` so large request bodies are passed through the normal
+  body-output path instead of being emitted as one oversized DATA frame.
+  The vulnerable parent (`2046b45aa`) was built as
+  `nginx-h2-setbody-prepatch-amd64-asan` and exposed on `127.0.0.1:19363`.
+  `tools/proxy_v2_set_body_probe.py --target 127.0.0.1:19363 --size 16777216`
+  produced `parse=truncated` with a single DATA frame length of `0`, showing
+  the 24-bit length wrap and raw unframed stream bytes after the frame.
+  `--size 16777217` produced a single DATA frame length of `1`, and
+  `--size 17825792` produced a single DATA frame length of `1048576` plus
+  downstream parse desynchronization. The fixed comparison image on
+  `127.0.0.1:19361` fragmented all tested bodies into DATA frames no larger
+  than `16384` and parsed cleanly. This is an HTTP/2-enabled-build bug, not the
+  Poolslip default-module demo bug, but it is a concrete remote-triggered
+  protocol corruption/injection issue from the current source-fix set.

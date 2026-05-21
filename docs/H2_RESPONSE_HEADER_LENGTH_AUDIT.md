@@ -46,6 +46,12 @@ against a raw local HTTP/2 upstream on `127.0.0.1:19325`. This exercises
 `ngx_http_proxy_v2_module`, a separate parser-heavy surface compiled only in
 H2-enabled builds.
 
+The lab now also supports `/h2-set-body` and a raw capture upstream for the
+separate `proxy_set_body $request_body` HTTP/2 framing bug fixed by
+`c24fb259d`. That confirmed finding is tracked separately in
+`docs/H2_PROXY_SET_BODY_FRAMING_AUDIT.md` so the response-header-length
+negative results stay distinct from the framing/injection result.
+
 ## Status
 
 - [x] Identify source-fix lead.

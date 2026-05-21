@@ -633,6 +633,96 @@ class H2UpstreamHandler(socketserver.BaseRequestHandler):
         send(h2_frame(0x1, 0x5, 1, hpack_status(b"200")))
 
 
+class H2CaptureHandler(socketserver.BaseRequestHandler):
+    def handle(self):
+        self.request.settimeout(1.0)
+        chunks = []
+        total = 0
+        max_capture = 36 * 1024 * 1024
+
+        try:
+            self.request.sendall(h2_frame(0x4, 0x0, 0))
+        except OSError:
+            return
+
+        while total < max_capture:
+            try:
+                chunk = self.request.recv(65536)
+            except socket.timeout:
+                break
+            if not chunk:
+                break
+            chunks.append(chunk)
+            total += len(chunk)
+
+        received = b"".join(chunks)
+        summary = summarize_h2_capture(received)
+        body = summary.encode("ascii", "replace")
+
+        try:
+            self.request.sendall(
+                h2_frame(
+                    0x1,
+                    0x4,
+                    1,
+                    hpack_status(b"200")
+                    + hpack_literal(b"content-type", b"text/plain")
+                    + hpack_literal(b"content-length", str(len(body)).encode("ascii")),
+                )
+            )
+            self.request.sendall(h2_frame(0x0, 0x1, 1, body))
+        except OSError:
+            return
+
+
+def summarize_h2_capture(data):
+    if not data.startswith(H2_PREFACE):
+        return f"preface=no received={len(data)} parse=bad"
+
+    pos = len(H2_PREFACE)
+    frames = []
+    data_total = 0
+    parse = "ok"
+
+    while pos + 9 <= len(data):
+        length = (data[pos] << 16) | (data[pos + 1] << 8) | data[pos + 2]
+        frame_type = data[pos + 3]
+        flags = data[pos + 4]
+        stream_id = int.from_bytes(data[pos + 5 : pos + 9], "big") & 0x7fffffff
+        end = pos + 9 + length
+
+        if end > len(data):
+            parse = f"truncated(type={frame_type},len={length},remaining={len(data) - pos - 9})"
+            frames.append((frame_type, flags, stream_id, length))
+            break
+
+        frames.append((frame_type, flags, stream_id, length))
+
+        if frame_type == 0x0 and stream_id == 1:
+            data_total += length
+
+        pos = end
+
+    if pos + 9 > len(data) and pos != len(data) and parse == "ok":
+        parse = f"trailing={len(data) - pos}"
+
+    data_lengths = [str(length) for frame_type, _flags, stream_id, length in frames if frame_type == 0x0 and stream_id == 1]
+    max_data = max((length for frame_type, _flags, stream_id, length in frames if frame_type == 0x0 and stream_id == 1), default=0)
+    bad_data = any(length > 16384 for frame_type, _flags, stream_id, length in frames if frame_type == 0x0 and stream_id == 1)
+
+    if len(data_lengths) > 12:
+        shown = ",".join(data_lengths[:8]) + ",...," + ",".join(data_lengths[-3:])
+    else:
+        shown = ",".join(data_lengths)
+
+    return (
+        f"preface=yes received={len(data)} frames={len(frames)} parse={parse} "
+        f"data_frames={len(data_lengths)} data_total={data_total} "
+        f"max_data={max_data} oversized_data={str(bad_data).lower()} "
+        f"data_lengths={shown}"
+    )
+
+
 def serve_h2_upstream():
     socketserver.ThreadingTCPServer.allow_reuse_address = True
     with socketserver.ThreadingTCPServer(("127.0.0.1", 19325), H2UpstreamHandler) as h2d:
@@ -640,9 +730,17 @@ def serve_h2_upstream():
         h2d.serve_forever()
 
 
+def serve_h2_capture():
+    socketserver.ThreadingTCPServer.allow_reuse_address = True
+    with socketserver.ThreadingTCPServer(("127.0.0.1", 19326), H2CaptureHandler) as h2d:
+        print("Raw H2 capture upstream on :19326")
+        h2d.serve_forever()
+
+
 socketserver.ThreadingTCPServer.allow_reuse_address = True
 threading.Thread(target=serve_raw_upstream, daemon=True).start()
 threading.Thread(target=serve_h2_upstream, daemon=True).start()
+threading.Thread(target=serve_h2_capture, daemon=True).start()
 with socketserver.ThreadingTCPServer(("127.0.0.1", 19323), BackendHandler) as httpd:
     print("Backend on :19323")
     httpd.serve_forever()
