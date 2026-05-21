@@ -52,6 +52,7 @@ Deferred until a bug is found:
 - [x] Add focused request-body/discard/chunked pipeline probe.
 - [x] Add source-guided request-sequence fuzzer for allocator/pool state.
 - [x] Add lab-backed upstream-response fuzzer for proxy parser state.
+- [x] Add raw HTTP mutation fuzzer for parser/lifecycle coverage.
 - [x] Run first `nginx/1.31.0` comparison pass because public poolslip
   references disagree on whether the demo target is `1.31.0` or `1.31.1`.
 - [x] Run a static-dangerous-API scan and triage remote-relevant hits.
@@ -351,3 +352,20 @@ Candidate surfaces:
   `1.31.0` and `1.31.1` remains clean; next upstream work should use shorter
   transcript-specific probes or minimizers rather than another broad timeout-
   heavy random campaign.
+- 2026-05-21: Added `tools/poolslip_raw_http_mutation_fuzzer.py`, a
+  transport-level fuzzer for malformed HTTP/1.x request lines, CONNECT targets,
+  large and folded headers, chunked/body mismatches, binary-ish header values,
+  and pipelined follow-up requests. Live ASAN runs:
+  - `tools/poolslip_raw_http_mutation_fuzzer.py --target 127.0.0.1:19341
+    --iterations 3000 --seed 20260521 --timeout 0.35 --container
+    nginx-poolslip-1311-amd64-asan --log-every 250 --stop-on-suspicious`
+    produced `summary suspicious=0 iterations=3000`, `asan_log_bytes 0`,
+    `asan_status clean`.
+  - `tools/poolslip_raw_http_mutation_fuzzer.py --target 127.0.0.1:19350
+    --iterations 3000 --seed 20261310 --timeout 0.35 --container
+    nginx-poolslip-1310-amd64-asan --log-every 250 --stop-on-suspicious`
+    produced `summary suspicious=0 iterations=3000`, `asan_log_bytes 0`,
+    `asan_status clean`.
+  This is negative evidence for generic request-line/header/body parser memory
+  safety on both checked versions, but it is still broad fuzzing and not a
+  replacement for source-guided module-specific probes.
