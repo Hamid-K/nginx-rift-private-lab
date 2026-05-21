@@ -53,9 +53,19 @@ Deferred for this phase until a bug is found and characterized:
 - [x] Add source-guided request-sequence fuzzer for allocator/pool state.
 - [x] Add lab-backed upstream-response fuzzer for proxy parser state.
 - [x] Add raw HTTP mutation fuzzer for parser/lifecycle coverage.
+- [x] Add a focused CONNECT/tunnel lifecycle probe for the new default tunnel
+  module.
+- [x] Add a focused CONNECT/proxy-auth probe for the changed `auth_basic`
+  behavior on `CONNECT` requests.
+- [x] Add a focused static file `Range`/body-filter probe for `ngx_buf_t`
+  offset manipulation.
+- [x] Add a pool-canary build option that preserves NGINX pool allocation while
+  detecting small pool allocation tail corruption.
 - [x] Run first `nginx/1.31.0` comparison pass because public poolslip
   references disagree on whether the demo target is `1.31.0` or `1.31.1`.
 - [x] Run a static-dangerous-API scan and triage remote-relevant hits.
+- [x] Run `scan-build` and CodeQL over the current source tree and triage
+  memory-safety-looking reports against source control flow.
 - [x] Confirm one additional source-fixed HTTP/2 bug:
   `proxy_set_body $request_body` with `proxy_http_version 2` can corrupt the
   upstream HTTP/2 frame stream for request bodies larger than 16 MiB in the
@@ -96,8 +106,9 @@ Candidate surfaces:
   list in this document.
 - [x] Build ASAN and non-ASAN containers with the same demo flags.
 - [x] Build ASAN + `NGX_DEBUG_PALLOC` container for pool-overwrite detection.
-- [ ] Verify the image still reports `Server: nginx/1.31.1`.
-- [ ] Record baseline clean runs for existing probes:
+- [x] Verify the latest pool-canary/auth image still reports
+  `Server: nginx/1.31.1`.
+- [x] Record baseline clean runs for existing probes:
   - [x] `tools/no_lfi_http_module_probe.py`
   - [x] `tools/poolslip_header_sink_probe.py`
   - [x] `tools/poolslip_large_header_matrix.py`
@@ -148,6 +159,8 @@ Candidate surfaces:
 - [x] Add a targeted chunked request-body/discard probe for body parser to
   keepalive-pipeline transitions.
 - [ ] Ensure harnesses support ASAN capture and request minimization.
+- [x] Re-run highest-value parser/lifecycle fuzzers under the pool-canary ASAN
+  build.
 - [ ] Record any crash with:
   - exact request bytes or upstream transcript,
   - ASAN stack,
@@ -184,6 +197,14 @@ Candidate surfaces:
   in this pass.
 - [ ] Continue source-guided pass on request-body discard/lingering close and
   range/static body filters with debug-palloc ASAN coverage.
+  - [x] Static `Range` body-filter probe rejected the first
+    request-controlled offset/copy hypotheses under pool-canary ASAN.
+- [ ] Continue source-guided pass on cache-enabled upstream finalization and
+  internal resolver SRV-name resolution because these are the only remaining
+  clang-analyzer reports with non-trivial control-flow questions.
+  - [x] Cache-enabled upstream finalization live repro rejected under ASAN.
+  - [x] Resolver SRV `NGX_NO_RESOLVER` path source-rejected for valid
+    upstream-zone resolution.
 - [ ] Implement a remote-only allocator/pool metadata oracle harness that does
   not assume LFI, procfs, coredumps, or debugger access. The first version
   should classify only HTTP status, connection close/reset, worker recovery
@@ -215,6 +236,11 @@ redzones for the objects most relevant to pool-corruption hypotheses.
     --with-cc-opt='-O1 -g -fno-omit-frame-pointer'
     --without-http_gzip_module`
   - Health check: `GET /` returns `poolslip lab ok`.
+- 2026-05-21: Confirmed the active no-gzip ASAN/debug-palloc audit container
+  reports `nginx/1.31.1`, clang `18.1.3`, and configure arguments:
+  `--builddir=build --with-cc=clang --with-cc-opt='-O1 -g
+  -fno-omit-frame-pointer -fsanitize=address -DNGX_DEBUG_PALLOC'
+  --with-ld-opt=-fsanitize=address --without-http_gzip_module`.
 - 2026-05-21: Initial ASAN+UBSAN build completed, but an ordinary `GET /`
   triggers UBSAN's function-pointer-type check in the NGINX HTTP filter chain:
   `ngx_output_chain()` calls a filter through a generic output-chain callback
@@ -238,6 +264,54 @@ redzones for the objects most relevant to pool-corruption hypotheses.
     `ngx_http_connection_t.busy/free`.
   - `ngx_http_set_keepalive()` preserves the current large buffer for a
     pipelined request and resets/moves other large buffers to the free list.
+- 2026-05-21: Raw HTTP mutation fuzzer completed 3,000 iterations against
+  `nginx-poolslip-1311-amd64-asan-debugpalloc-subreq` with ASAN clean and
+  worker health stable. Expected parser boundaries included clean `400`
+  responses and short-body timeouts; no crash, sanitizer report, or
+  response-visible memory disclosure was observed.
+- 2026-05-21: Added `tools/poolslip_tunnel_lifecycle_probe.py` and ran it
+  against `127.0.0.1:19343`. The probe targets CONNECT upgrade boundaries,
+  `Content-Length`, chunked bodies, `Expect: 100-continue`, split headers, and
+  tunneled bytes sent after `200`. Result: 12/12 cases clean, ASAN delta `0`,
+  worker health stable. This does not prove the tunnel module safe, but it
+  closes the first direct lifecycle-corruption hypothesis.
+- 2026-05-21: Source-audited the clang analyzer's FastCGI/SCGI/UWSGI duplicate
+  header reports. They are source-triaged as false positives: duplicate request
+  headers imply `r->headers_in.multi = 1` in `ngx_http_link_multi_headers()`,
+  and the upstream parameter builders allocate the `ignored` array when
+  `params->number || r->headers_in.multi` is true.
+- 2026-05-21: Source-audited the request-body analyzer report at
+  `ngx_http_request_body.c:1367`. The reported `rb->temp_file == NULL` deref
+  path is blocked by `ngx_http_write_request_body()`, which assigns
+  `rb->temp_file` before the reported `last_saved`/file-offset path is reached
+  when `request_body_in_file_only` is active.
+- 2026-05-21: Source-audited the resolver AAAA second-pass analyzer report.
+  The mixed A/AAAA path reaches the second address-copy pass only after the
+  first pass validates the response type against the query type; unexpected
+  AAAA answers for an A query go to the invalid-response path before allocation
+  and copy.
+- 2026-05-21: CodeQL completed successfully on an arm64 host build of the same
+  source tree. It produced 283 results, dominated by maintainability/style
+  rules. The only security-severity result is command-line path injection in
+  log-file opening, not a remote HTTP memory-safety candidate. No CodeQL result
+  currently outranks the clang analyzer control-flow leads above.
+- 2026-05-21: HTTP/2 upstream parser probe completed 96 iterations against the
+  `proxy_http_version 2` ASAN lab with ASAN clean. This is useful coverage for
+  source-fixed H2 issues, but the visible poolslip video build does not show
+  `--with-http_v2_module`, so H2 remains a secondary surface for this track.
+- 2026-05-21: Added `tools/poolslip_cache_finalize_probe.py` and a
+  cache-enabled `/cache-lab` route. Built and ran an x86_64 ASAN/debug-palloc
+  image on `127.0.0.1:19344`; verified `uname -m` reports `x86_64` and NGINX
+  reports `nginx/1.31.1`. Cache fill, `HEAD`, intercepted cached `404`/`500`,
+  truncated upstream body, and `204` all kept the worker healthy with ASAN
+  delta `0`. This rejects the scan-build upstream-cache finalization report for
+  the standard proxy path.
+- 2026-05-21: Source-rejected the remaining resolver SRV clang-analyzer report.
+  The public HTTP upstream-zone resolver timer checks `NGX_NO_RESOLVER` before
+  setting `ctx->service` and before any SRV query is created. The internal SRV
+  child-name loop only runs after an SRV response has been received through a
+  resolver with configured connections, so the reported `cctx == NGX_NO_RESOLVER`
+  dereference is not reachable through a valid remote DNS answer in this path.
   - ASAN large-header/pipeline matrix matched this ownership model and produced
     only clean `200,200` or `400` boundaries.
   - No candidate memory-safety bug found in this pass yet.
@@ -557,3 +631,99 @@ redzones for the objects most relevant to pool-corruption hypotheses.
   request cleanup walk, large-header keepalive reuse, final header filter
   copying of `ngx_table_elt_t.value`, and range/body write filters copying
   `ngx_buf_t.pos..last`.
+- 2026-05-21: Completed the outstanding debug-palloc upstream-response fuzzer
+  run:
+  `tools/poolslip_upstream_response_fuzzer.py --target 127.0.0.1:19343
+  --container nginx-poolslip-1311-amd64-asan-debugpalloc-subreq --iterations
+  1500 --seed 3233104 --timeout 5 --stop-on-suspicious`. Result:
+  `summary suspicious=0 iterations=1500`, `asan_log_bytes 0`,
+  `asan_status clean`. Case mix covered valid responses, split and invalid
+  status lines, early hints, heavy headers, malformed headers, chunked edge
+  cases, trailers, and truncated bodies.
+- 2026-05-21: Added `POOL_CANARY=1` support to `env/Dockerfile.poolslip`.
+  The patch (`env/patches/nginx_pool_canary.patch`) instruments small
+  `ngx_palloc()`/`ngx_pnalloc()` allocations with tail canaries while keeping
+  them inside NGINX request/connection pools. This is intended to catch pool
+  overwrites that ASAN may miss and that `NGX_DEBUG_PALLOC` can mask by moving
+  allocations out to malloc.
+- 2026-05-21: Built and started
+  `nginx-poolslip-1311-amd64-asan-poolcanary` on `127.0.0.1:19345`.
+  Smoke test returned `Server: nginx/1.31.1`; Docker logs were clean.
+  Targeted pool-canary checks completed clean:
+  - `tools/poolslip_body_state_probe.py --target 127.0.0.1:19345
+    --container nginx-poolslip-1311-amd64-asan-poolcanary --timeout 8`
+    produced `summary suspicious=0 cases=19`, `asan_log_bytes 0`,
+    `asan_status clean`.
+  - `tools/poolslip_tunnel_lifecycle_probe.py --target 127.0.0.1:19345
+    --container nginx-poolslip-1311-amd64-asan-poolcanary --timeout 6`
+    produced `summary suspicious=0 cases=12`, `asan_log_bytes 0`,
+    `asan_status clean`.
+  - `tools/poolslip_upstream_parser_probe.py --target 127.0.0.1:19345
+    --timeout 6` completed `summary suspicious=0 cases=32`; follow-up Docker
+    log grep found no `pool canary`, ASAN, UBSAN, runtime, or abort markers.
+- 2026-05-21: Ran the pool-canary request-sequence fuzzer:
+  `tools/poolslip_request_sequence_fuzzer.py --target 127.0.0.1:19345
+  --iterations 1000 --seed 91919191 --timeout 4 --container
+  nginx-poolslip-1311-amd64-asan-poolcanary --stop-on-suspicious`.
+  Result: `summary suspicious=0 iterations=1000`, `asan_log_bytes 0`,
+  `asan_status clean`. Case mix covered large headers, invalid framing,
+  chunked discard, proxy body handling, rewrite edges, tunnel CONNECT, and
+  upstream response edges. This is negative evidence for simple pool-local tail
+  overwrites in the exercised request parser/lifecycle paths.
+- 2026-05-21: Harvested background read-only audit feedback and tightened the
+  next hunt direction. The most plausible remaining Poolslip shape still needs
+  a real corruption primitive first; once present, the likely remote sinks are
+  `ngx_table_elt_t.value` in the final/early-hints/trailer header filters and
+  `ngx_buf_t.pos..last` in body/range output. The njs proxy-overflow side
+  review produced a liveness oracle only, not a direct pointer disclosure, so
+  it is not counted as a Poolslip finding.
+- 2026-05-21: Ran the pool-canary raw HTTP mutation fuzzer:
+  `tools/poolslip_raw_http_mutation_fuzzer.py --target 127.0.0.1:19345
+  --iterations 3000 --seed 93939393 --timeout 0.35 --container
+  nginx-poolslip-1311-amd64-asan-poolcanary --log-every 500
+  --stop-on-suspicious`. Result: `summary suspicious=0 iterations=3000`,
+  `asan_log_bytes 0`, `asan_status clean`. This run adds parser-level
+  mutation coverage under the pool-canary build and did not expose a crash,
+  canary overwrite, or response disclosure.
+- 2026-05-21: Completed the pool-canary upstream-response fuzzer run:
+  `tools/poolslip_upstream_response_fuzzer.py --target 127.0.0.1:19345
+  --iterations 500 --seed 92929292 --timeout 5 --container
+  nginx-poolslip-1311-amd64-asan-poolcanary --stop-on-suspicious`. Result:
+  `summary suspicious=0 iterations=500`, `asan_log_bytes 0`,
+  `asan_status clean`. Case mix covered chunk extensions, chunk-size overflow,
+  early hints, heavy and malformed headers, invalid and split status lines,
+  trailers, truncated upstream bodies, and valid controls.
+- 2026-05-21: Built
+  `nginx-poolslip-1311-amd64-asan-ubsan-poolcanary-auth` with
+  `-fsanitize=address,undefined -DNGX_POOL_CANARY`, exposed it on
+  `127.0.0.1:19346`, and verified `GET /` returns `Server: nginx/1.31.1`.
+  Added `tools/poolslip_connect_auth_probe.py` plus an
+  `auth.tunnel.local` virtual server using `auth_basic`,
+  `auth_basic_user_file`, and `tunnel_pass` on the same listener.
+  The probe covered missing auth, `Authorization` vs `Proxy-Authorization`,
+  invalid scheme/base64, valid auth, body-after-CONNECT, long user/password,
+  binary user, duplicate proxy auth, `Proxy-Connection`, split request bytes,
+  and an unauthenticated tunnel control. Result:
+  `summary suspicious=0 cases=13`, worker health stable, and no ASAN or
+  pool-canary finding.
+- 2026-05-21: Triage note from the auth image: NGINX's file error log captured
+  UBSAN diagnostics that the initial probe did not read from Docker stdout.
+  The recurring `ngx_output_chain()` function-pointer-type report is the known
+  sanitizer compatibility issue in the HTTP filter callback chain. A
+  `ngx_string.c:586` null-argument warning appears on a zero-length string
+  formatting path after declined auth; source review shows this is consistent
+  with a zero-length `ngx_str_t` reaching `%V` formatting and causing UBSAN to
+  complain about `memcpy(dst, NULL, 0)`. It is a sanitizer-cleanliness issue,
+  not memory disclosure or corruption evidence, but future probes should read
+  both Docker stdout and `/app/logs/error.log` so sanitizer findings are not
+  missed.
+- 2026-05-21: Added `tools/poolslip_range_filter_probe.py` for the static file
+  range/body-filter sink (`ngx_buf_t.pos..last` and file offsets). Ran it
+  against `nginx-poolslip-1311-amd64-asan-poolcanary` at
+  `127.0.0.1:19345`. The probe covered baseline static output, single ranges,
+  suffix/open-ended ranges, unsatisfiable and overflow ranges, space-tolerant
+  parsing, overlapping and many-part multipart ranges, invalid units/tokens,
+  `If-Range`, `HEAD`, and keepalive pipelining. Result:
+  `summary suspicious=0 cases=21`, `sanitizer_log_bytes 0`,
+  `memsafety_status clean`, `ubsan_status clean`. No response-visible pointer
+  material, ASAN hit, pool-canary hit, or worker-health loss was observed.

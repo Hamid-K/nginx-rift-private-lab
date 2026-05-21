@@ -11,10 +11,17 @@ RUN id -u ubuntu >/dev/null 2>&1 || useradd -m -u 1000 ubuntu
 ARG NGINX_REF=eff110885412737aec9b953067b6a670bffdbfa0
 ARG SANITIZE=0
 ARG DEBUG_PALLOC=0
+ARG POOL_CANARY=0
+
+COPY patches/nginx_pool_canary.patch /tmp/nginx_pool_canary.patch
 
 RUN git clone https://github.com/nginx/nginx.git /nginx-src \
     && cd /nginx-src \
     && git checkout "${NGINX_REF}"
+
+RUN if [ "${POOL_CANARY}" = "1" ]; then \
+        cd /nginx-src && git apply /tmp/nginx_pool_canary.patch; \
+    fi
 
 RUN cd /nginx-src \
     && if [ "${SANITIZE}" = "1" ] || [ "${SANITIZE}" = "all" ]; then \
@@ -33,6 +40,9 @@ RUN cd /nginx-src \
     && if [ "${DEBUG_PALLOC}" = "1" ]; then \
         CC_OPT="${CC_OPT} -DNGX_DEBUG_PALLOC"; \
     fi \
+    && if [ "${POOL_CANARY}" = "1" ]; then \
+        CC_OPT="${CC_OPT} -DNGX_POOL_CANARY"; \
+    fi \
     && ./auto/configure \
         --builddir=build \
         --with-cc=clang \
@@ -45,6 +55,7 @@ WORKDIR /app
 COPY nginx-poolslip.conf server.py entrypoint-poolslip.sh ./
 RUN chmod +x entrypoint-poolslip.sh \
     && mkdir -p logs tmp www \
+    && printf '%s\n' 'pooluser:$6$poolsalt$eXCn9YZajlPN84gktR1b9yKkr81MIN5dKPbYnq9d6SxZiSW1scGV8QKOFQ/e87.kDDvrMXN7LbmkeUfCblsiJ0' > tmp/htpasswd \
     && python3 - <<'PY'
 from pathlib import Path
 data = bytes((i * 37 + 11) & 0xff for i in range(65536))

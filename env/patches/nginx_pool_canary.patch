@@ -1,0 +1,189 @@
+diff --git a/src/core/ngx_palloc.c b/src/core/ngx_palloc.c
+index e9ec3d633..c489a9a7d 100644
+--- a/src/core/ngx_palloc.c
++++ b/src/core/ngx_palloc.c
+@@ -13,8 +13,103 @@
+     ngx_uint_t align);
+ static void *ngx_palloc_block(ngx_pool_t *pool, size_t size);
+ static void *ngx_palloc_large(ngx_pool_t *pool, size_t size);
++#if (NGX_POOL_CANARY)
+ 
++#define NGX_POOL_CANARY_SIZE  16
++#define NGX_POOL_CANARY_BYTE  0xa5
+ 
++typedef struct ngx_pool_canary_s  ngx_pool_canary_t;
++
++struct ngx_pool_canary_s {
++    ngx_pool_t         *pool;
++    u_char             *tail;
++    size_t              size;
++    ngx_pool_canary_t  *next;
++};
++
++static ngx_pool_canary_t  *ngx_pool_canaries;
++
++
++static void
++ngx_pool_canary_register(ngx_pool_t *pool, u_char *p, size_t size)
++{
++    ngx_pool_canary_t  *g;
++
++    ngx_memset(p + size, NGX_POOL_CANARY_BYTE, NGX_POOL_CANARY_SIZE);
++
++    g = ngx_alloc(sizeof(ngx_pool_canary_t), pool->log);
++    if (g == NULL) {
++        return;
++    }
++
++    g->pool = pool;
++    g->tail = p + size;
++    g->size = size;
++    g->next = ngx_pool_canaries;
++    ngx_pool_canaries = g;
++}
++
++
++static ngx_uint_t
++ngx_pool_canary_corrupted(ngx_pool_canary_t *g)
++{
++    size_t  i;
++
++    for (i = 0; i < NGX_POOL_CANARY_SIZE; i++) {
++        if (g->tail[i] != NGX_POOL_CANARY_BYTE) {
++            return 1;
++        }
++    }
++
++    return 0;
++}
++
++
++static void
++ngx_pool_canary_check(ngx_pool_t *pool, const char *where)
++{
++    ngx_pool_canary_t  *g;
++
++    for (g = ngx_pool_canaries; g; g = g->next) {
++        if (g->pool != pool) {
++            continue;
++        }
++
++        if (ngx_pool_canary_corrupted(g)) {
++            ngx_log_error(NGX_LOG_ALERT, pool->log, 0,
++                          "pool canary corrupted %s: pool:%p tail:%p size:%uz",
++                          where, pool, g->tail, g->size);
++            ngx_abort();
++        }
++    }
++}
++
++
++static void
++ngx_pool_canary_drop(ngx_pool_t *pool)
++{
++    ngx_pool_canary_t  *g, **gp;
++
++    ngx_pool_canary_check(pool, "before pool release");
++
++    gp = &ngx_pool_canaries;
++    while (*gp) {
++        g = *gp;
++
++        if (g->pool == pool) {
++            *gp = g->next;
++            ngx_free(g);
++            continue;
++        }
++
++        gp = &g->next;
++    }
++}
++
++#endif
++
++
++
+ ngx_pool_t *
+ ngx_create_pool(size_t size, ngx_log_t *log)
+ {
+@@ -39,6 +123,10 @@ ngx_destroy_pool(ngx_pool_t *pool)
+     ngx_pool_large_t    *l;
+     ngx_pool_cleanup_t  *c;
+ 
++#if (NGX_POOL_CANARY)
++    ngx_pool_canary_check(pool, "before cleanup handlers");
++#endif
++
+     for (c = pool->cleanup; c; c = c->next) {
+         if (c->handler) {
+             ngx_log_debug1(NGX_LOG_DEBUG_ALLOC, pool->log, 0,
+@@ -71,6 +159,10 @@ ngx_destroy_pool(ngx_pool_t *pool)
+ 
+ #endif
+ 
++#if (NGX_POOL_CANARY)
++    ngx_pool_canary_drop(pool);
++#endif
++
+     for (l = pool->large; l; l = l->next) {
+         if (l->alloc) {
+             ngx_free(l->alloc);
+@@ -91,6 +183,10 @@ ngx_reset_pool(ngx_pool_t *pool)
+     ngx_pool_t        *p;
+     ngx_pool_large_t  *l;
+ 
++#if (NGX_POOL_CANARY)
++    ngx_pool_canary_drop(pool);
++#endif
++
+     for (l = pool->large; l; l = l->next) {
+         if (l->alloc) {
+             ngx_free(l->alloc);
+@@ -149,6 +256,18 @@ ngx_palloc_small(ngx_pool_t *pool, size_t size, ngx_uint_t align)
+ {
+     u_char      *m;
+     ngx_pool_t  *p;
++#if (NGX_POOL_CANARY)
++    size_t       requested;
++    ngx_uint_t   guarded;
++
++    requested = size;
++    guarded = (pool->max >= NGX_POOL_CANARY_SIZE
++               && size <= pool->max - NGX_POOL_CANARY_SIZE);
++
++    if (guarded) {
++        size += NGX_POOL_CANARY_SIZE;
++    }
++#endif
+ 
+     p = pool->current;
+ 
+@@ -162,13 +270,27 @@ ngx_palloc_small(ngx_pool_t *pool, size_t size, ngx_uint_t align)
+ 
+         if ((size_t) (p->d.end - m) >= size) {
+             p->d.last = m + size;
++
++#if (NGX_POOL_CANARY)
++            if (guarded) {
++                ngx_pool_canary_register(pool, m, requested);
++            }
++#endif
+ 
+             return m;
+         }
+ 
+         p = p->d.next;
+ 
+     } while (p);
+ 
+-    return ngx_palloc_block(pool, size);
++    m = ngx_palloc_block(pool, size);
++
++#if (NGX_POOL_CANARY)
++    if (m && guarded) {
++        ngx_pool_canary_register(pool, m, requested);
++    }
++#endif
++
++    return m;
+ }
