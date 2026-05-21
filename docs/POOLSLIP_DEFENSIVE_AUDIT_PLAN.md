@@ -369,3 +369,14 @@ Candidate surfaces:
   This is negative evidence for generic request-line/header/body parser memory
   safety on both checked versions, but it is still broad fuzzing and not a
   replacement for source-guided module-specific probes.
+- 2026-05-21: Re-ran the existing charset OOB proof in the current lab as a
+  concrete confirmed-bug baseline. Commands:
+  - `tools/charset_oob_probe.py 127.0.0.1:19321 --runs 8 --framing chunked`
+    returned `88 0a 58` on every run.
+  - `tools/charset_oob_probe.py 127.0.0.1:19321 --runs 4 --framing close`
+    returned `88 00 58` on every run.
+  - `tools/charset_oob_probe.py 127.0.0.1:19321 --runs 4 --framing length`
+    returned `88 00 58` on every run.
+  This confirms the fixed CVE-2026-42934 class is real and client-visible, but
+  the leaked byte remains framing/slack (`0a` or `00`) rather than an ASLR-useful
+  heap/libc/code pointer in this harness.
