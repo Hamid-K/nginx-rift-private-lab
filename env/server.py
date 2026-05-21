@@ -118,6 +118,15 @@ class BackendHandler(http.server.BaseHTTPRequestHandler):
             body_size = int_param(params, "body_size", 2, maximum=65535)
             trailer_size = int_param(params, "trailer_size", 0, maximum=8192)
             fill = params.get("fill", ["A"])[0].encode("latin1", "ignore")[:1] or b"A"
+            special_size = int_param(params, "special_size", 1, maximum=512)
+            special_fill = params.get("special_fill", ["~"])[0].encode("latin1", "ignore")[:1] or b"~"
+
+            def special_headers():
+                if params.get("pass_special", ["0"])[0] not in {"1", "true", "yes"}:
+                    return b""
+
+                value = special_fill * special_size
+                return b"Date: " + value + b"\r\nServer: " + value + b"\r\n"
 
             def headers(prefix=b"X-Fuzz"):
                 out = []
@@ -170,13 +179,31 @@ class BackendHandler(http.server.BaseHTTPRequestHandler):
                 data = (
                     b"HTTP/1.1 200 OK\r\nContent-Type: text/plain; x="
                     + fill * size
+                    + b"\r\n"
+                    + special_headers()
+                    + b"Content-Length: 2\r\n\r\nok"
+                )
+            elif mode == "huge-content-type-empty":
+                data = (
+                    b"HTTP/1.1 200 OK\r\nContent-Type: "
+                    + fill * size
                     + b"\r\nContent-Length: 2\r\n\r\nok"
                 )
             elif mode == "huge-location":
                 data = (
                     b"HTTP/1.1 302 Found\r\nLocation: /"
                     + fill * size
-                    + b"\r\nContent-Length: 0\r\n\r\n"
+                    + b"\r\n"
+                    + special_headers()
+                    + b"Content-Length: 0\r\n\r\n"
+                )
+            elif mode == "huge-location-absolute":
+                data = (
+                    b"HTTP/1.1 302 Found\r\nLocation: http://example.test/"
+                    + fill * size
+                    + b"\r\n"
+                    + special_headers()
+                    + b"Content-Length: 0\r\n\r\n"
                 )
             elif mode == "truncated":
                 data = b"HTTP/1.1 200 OK\r\nContent-Length: 4096\r\n\r\n" + b"Z" * body_size
@@ -192,6 +219,75 @@ class BackendHandler(http.server.BaseHTTPRequestHandler):
                 self.wfile.write(data)
 
             self.wfile.flush()
+            return
+        if case == "ssi-gen":
+            kind = params.get("kind", ["plain"])[0]
+            repeat = int_param(params, "repeat", 4, maximum=256)
+            size = int_param(params, "size", 64, maximum=8192)
+            framing = params.get("framing", ["length"])[0]
+            pause_ms = int_param(params, "pause_ms", 0, maximum=1000)
+
+            include = (
+                b'<!--#include virtual="/internal?case=raw-gen&mode=heavy-headers'
+                + f"&n={min(repeat, 64)}&size={min(size, 2048)}".encode("ascii")
+                + b'" -->'
+            )
+
+            if kind == "include":
+                body = b"ssi-start\n" + include + b"\nssi-end\n"
+            elif kind == "many-includes":
+                body = b"".join(
+                    b"[" + str(i).encode("ascii") + b"]" + include + b"\n"
+                    for i in range(repeat)
+                )
+            elif kind == "nested-if":
+                filler = b"A" * size
+                body = (
+                    b'<!--#set var="poolslip" value="' + filler + b'" -->'
+                    b'<!--#if expr="$poolslip" -->'
+                    + include
+                    + b'<!--#elif expr="$missing" -->elif'
+                    b"<!--#else -->else<!--#endif -->"
+                )
+            elif kind == "long-param":
+                body = (
+                    b'<!--#echo var="' + b"V" * size + b'" default="'
+                    + b"D" * size
+                    + b'" encoding="entity" -->'
+                )
+            elif kind == "unterminated":
+                body = b"prefix <!--#include virtual=\"" + b"/" + b"U" * size
+            elif kind == "split-token":
+                body = b"prefix <!--#in" + b"clude virtual=\"/internal\" --> suffix\n"
+            else:
+                body = b"plain ssi body\n"
+
+            if framing == "chunked":
+                chunks = []
+                split = max(1, min(size, len(body)))
+                for offset in range(0, len(body), split):
+                    chunk = body[offset : offset + split]
+                    chunks.append(f"{len(chunk):x}\r\n".encode("ascii") + chunk + b"\r\n")
+                chunks.append(b"0\r\n\r\n")
+                self.wfile.write(
+                    b"HTTP/1.1 200 OK\r\n"
+                    b"Content-Type: text/html\r\n"
+                    b"Transfer-Encoding: chunked\r\n"
+                    b"Connection: close\r\n\r\n"
+                )
+                for chunk in chunks:
+                    self.wfile.write(chunk)
+                    self.wfile.flush()
+                    if pause_ms:
+                        time.sleep(pause_ms / 1000)
+                return
+
+            self.send_response(200)
+            self.send_header("Content-Type", "text/html")
+            self.send_header("Connection", "close")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
             return
         if case == "many-headers":
             count = int_param(params, "n", 64, maximum=1024)

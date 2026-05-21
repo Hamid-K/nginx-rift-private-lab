@@ -63,6 +63,9 @@ Deferred for this phase until a bug is found and characterized:
 - [x] Add an ASAN + `NGX_DEBUG_PALLOC` build mode so small NGINX pool
   allocations are individually redzoned instead of hidden inside large pool
   blocks.
+- [x] Add and test a default-module subrequest/filter route set covering SSI,
+  mirror, and shared-memory limit modules on both `1.31.1` and `1.31.0`
+  debug-palloc ASAN images.
 - [ ] Update this plan with new hypotheses and completed tasks after each
   audit/test milestone.
 
@@ -120,11 +123,16 @@ Candidate surfaces:
   - early hints filter
   - chunked trailer filter
   - range/body write filters.
+- [x] Default subrequest/filter modules:
+  - SSI include/conditional parser with proxied length and chunked bodies.
+  - mirror subrequests with preserved request body.
+  - `limit_req` / `limit_conn` key handling and shared-memory boundaries.
 - [ ] Default-module diff review around `1.31.0 -> 1.31.1` and nearby commits
   for newly introduced pool, parser, or filter behavior.
 - [x] New default-module pass:
   - `ngx_http_tunnel_module`
   - `ngx_http_upstream_sticky_module`
+  - `ngx_http_upstream_least_time_module`
 - [ ] Request-body and discard-body pass:
   - `ngx_http_request_body_chunked_filter()`
   - `ngx_http_discard_request_body_filter()`
@@ -157,6 +165,25 @@ Candidate surfaces:
 - [ ] A finding only counts as an information leak if bytes returned to the
   HTTP client include memory not controlled by the client/upstream and not
   expected by protocol behavior.
+
+### 5. Current Source-Audit Focus
+
+- [x] `ngx_http_tunnel_module`: reviewed request-controlled CONNECT authority
+  handling, dynamic `tunnel_pass` evaluation, and upstream upgrade setup. The
+  code path is small and no unchecked copy or response-visible pointer sink was
+  identified in this pass. Existing ASAN probes also produced only clean
+  `400`/`405`/tunnel boundaries.
+- [x] `ngx_http_upstream_sticky_module`: reviewed session ID storage and
+  shared-memory learn-mode updates. The fixed `sid[32]` node copy is protected
+  by upstream peer IDs bounded to `NGX_HTTP_UPSTREAM_SID_LEN`; tested dynamic
+  cookie/samesite/session inputs did not produce a sanitizer finding.
+- [x] `ngx_http_upstream_least_time_module`: reviewed peer selection, inflight
+  accounting, backup recursion, and sticky SID interaction. The recursive call
+  passes the address of the first embedded field, so the cast back to the
+  containing peer-data struct is intentional; no memory-safety candidate found
+  in this pass.
+- [ ] Continue source-guided pass on request-body discard/lingering close and
+  range/static body filters with debug-palloc ASAN coverage.
 
 ## Instrumentation Notes
 
@@ -480,3 +507,31 @@ redzones for the objects most relevant to pool-corruption hypotheses.
   `summary suspicious=0 iterations=1000`, both with `asan_log_bytes 0` and
   `asan_status clean`. This gives the same pool-redzone coverage to the older
   public-hint comparison target.
+- 2026-05-21: Added a sharper HTTP/2 response-special-header lab route,
+  `/h2-header-pass-special`, plus `tools/h2_header_overflow_probe.py`. The
+  route passes upstream `Date` and `Server` headers through so the fixed
+  `Content-Type`/`Location` response-header length bug from `58a7bc340` is less
+  masked by generated header Huffman slack. A long single case against
+  `release-1.31.0` (`huge-content-type`, size `2097279`, fill `~`,
+  pass-through special headers) timed out client-side after 60 seconds, but the
+  worker stayed healthy and Docker logs contained no ASAN report. This did not
+  produce a crash proof.
+- 2026-05-21: Added default-module subrequest/filter lab routes to
+  `env/nginx-poolslip.conf`:
+  `/ssi-proxy`, `/mirror-spray`, `/mirror-target`, `/limit-req-lab`, and
+  `/limit-conn-lab`. Added backend `case=ssi-gen` to generate SSI include,
+  conditional, long-param, unterminated, and split-token bodies with length or
+  chunked upstream framing. Added
+  `tools/poolslip_subrequest_filter_probe.py` to drive these paths.
+- 2026-05-21: Built and ran `nginx-poolslip-1311-amd64-asan-debugpalloc-subreq`
+  on `127.0.0.1:19343`. The subrequest/filter probe completed 22 cases:
+  SSI length/chunked cases, mirror POST bodies up to 65535 bytes, and
+  `limit_req` keys up to the request-line limit. Result:
+  `summary suspicious=0 cases=22`, `asan_log_bytes 0`, `asan_status clean`.
+- 2026-05-21: Repeated the same subrequest/filter route set and probe against
+  `release-1.31.0` as
+  `nginx-poolslip-1310-amd64-asan-debugpalloc-subreq` on `127.0.0.1:19353`.
+  Result: `summary suspicious=0 cases=22`, `asan_log_bytes 0`,
+  `asan_status clean`. This narrows the easy SSI/mirror/limit-module theories
+  but does not close deeper request-body lifecycle or static/range filter
+  hypotheses.
