@@ -112,11 +112,12 @@ class BackendHandler(http.server.BaseHTTPRequestHandler):
         if case == "raw-gen":
             mode = params.get("mode", ["valid"])[0]
             count = int_param(params, "n", 4, maximum=512)
-            size = int_param(params, "size", 32, maximum=8192)
+            size = int_param(params, "size", 32, maximum=5242880)
             split_at = int_param(params, "split", 0, maximum=65535)
             pause_ms = int_param(params, "pause_ms", 0, maximum=1000)
             body_size = int_param(params, "body_size", 2, maximum=65535)
             trailer_size = int_param(params, "trailer_size", 0, maximum=8192)
+            fill = params.get("fill", ["A"])[0].encode("latin1", "ignore")[:1] or b"A"
 
             def headers(prefix=b"X-Fuzz"):
                 out = []
@@ -164,6 +165,18 @@ class BackendHandler(http.server.BaseHTTPRequestHandler):
                 data = (
                     b"HTTP/1.1 200 OK\r\n"
                     b"BrokenHeader\r\nX-Control: abc\x01def\r\nContent-Length: 2\r\n\r\nok"
+                )
+            elif mode == "huge-content-type":
+                data = (
+                    b"HTTP/1.1 200 OK\r\nContent-Type: text/plain; x="
+                    + fill * size
+                    + b"\r\nContent-Length: 2\r\n\r\nok"
+                )
+            elif mode == "huge-location":
+                data = (
+                    b"HTTP/1.1 302 Found\r\nLocation: /"
+                    + fill * size
+                    + b"\r\nContent-Length: 0\r\n\r\n"
                 )
             elif mode == "truncated":
                 data = b"HTTP/1.1 200 OK\r\nContent-Length: 4096\r\n\r\n" + b"Z" * body_size

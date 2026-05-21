@@ -1,0 +1,46 @@
+FROM ubuntu:24.04
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && apt-get install -y \
+    clang make libpcre2-dev libssl-dev zlib1g-dev \
+    ca-certificates python3 curl git \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN id -u ubuntu >/dev/null 2>&1 || useradd -m -u 1000 ubuntu
+
+ARG NGINX_REF=release-1.31.0
+ARG SANITIZE=asan
+
+RUN git clone https://github.com/nginx/nginx.git /nginx-src \
+    && cd /nginx-src \
+    && git checkout "${NGINX_REF}"
+
+RUN cd /nginx-src \
+    && if [ "${SANITIZE}" = "asan" ]; then \
+        CC_OPT="-O1 -g -fno-omit-frame-pointer -fsanitize=address"; \
+        LD_OPT="-fsanitize=address"; \
+    else \
+        CC_OPT="-O1 -g -fno-omit-frame-pointer"; \
+        LD_OPT=""; \
+    fi \
+    && ./auto/configure \
+        --builddir=build \
+        --with-cc=clang \
+        --with-cc-opt="${CC_OPT}" \
+        --with-ld-opt="${LD_OPT}" \
+        --with-http_v2_module \
+        --without-http_gzip_module \
+    && make -j"$(nproc)"
+
+WORKDIR /app
+COPY nginx-h2-header.conf server.py entrypoint-poolslip.sh ./
+RUN chmod +x entrypoint-poolslip.sh \
+    && mkdir -p logs tmp www \
+    && python3 - <<'PY'
+from pathlib import Path
+Path("/app/www/index.txt").write_text("h2 header lab ok\n")
+PY
+
+ENV NGINX_CONF=nginx-h2-header.conf
+ENTRYPOINT ["/app/entrypoint-poolslip.sh"]
+EXPOSE 19361

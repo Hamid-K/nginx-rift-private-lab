@@ -306,3 +306,11 @@ Candidate surfaces:
   valid controls. This weakens the straightforward upstream parser,
   Early-Hints metadata, trailer, and heavy-header disclosure hypotheses in the
   current no-H2/no-MP4 ASAN build.
+- 2026-05-21: Started a separate fixed-bug validation track for the HTTP/2
+  response-header length issue fixed by `58a7bc340`. This is not a Poolslip
+  demo match because the demo-like build does not include
+  `--with-http_v2_module`. The work is tracked in
+  `docs/H2_RESPONSE_HEADER_LENGTH_AUDIT.md`. First `release-1.31.0` H2 ASAN
+  run with huge `Content-Type`/`Location` values produced no ASAN finding; this
+  matches the upstream fix note that normal module paths may leave enough
+  encoded-buffer slack despite the source-level allocation undercount.
