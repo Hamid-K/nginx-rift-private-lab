@@ -9,16 +9,32 @@ RUN apt-get update && apt-get install -y \
 RUN id -u ubuntu >/dev/null 2>&1 || useradd -m -u 1000 ubuntu
 
 ARG NGINX_REF=eff110885412737aec9b953067b6a670bffdbfa0
+ARG SANITIZE=0
 
 RUN git clone https://github.com/nginx/nginx.git /nginx-src \
     && cd /nginx-src \
     && git checkout "${NGINX_REF}"
 
-RUN cd /nginx-src && ./auto/configure \
-    --builddir=build \
-    --with-cc=clang \
-    --with-cc-opt='-O1 -g -fno-omit-frame-pointer' \
-    --without-http_gzip_module \
+RUN cd /nginx-src \
+    && if [ "${SANITIZE}" = "1" ] || [ "${SANITIZE}" = "all" ]; then \
+        CC_OPT="-O1 -g -fno-omit-frame-pointer -fsanitize=address,undefined"; \
+        LD_OPT="-fsanitize=address,undefined"; \
+    elif [ "${SANITIZE}" = "asan" ]; then \
+        CC_OPT="-O1 -g -fno-omit-frame-pointer -fsanitize=address"; \
+        LD_OPT="-fsanitize=address"; \
+    elif [ "${SANITIZE}" = "ubsan" ]; then \
+        CC_OPT="-O1 -g -fno-omit-frame-pointer -fsanitize=undefined"; \
+        LD_OPT="-fsanitize=undefined"; \
+    else \
+        CC_OPT="-O1 -g -fno-omit-frame-pointer"; \
+        LD_OPT=""; \
+    fi \
+    && ./auto/configure \
+        --builddir=build \
+        --with-cc=clang \
+        --with-cc-opt="${CC_OPT}" \
+        --with-ld-opt="${LD_OPT}" \
+        --without-http_gzip_module \
     && make -j"$(nproc)"
 
 WORKDIR /app
