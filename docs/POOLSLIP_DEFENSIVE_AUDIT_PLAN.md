@@ -770,3 +770,24 @@ redzones for the objects most relevant to pool-corruption hypotheses.
   `asan_status clean`. The large `asan_log_bytes` value in this run is normal
   NGINX error-log volume from rejected malformed requests; no ASAN, UBSAN,
   runtime, `ERROR:`, or pool-canary marker was present.
+- 2026-05-21: Parallel CONNECT/tunnel/request-lifecycle source audit returned
+  no concrete memory-safety candidate in `eff110885`. Rejected leads include
+  colon-without-port CONNECT authorities, `$request_port` sizing, large-header
+  relocation of `host_start`/`host_end`, body-before-upgrade handling in
+  `ngx_http_tunnel_module`, surplus-body to pipelined-header copying, empty
+  request-body temp-file finalization, and keepalive reuse of large buffers.
+  These remain useful negative coverage for core Poolslip, but not findings.
+- 2026-05-21: Separate njs track found a concrete fixed bug:
+  `js_fetch_proxy` dynamic proxy URL credentials in njs `0.9.8` overflow fixed
+  by upstream commit `2bf4601a`. This is not stock NGINX core Poolslip, but it
+  is a real NGINX-family module memory-safety issue reachable through ordinary
+  HTTP requests when a deployment uses request-controlled variables in
+  `js_fetch_proxy` credentials. Details and repro are in
+  `docs/NJS_FETCH_PROXY_CVE_2026_8711_AUDIT.md`.
+- 2026-05-21: Response/filter/upstream/sticky source audit returned no
+  concrete memory-safety candidate in `eff110885`. Rejected leads include
+  upstream `Content-Type` charset underflow, split UTF-8 charset conversion,
+  early-hints header reuse, trailer pass-through, range offset manipulation,
+  SSI parser/subrequest state, sticky SID storage, and upstream-zone shared
+  memory copies. The top historical leak-looking classes in this area are
+  already fixed in the target commit.
