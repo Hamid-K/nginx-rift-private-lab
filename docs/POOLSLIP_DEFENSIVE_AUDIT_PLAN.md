@@ -758,3 +758,15 @@ redzones for the objects most relevant to pool-corruption hypotheses.
   authority shapes, `405` for an IPv6 authority that did not select the
   dynamic tunnel vhost, and `500` for port zero; no crash, canary overwrite, or
   response-visible pointer material was observed.
+- 2026-05-21: Extended `tools/poolslip_raw_http_mutation_fuzzer.py` so random
+  CONNECT targets include the dynamic tunnel vhost (`127.0.0.2:19323`,
+  no-port, and colon-without-port forms), and so sanitizer detection reads both
+  Docker stdout and `/app/logs/error.log`. Ran it against the dynamic
+  pool-canary image:
+  `tools/poolslip_raw_http_mutation_fuzzer.py --target 127.0.0.1:19347
+  --iterations 3000 --seed 104104104 --timeout 0.35 --container
+  nginx-poolslip-1311-amd64-asan-poolcanary-dyn --log-every 500
+  --stop-on-suspicious`. Result: `summary suspicious=0 iterations=3000`,
+  `asan_status clean`. The large `asan_log_bytes` value in this run is normal
+  NGINX error-log volume from rejected malformed requests; no ASAN, UBSAN,
+  runtime, `ERROR:`, or pool-canary marker was present.

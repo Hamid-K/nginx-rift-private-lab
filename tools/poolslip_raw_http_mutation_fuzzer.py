@@ -21,7 +21,7 @@ from dataclasses import dataclass
 
 
 STATUS_RE = re.compile(rb"HTTP/1\.[01] ([0-9]{3})")
-ASAN_RE = re.compile(rb"(AddressSanitizer|UndefinedBehaviorSanitizer|runtime error|ERROR:)")
+ASAN_RE = re.compile(rb"(AddressSanitizer|UndefinedBehaviorSanitizer|runtime error|ERROR:|pool canary)")
 
 
 @dataclass
@@ -70,7 +70,17 @@ def docker_logs(container: str | None) -> bytes:
     except OSError:
         return b""
 
-    return proc.stdout
+    try:
+        err = subprocess.run(
+            ["docker", "exec", container, "sh", "-lc", "cat /app/logs/error.log 2>/dev/null || true"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            check=False,
+        )
+    except OSError:
+        return proc.stdout
+
+    return proc.stdout + b"\n--- /app/logs/error.log ---\n" + err.stdout
 
 
 def send_raw(host: str, port: int, payload: bytes, timeout: float) -> tuple[bytes, str]:
@@ -174,7 +184,17 @@ def make_case(index: int, rng: random.Random) -> tuple[str, bytes]:
     method = rng.choice(methods)
 
     if method == b"CONNECT":
-        target = rng.choice([b"127.0.0.1:19323", b"backend:80", b"[::1]:80", b"a" * rng.randint(1, 4096)])
+        target = rng.choice(
+            [
+                b"127.0.0.1:19323",
+                b"127.0.0.2:19323",
+                b"127.0.0.2:",
+                b"127.0.0.2",
+                b"backend:80",
+                b"[::1]:80",
+                b"a" * rng.randint(1, 4096),
+            ]
+        )
     else:
         target = rand_path(rng)
 
