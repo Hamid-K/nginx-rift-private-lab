@@ -89,6 +89,97 @@ class BackendHandler(http.server.BaseHTTPRequestHandler):
                 flush()
                 time.sleep(0.02)
             return
+        if case == "raw-hex":
+            data_hex = params.get("data", [""])[0]
+            split_at = int_param(params, "split", 0, maximum=8192)
+            pause_ms = int_param(params, "pause_ms", 0, maximum=1000)
+
+            try:
+                data = bytes.fromhex(data_hex[:16384])
+            except ValueError:
+                data = b"HTTP/1.1 500 Bad Hex\r\nContent-Length: 0\r\n\r\n"
+
+            if split_at and split_at < len(data):
+                self.wfile.write(data[:split_at])
+                self.wfile.flush()
+                time.sleep(pause_ms / 1000)
+                self.wfile.write(data[split_at:])
+            else:
+                self.wfile.write(data)
+
+            self.wfile.flush()
+            return
+        if case == "raw-gen":
+            mode = params.get("mode", ["valid"])[0]
+            count = int_param(params, "n", 4, maximum=512)
+            size = int_param(params, "size", 32, maximum=8192)
+            split_at = int_param(params, "split", 0, maximum=65535)
+            pause_ms = int_param(params, "pause_ms", 0, maximum=1000)
+            body_size = int_param(params, "body_size", 2, maximum=65535)
+            trailer_size = int_param(params, "trailer_size", 0, maximum=8192)
+
+            def headers(prefix=b"X-Fuzz"):
+                out = []
+                for i in range(count):
+                    marker = f"{i:04d}:".encode("ascii")
+                    value = (marker + b"A" * size)[:size]
+                    out.append(prefix + f"-{i:04d}: ".encode("ascii") + value + b"\r\n")
+                return b"".join(out)
+
+            if mode == "split-status":
+                data = b"HTTP/1.1 20X Bad\r\nContent-Length: 0\r\n\r\n"
+            elif mode == "invalid-status":
+                data = b"HTTX/1.1 200 OK\r\nContent-Length: 0\r\n\r\n"
+            elif mode == "many-early":
+                data = (
+                    (b"HTTP/1.1 103 Early Hints\r\n" + headers(b"X-Early") + b"\r\n") * count
+                    + b"HTTP/1.1 200 OK\r\nContent-Length: 2\r\n\r\nok"
+                )
+            elif mode == "early-final":
+                data = (
+                    b"HTTP/1.1 103 Early Hints\r\n" + headers(b"X-Early") + b"\r\n"
+                    b"HTTP/1.1 200 OK\r\nContent-Length: 2\r\n" + headers(b"X-Final") + b"\r\nok"
+                )
+            elif mode == "chunk-ext":
+                data = (
+                    b"HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n"
+                    b"1;" + b"e" * size + b"\r\nx\r\n0\r\n\r\n"
+                )
+            elif mode == "chunk-overflow":
+                data = (
+                    b"HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n"
+                    b"10000000000000000\r\nx\r\n0\r\n\r\n"
+                )
+            elif mode == "trailers":
+                data = (
+                    b"HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\nTrailer: X-T\r\n\r\n"
+                    b"4\r\nBODY\r\n0\r\nX-T: " + b"T" * trailer_size + b"\r\n\r\n"
+                )
+            elif mode == "heavy-headers":
+                data = (
+                    b"HTTP/1.1 200 OK\r\nContent-Length: 2\r\n"
+                    + headers(b"X-Heavy") + b"\r\nok"
+                )
+            elif mode == "malformed-header":
+                data = (
+                    b"HTTP/1.1 200 OK\r\n"
+                    b"BrokenHeader\r\nX-Control: abc\x01def\r\nContent-Length: 2\r\n\r\nok"
+                )
+            elif mode == "truncated":
+                data = b"HTTP/1.1 200 OK\r\nContent-Length: 4096\r\n\r\n" + b"Z" * body_size
+            else:
+                data = b"HTTP/1.1 200 OK\r\nContent-Length: 2\r\n\r\nok"
+
+            if split_at and split_at < len(data):
+                self.wfile.write(data[:split_at])
+                self.wfile.flush()
+                time.sleep(pause_ms / 1000)
+                self.wfile.write(data[split_at:])
+            else:
+                self.wfile.write(data)
+
+            self.wfile.flush()
+            return
         if case == "many-headers":
             count = int_param(params, "n", 64, maximum=1024)
             size = int_param(params, "size", 64, maximum=8192)

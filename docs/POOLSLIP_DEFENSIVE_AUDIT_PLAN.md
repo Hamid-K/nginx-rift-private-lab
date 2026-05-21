@@ -50,6 +50,8 @@ Deferred until a bug is found:
 - [x] Add first targeted module probes for newly enabled default modules.
 - [x] Add first upstream parser fuzz/minimization harness.
 - [x] Add focused request-body/discard/chunked pipeline probe.
+- [x] Add source-guided request-sequence fuzzer for allocator/pool state.
+- [x] Add lab-backed upstream-response fuzzer for proxy parser state.
 - [ ] Update this plan with new hypotheses and completed tasks after each
   audit/test milestone.
 
@@ -119,9 +121,9 @@ Candidate surfaces:
 
 ### 3. Fuzzing And Minimization
 
-- [ ] Add a raw HTTP/1 request-sequence fuzzer for large-header/keepalive/
+- [x] Add a raw HTTP/1 request-sequence fuzzer for large-header/keepalive/
   pipelining transitions.
-- [ ] Add an upstream-response fuzzer for proxy status/header/trailer/early
+- [x] Add an upstream-response fuzzer for proxy status/header/trailer/early
   hints state machines.
 - [x] Add a targeted chunked request-body/discard probe for body parser to
   keepalive-pipeline transitions.
@@ -250,3 +252,57 @@ Candidate surfaces:
   source review clarified why: the local `release-1.31.0` tag already contains
   the `e->is_args = 0` fix. A vulnerable comparison build must use
   `2046b45aa^`, not `release-1.31.0`, if we want to replay that fixed bug.
+- 2026-05-21: Corrected the source-audit tree. The host checkout at
+  `../nginx-src` is not the same commit graph as the running audit image. The
+  ASAN container contains the intended `nginx/1.31.1` tree at
+  `eff110885412737aec9b953067b6a670bffdbfa0`, and that exact tree is now copied
+  to `/tmp/nginx-rift-nginx-src-1311` for local searches and diffs. The
+  `release-1.31.0..eff110885` source diff for compiled HTTP/core code is small:
+  version bump, a default-disabled HTTP/2 special-header length guard, a
+  default-disabled MP4 null-pointer guard, and mail cleanup/style changes. That
+  means the Poolslip/video bug, if present in the demo-like no-H2/no-MP4 build,
+  is probably not discoverable by a simple `1.31.0 -> 1.31.1` HTTP/core diff and
+  needs deeper state-machine probing of default modules.
+- 2026-05-21: Integrated sidecar audit feedback into concrete harnesses:
+  - `tools/poolslip_request_sequence_fuzzer.py` fuzzes large headers,
+    keepalive/pipelining, content-length mismatch, chunked discard/body paths,
+    malformed framing, upstream edge cases, rewrite edge cases, and CONNECT
+    traffic. It classifies only remote response/health signals, with optional
+    Docker log checks for local ASAN evidence.
+  - `tools/poolslip_upstream_response_fuzzer.py` drives proxy upstream parser
+    transcripts through a new lab backend mode, `case=raw-hex`, so we can test
+    split status lines, many `103 Early Hints`, heavy headers, malformed
+    headers, chunking, trailers, and truncation beyond the earlier fixed case
+    list.
+  Next milestone is live ASAN execution of both fuzzers against
+  `127.0.0.1:19341` after rebuilding the image with the updated backend.
+- 2026-05-21: Ran
+  `tools/poolslip_request_sequence_fuzzer.py --target 127.0.0.1:19341
+  --iterations 750 --seed 1347374924 --timeout 4 --container
+  nginx-poolslip-1311-amd64-asan --stop-on-suspicious` against the
+  `nginx/1.31.1` ASAN image. Result: `summary suspicious=0 iterations=750`,
+  `asan_log_bytes 0`, `asan_status clean`. The run covered large-header
+  keepalive/pipelining, many-large-header boundaries, content-length mismatch,
+  chunked discard/body paths, malformed framing, proxy upstream edge cases,
+  rewrite edge cases, and CONNECT/tunnel parser traffic. This is negative
+  evidence for the current allocator/connection-pool hypotheses, not a proof of
+  absence; next live pass is upstream transcript fuzzing with the rebuilt
+  backend.
+- 2026-05-21: First upstream-response fuzzer transport used raw response bytes
+  in the client query string and mostly hit client-side `414 Request-URI Too
+  Large`, so it was stopped and redesigned. The lab backend now supports a
+  compact `case=raw-gen` mode that generates large upstream transcripts
+  server-side from short query parameters; this keeps the client request within
+  header limits while still stressing the proxy parser.
+- 2026-05-21: Rebuilt the `nginx/1.31.1` ASAN image with `raw-gen` backend
+  support and ran
+  `tools/poolslip_upstream_response_fuzzer.py --target 127.0.0.1:19341
+  --iterations 750 --seed 3235920 --timeout 5 --container
+  nginx-poolslip-1311-amd64-asan --stop-on-suspicious`. Result:
+  `summary suspicious=0 iterations=750`, `asan_log_bytes 0`, `asan_status
+  clean`. Case mix covered chunk extensions, chunk-size overflow,
+  early-final `103,200` sequences, heavy upstream headers, invalid/split
+  status lines, malformed headers, many Early Hints, trailers, truncation, and
+  valid controls. This weakens the straightforward upstream parser,
+  Early-Hints metadata, trailer, and heavy-header disclosure hypotheses in the
+  current no-H2/no-MP4 ASAN build.
