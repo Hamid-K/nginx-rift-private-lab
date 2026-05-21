@@ -31,6 +31,7 @@ Files added:
 
 - `env/Dockerfile.h2-header`
 - `env/nginx-h2-header.conf`
+- `tools/poolslip_h2_upstream_probe.py`
 
 Shared backend support added to `env/server.py`:
 
@@ -39,6 +40,11 @@ Shared backend support added to `env/server.py`:
 
 The lab raises proxy buffers so a local backend can provide multi-megabyte
 special response headers to the HTTP/2 header filter.
+
+The same lab also exposes `/h2-upstream`, which uses `proxy_http_version 2`
+against a raw local HTTP/2 upstream on `127.0.0.1:19325`. This exercises
+`ngx_http_proxy_v2_module`, a separate parser-heavy surface compiled only in
+H2-enabled builds.
 
 ## Status
 
@@ -78,3 +84,20 @@ special response headers to the HTTP/2 header filter.
   `code=200`, no ASAN report in Docker logs, no worker crash, and no NGINX
   error-log finding. This confirms the source-level fixed bug is real but has
   not yet been turned into an ASAN-crashing proof in this lab.
+- 2026-05-21: Added a raw HTTP/2 upstream generator and
+  `tools/poolslip_h2_upstream_probe.py`. The upstream rotates through controlled
+  H2 frame sequences: valid headers, valid data, 103 then final, duplicate
+  status, missing status, split HEADERS/CONTINUATION, invalid HPACK, DATA before
+  HEADERS, large response header, malformed padding, RST after headers, and
+  GOAWAY after headers. Next step is live ASAN execution against the rebuilt H2
+  lab.
+- 2026-05-21: Ran
+  `tools/poolslip_h2_upstream_probe.py --target 127.0.0.1:19361 --iterations
+  120 --timeout 5 --container nginx-h2-header-1310-amd64-asan
+  --stop-on-suspicious` against the `release-1.31.0` H2 ASAN lab. Result:
+  `summary suspicious=0 iterations=120`, `asan_log_bytes 0`, `asan_status
+  clean`. The parser returned expected `200`, `502`, or empty-body close
+  outcomes, health remained up, and no sanitizer finding was produced. This is
+  negative evidence for the first `ngx_http_proxy_v2_module` frame-parser
+  hypotheses; it does not close deeper HPACK/dynamic-table or flow-control
+  state-space yet.

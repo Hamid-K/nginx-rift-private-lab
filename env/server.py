@@ -381,8 +381,159 @@ def serve_raw_upstream():
         rawd.serve_forever()
 
 
+H2_PREFACE = b"PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n"
+H2_MODES = (
+    "valid_headers_end",
+    "valid_data",
+    "early_then_final",
+    "duplicate_status",
+    "no_status",
+    "split_continuation",
+    "invalid_hpack",
+    "data_before_headers",
+    "large_header",
+    "padded_too_long",
+    "rst_after_headers",
+    "goaway_after_headers",
+)
+_h2_counter = 0
+_h2_lock = threading.Lock()
+
+
+def h2_next_mode():
+    global _h2_counter
+    with _h2_lock:
+        mode = H2_MODES[_h2_counter % len(H2_MODES)]
+        _h2_counter += 1
+    return mode
+
+
+def h2_frame(frame_type, flags, stream_id, payload=b""):
+    length = len(payload)
+    return (
+        bytes([(length >> 16) & 0xff, (length >> 8) & 0xff, length & 0xff, frame_type & 0xff, flags & 0xff])
+        + ((stream_id & 0x7fffffff).to_bytes(4, "big"))
+        + payload
+    )
+
+
+def hpack_int(value, prefix_bits, first_prefix):
+    limit = (1 << prefix_bits) - 1
+    if value < limit:
+        return bytes([first_prefix | value])
+
+    out = bytearray([first_prefix | limit])
+    value -= limit
+    while value >= 128:
+        out.append((value % 128) + 128)
+        value //= 128
+    out.append(value)
+    return bytes(out)
+
+
+def hpack_string(value):
+    return hpack_int(len(value), 7, 0x00) + value
+
+
+def hpack_status(value):
+    if value == b"200":
+        return b"\x88"
+    return hpack_int(8, 4, 0x00) + hpack_string(value)
+
+
+def hpack_literal(name, value):
+    return b"\x00" + hpack_string(name) + hpack_string(value)
+
+
+class H2UpstreamHandler(socketserver.BaseRequestHandler):
+    def handle(self):
+        self.request.settimeout(0.5)
+        chunks = []
+        try:
+            while sum(len(chunk) for chunk in chunks) < 65536:
+                chunk = self.request.recv(4096)
+                if not chunk:
+                    break
+                chunks.append(chunk)
+                if b"\x01" in chunk or b"\x00\x00\x04\x08" in b"".join(chunks):
+                    break
+        except socket.timeout:
+            pass
+
+        mode = h2_next_mode()
+        send = self.request.sendall
+        send(h2_frame(0x4, 0x0, 0))
+
+        if mode == "valid_headers_end":
+            send(h2_frame(0x1, 0x5, 1, hpack_status(b"200")))
+            return
+
+        if mode == "valid_data":
+            send(h2_frame(0x1, 0x4, 1, hpack_status(b"200")))
+            send(h2_frame(0x0, 0x1, 1, b"ok"))
+            return
+
+        if mode == "early_then_final":
+            send(h2_frame(0x1, 0x4, 1, hpack_status(b"103") + hpack_literal(b"link", b"</x>; rel=preload")))
+            send(h2_frame(0x1, 0x4, 1, hpack_status(b"200")))
+            send(h2_frame(0x0, 0x1, 1, b"ok"))
+            return
+
+        if mode == "duplicate_status":
+            send(h2_frame(0x1, 0x5, 1, hpack_status(b"200") + hpack_status(b"204")))
+            return
+
+        if mode == "no_status":
+            send(h2_frame(0x1, 0x5, 1, hpack_literal(b"x-test", b"missing-status")))
+            return
+
+        if mode == "split_continuation":
+            block = hpack_status(b"200") + hpack_literal(b"x-split", b"S" * 128)
+            send(h2_frame(0x1, 0x0, 1, block[:8]))
+            time.sleep(0.01)
+            send(h2_frame(0x9, 0x5, 1, block[8:]))
+            return
+
+        if mode == "invalid_hpack":
+            send(h2_frame(0x1, 0x5, 1, b"\xff\xff\xff"))
+            return
+
+        if mode == "data_before_headers":
+            send(h2_frame(0x0, 0x0, 1, b"bad"))
+            send(h2_frame(0x1, 0x5, 1, hpack_status(b"200")))
+            return
+
+        if mode == "large_header":
+            send(h2_frame(0x1, 0x5, 1, hpack_status(b"200") + hpack_literal(b"x-large", b"L" * 12000)))
+            return
+
+        if mode == "padded_too_long":
+            send(h2_frame(0x1, 0x0c, 1, b"\xff" + hpack_status(b"200")))
+            return
+
+        if mode == "rst_after_headers":
+            send(h2_frame(0x1, 0x4, 1, hpack_status(b"200")))
+            send(h2_frame(0x3, 0x0, 1, (0).to_bytes(4, "big")))
+            return
+
+        if mode == "goaway_after_headers":
+            send(h2_frame(0x1, 0x4, 1, hpack_status(b"200")))
+            send(h2_frame(0x7, 0x0, 0, (1).to_bytes(4, "big") + (0).to_bytes(4, "big")))
+            return
+
+        send(h2_frame(0x1, 0x5, 1, hpack_status(b"200")))
+
+
+def serve_h2_upstream():
+    socketserver.ThreadingTCPServer.allow_reuse_address = True
+    with socketserver.ThreadingTCPServer(("127.0.0.1", 19325), H2UpstreamHandler) as h2d:
+        print("Raw H2 upstream on :19325")
+        h2d.serve_forever()
+
+
 socketserver.ThreadingTCPServer.allow_reuse_address = True
 threading.Thread(target=serve_raw_upstream, daemon=True).start()
+threading.Thread(target=serve_h2_upstream, daemon=True).start()
 with socketserver.ThreadingTCPServer(("127.0.0.1", 19323), BackendHandler) as httpd:
     print("Backend on :19323")
     httpd.serve_forever()
