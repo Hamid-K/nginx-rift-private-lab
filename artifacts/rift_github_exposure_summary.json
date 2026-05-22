@@ -1,0 +1,23 @@
+{
+  "blocked_high_confidence_files": 1,
+  "blocker_counts_by_file": {
+    "internal": 1
+  },
+  "fetch_failures": {},
+  "file_level_candidate_files": 210,
+  "generated_at": "2026-05-22T23:00:40.657834+00:00",
+  "high_confidence_vulnerable_shape_files": 120,
+  "nginx_like_files": 3015,
+  "publicish_high_confidence_files": 119,
+  "search_stats": {
+    "capped_partitions": 0,
+    "dedup_items": 3737,
+    "queries": 185,
+    "result_items": 8913,
+    "search_errors": 0
+  },
+  "total_blocked_blocks": 1,
+  "total_high_confidence_blocks": 328,
+  "total_publicish_blocks": 327,
+  "unique_files_fetched": 3021
+}
