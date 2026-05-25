@@ -1,0 +1,1490 @@
+[
+  {
+    "case_id": "case_000001",
+    "status": "no_trigger",
+    "http_status": "HTTP/1.1 200 OK",
+    "container_exit": "running 0",
+    "elapsed_ms": 905,
+    "docker_name": "rift-exp-case_000001-j2l26ni0",
+    "evidence": [
+      "trigger returned HTTP/1.1 200 OK"
+    ]
+  },
+  {
+    "case_id": "case_000002",
+    "status": "no_trigger",
+    "http_status": "HTTP/1.1 200 OK",
+    "container_exit": "running 0",
+    "elapsed_ms": 859,
+    "docker_name": "rift-exp-case_000002-w2taszea",
+    "evidence": [
+      "trigger returned HTTP/1.1 200 OK"
+    ]
+  },
+  {
+    "case_id": "case_000003",
+    "status": "no_trigger",
+    "http_status": "HTTP/1.1 200 OK",
+    "container_exit": "running 0",
+    "elapsed_ms": 899,
+    "docker_name": "rift-exp-case_000003-2t4lv7vw",
+    "evidence": [
+      "trigger returned HTTP/1.1 200 OK"
+    ]
+  },
+  {
+    "case_id": "case_000004",
+    "status": "no_trigger",
+    "http_status": "HTTP/1.1 200 OK",
+    "container_exit": "running 0",
+    "elapsed_ms": 814,
+    "docker_name": "rift-exp-case_000004-qmock441",
+    "evidence": [
+      "trigger returned HTTP/1.1 200 OK"
+    ]
+  },
+  {
+    "case_id": "case_000005",
+    "status": "no_trigger",
+    "http_status": "HTTP/1.1 200 OK",
+    "container_exit": "running 0",
+    "elapsed_ms": 864,
+    "docker_name": "rift-exp-case_000005-189559u7",
+    "evidence": [
+      "trigger returned HTTP/1.1 200 OK"
+    ]
+  },
+  {
+    "case_id": "case_000006",
+    "status": "no_trigger",
+    "http_status": "HTTP/1.1 200 OK",
+    "container_exit": "running 0",
+    "elapsed_ms": 867,
+    "docker_name": "rift-exp-case_000006-gj5n390u",
+    "evidence": [
+      "trigger returned HTTP/1.1 200 OK"
+    ]
+  },
+  {
+    "case_id": "case_000007",
+    "status": "no_trigger",
+    "http_status": "HTTP/1.1 200 OK",
+    "container_exit": "running 0",
+    "elapsed_ms": 808,
+    "docker_name": "rift-exp-case_000007-ujwajmm6",
+    "evidence": [
+      "trigger returned HTTP/1.1 200 OK"
+    ]
+  },
+  {
+    "case_id": "case_000008",
+    "status": "no_trigger",
+    "http_status": "HTTP/1.1 200 OK",
+    "container_exit": "running 0",
+    "elapsed_ms": 831,
+    "docker_name": "rift-exp-case_000008-zhac0hwn",
+    "evidence": [
+      "trigger returned HTTP/1.1 200 OK"
+    ]
+  },
+  {
+    "case_id": "case_000009",
+    "status": "no_trigger",
+    "http_status": "HTTP/1.1 404 Not Found",
+    "container_exit": "running 0",
+    "elapsed_ms": 912,
+    "docker_name": "rift-exp-case_000009-2yiaz8ku",
+    "evidence": [
+      "trigger returned HTTP/1.1 404 Not Found"
+    ]
+  },
+  {
+    "case_id": "case_000010",
+    "status": "no_trigger",
+    "http_status": "HTTP/1.1 404 Not Found",
+    "container_exit": "running 0",
+    "elapsed_ms": 898,
+    "docker_name": "rift-exp-case_000010-k4y07p4u",
+    "evidence": [
+      "trigger returned HTTP/1.1 404 Not Found"
+    ]
+  },
+  {
+    "case_id": "case_000011",
+    "status": "no_trigger",
+    "http_status": "HTTP/1.1 200 OK",
+    "container_exit": "running 0",
+    "elapsed_ms": 1099,
+    "docker_name": "rift-exp-case_000011-0i2ujrt0",
+    "evidence": [
+      "trigger returned HTTP/1.1 200 OK"
+    ]
+  },
+  {
+    "case_id": "case_000012",
+    "status": "asan_hit",
+    "http_status": "no_response",
+    "container_exit": "exited 133",
+    "elapsed_ms": 1220,
+    "docker_name": "rift-exp-case_000012-txt35kcb",
+    "evidence": [
+      "AddressSanitizer output observed",
+      "heap-buffer-overflow observed",
+      "container exit/status=exited 133",
+      "trigger connection closed without HTTP response"
+    ]
+  },
+  {
+    "case_id": "case_000013",
+    "status": "no_trigger",
+    "http_status": "HTTP/1.1 404 Not Found",
+    "container_exit": "running 0",
+    "elapsed_ms": 987,
+    "docker_name": "rift-exp-case_000013-9lu5m5z6",
+    "evidence": [
+      "trigger returned HTTP/1.1 404 Not Found"
+    ]
+  },
+  {
+    "case_id": "case_000014",
+    "status": "no_trigger",
+    "http_status": "HTTP/1.1 404 Not Found",
+    "container_exit": "running 0",
+    "elapsed_ms": 930,
+    "docker_name": "rift-exp-case_000014-ubyu7mrt",
+    "evidence": [
+      "trigger returned HTTP/1.1 404 Not Found"
+    ]
+  },
+  {
+    "case_id": "case_000015",
+    "status": "no_trigger",
+    "http_status": "HTTP/1.1 301 Moved Permanently",
+    "container_exit": "running 0",
+    "elapsed_ms": 887,
+    "docker_name": "rift-exp-case_000015-pwq7oxhg",
+    "evidence": [
+      "trigger returned HTTP/1.1 301 Moved Permanently"
+    ]
+  },
+  {
+    "case_id": "case_000016",
+    "status": "asan_hit",
+    "http_status": "no_response",
+    "container_exit": "exited 133",
+    "elapsed_ms": 999,
+    "docker_name": "rift-exp-case_000016-ff9t5swf",
+    "evidence": [
+      "AddressSanitizer output observed",
+      "heap-buffer-overflow observed",
+      "container exit/status=exited 133",
+      "trigger connection closed without HTTP response"
+    ]
+  },
+  {
+    "case_id": "case_000017",
+    "status": "asan_hit",
+    "http_status": "no_response",
+    "container_exit": "exited 133",
+    "elapsed_ms": 999,
+    "docker_name": "rift-exp-case_000017-who9w61d",
+    "evidence": [
+      "AddressSanitizer output observed",
+      "heap-buffer-overflow observed",
+      "container exit/status=exited 133",
+      "trigger connection closed without HTTP response"
+    ]
+  },
+  {
+    "case_id": "case_000018",
+    "status": "asan_hit",
+    "http_status": "no_response",
+    "container_exit": "exited 133",
+    "elapsed_ms": 993,
+    "docker_name": "rift-exp-case_000018-adi6krmy",
+    "evidence": [
+      "AddressSanitizer output observed",
+      "heap-buffer-overflow observed",
+      "container exit/status=exited 133",
+      "trigger connection closed without HTTP response"
+    ]
+  },
+  {
+    "case_id": "case_000019",
+    "status": "asan_hit",
+    "http_status": "no_response",
+    "container_exit": "exited 133",
+    "elapsed_ms": 986,
+    "docker_name": "rift-exp-case_000019-3cdrqqr9",
+    "evidence": [
+      "AddressSanitizer output observed",
+      "heap-buffer-overflow observed",
+      "container exit/status=exited 133",
+      "trigger connection closed without HTTP response"
+    ]
+  },
+  {
+    "case_id": "case_000020",
+    "status": "asan_hit",
+    "http_status": "no_response",
+    "container_exit": "exited 133",
+    "elapsed_ms": 1086,
+    "docker_name": "rift-exp-case_000020-usu4vffu",
+    "evidence": [
+      "AddressSanitizer output observed",
+      "heap-buffer-overflow observed",
+      "container exit/status=exited 133",
+      "trigger connection closed without HTTP response"
+    ]
+  },
+  {
+    "case_id": "case_000021",
+    "status": "asan_hit",
+    "http_status": "no_response",
+    "container_exit": "exited 133",
+    "elapsed_ms": 990,
+    "docker_name": "rift-exp-case_000021-v1vm85w2",
+    "evidence": [
+      "AddressSanitizer output observed",
+      "heap-buffer-overflow observed",
+      "container exit/status=exited 133",
+      "trigger connection closed without HTTP response"
+    ]
+  },
+  {
+    "case_id": "case_000022",
+    "status": "asan_hit",
+    "http_status": "no_response",
+    "container_exit": "exited 133",
+    "elapsed_ms": 1016,
+    "docker_name": "rift-exp-case_000022-xomdefgt",
+    "evidence": [
+      "AddressSanitizer output observed",
+      "heap-buffer-overflow observed",
+      "container exit/status=exited 133",
+      "trigger connection closed without HTTP response"
+    ]
+  },
+  {
+    "case_id": "case_000023",
+    "status": "asan_hit",
+    "http_status": "no_response",
+    "container_exit": "exited 133",
+    "elapsed_ms": 1030,
+    "docker_name": "rift-exp-case_000023-t3jzef3y",
+    "evidence": [
+      "AddressSanitizer output observed",
+      "heap-buffer-overflow observed",
+      "container exit/status=exited 133",
+      "trigger connection closed without HTTP response"
+    ]
+  },
+  {
+    "case_id": "case_000024",
+    "status": "asan_hit",
+    "http_status": "no_response",
+    "container_exit": "exited 133",
+    "elapsed_ms": 1087,
+    "docker_name": "rift-exp-case_000024-4nm4no4g",
+    "evidence": [
+      "AddressSanitizer output observed",
+      "heap-buffer-overflow observed",
+      "container exit/status=exited 133",
+      "trigger connection closed without HTTP response"
+    ]
+  },
+  {
+    "case_id": "case_000025",
+    "status": "asan_hit",
+    "http_status": "no_response",
+    "container_exit": "exited 133",
+    "elapsed_ms": 1074,
+    "docker_name": "rift-exp-case_000025-f5vd59z7",
+    "evidence": [
+      "AddressSanitizer output observed",
+      "heap-buffer-overflow observed",
+      "container exit/status=exited 133",
+      "trigger connection closed without HTTP response"
+    ]
+  },
+  {
+    "case_id": "case_000026",
+    "status": "no_trigger",
+    "http_status": "HTTP/1.1 404 Not Found",
+    "container_exit": "running 0",
+    "elapsed_ms": 949,
+    "docker_name": "rift-exp-case_000026-a7khb6hh",
+    "evidence": [
+      "trigger returned HTTP/1.1 404 Not Found"
+    ]
+  },
+  {
+    "case_id": "case_000027",
+    "status": "asan_hit",
+    "http_status": "no_response",
+    "container_exit": "exited 133",
+    "elapsed_ms": 1109,
+    "docker_name": "rift-exp-case_000027-l4o2gu65",
+    "evidence": [
+      "AddressSanitizer output observed",
+      "heap-buffer-overflow observed",
+      "container exit/status=exited 133",
+      "trigger connection closed without HTTP response"
+    ]
+  },
+  {
+    "case_id": "case_000028",
+    "status": "asan_hit",
+    "http_status": "no_response",
+    "container_exit": "exited 133",
+    "elapsed_ms": 1198,
+    "docker_name": "rift-exp-case_000028-1typbfbo",
+    "evidence": [
+      "AddressSanitizer output observed",
+      "heap-buffer-overflow observed",
+      "container exit/status=exited 133",
+      "trigger connection closed without HTTP response"
+    ]
+  },
+  {
+    "case_id": "case_000029",
+    "status": "no_trigger",
+    "http_status": "HTTP/1.1 301 Moved Permanently",
+    "container_exit": "running 0",
+    "elapsed_ms": 1015,
+    "docker_name": "rift-exp-case_000029-r9z5m43i",
+    "evidence": [
+      "trigger returned HTTP/1.1 301 Moved Permanently"
+    ]
+  },
+  {
+    "case_id": "case_000030",
+    "status": "no_trigger",
+    "http_status": "HTTP/1.1 301 Moved Permanently",
+    "container_exit": "running 0",
+    "elapsed_ms": 989,
+    "docker_name": "rift-exp-case_000030-lhcwruur",
+    "evidence": [
+      "trigger returned HTTP/1.1 301 Moved Permanently"
+    ]
+  },
+  {
+    "case_id": "case_000031",
+    "status": "no_trigger",
+    "http_status": "HTTP/1.1 301 Moved Permanently",
+    "container_exit": "running 0",
+    "elapsed_ms": 867,
+    "docker_name": "rift-exp-case_000031-6x68jfmg",
+    "evidence": [
+      "trigger returned HTTP/1.1 301 Moved Permanently"
+    ]
+  },
+  {
+    "case_id": "case_000032",
+    "status": "no_trigger",
+    "http_status": "HTTP/1.1 200 OK",
+    "container_exit": "running 0",
+    "elapsed_ms": 836,
+    "docker_name": "rift-exp-case_000032-4g99eo1p",
+    "evidence": [
+      "trigger returned HTTP/1.1 200 OK"
+    ]
+  },
+  {
+    "case_id": "case_000033",
+    "status": "no_trigger",
+    "http_status": "HTTP/1.1 301 Moved Permanently",
+    "container_exit": "running 0",
+    "elapsed_ms": 852,
+    "docker_name": "rift-exp-case_000033-ha0hv83s",
+    "evidence": [
+      "trigger returned HTTP/1.1 301 Moved Permanently"
+    ]
+  },
+  {
+    "case_id": "case_000034",
+    "status": "no_trigger",
+    "http_status": "HTTP/1.1 301 Moved Permanently",
+    "container_exit": "running 0",
+    "elapsed_ms": 864,
+    "docker_name": "rift-exp-case_000034-8sswi68w",
+    "evidence": [
+      "trigger returned HTTP/1.1 301 Moved Permanently"
+    ]
+  },
+  {
+    "case_id": "case_000035",
+    "status": "no_trigger",
+    "http_status": "HTTP/1.1 301 Moved Permanently",
+    "container_exit": "running 0",
+    "elapsed_ms": 848,
+    "docker_name": "rift-exp-case_000035-kogqh3hd",
+    "evidence": [
+      "trigger returned HTTP/1.1 301 Moved Permanently"
+    ]
+  },
+  {
+    "case_id": "case_000036",
+    "status": "no_trigger",
+    "http_status": "HTTP/1.1 200 OK",
+    "container_exit": "running 0",
+    "elapsed_ms": 936,
+    "docker_name": "rift-exp-case_000036-c9u0uqgr",
+    "evidence": [
+      "trigger returned HTTP/1.1 200 OK"
+    ]
+  },
+  {
+    "case_id": "case_000037",
+    "status": "no_trigger",
+    "http_status": "HTTP/1.1 200 OK",
+    "container_exit": "running 0",
+    "elapsed_ms": 883,
+    "docker_name": "rift-exp-case_000037-2f98otl1",
+    "evidence": [
+      "trigger returned HTTP/1.1 200 OK"
+    ]
+  },
+  {
+    "case_id": "case_000038",
+    "status": "no_trigger",
+    "http_status": "HTTP/1.1 200 OK",
+    "container_exit": "running 0",
+    "elapsed_ms": 840,
+    "docker_name": "rift-exp-case_000038-mb3m50mp",
+    "evidence": [
+      "trigger returned HTTP/1.1 200 OK"
+    ]
+  },
+  {
+    "case_id": "case_000039",
+    "status": "no_trigger",
+    "http_status": "HTTP/1.1 200 OK",
+    "container_exit": "running 0",
+    "elapsed_ms": 843,
+    "docker_name": "rift-exp-case_000039-y95icyz6",
+    "evidence": [
+      "trigger returned HTTP/1.1 200 OK"
+    ]
+  },
+  {
+    "case_id": "case_000040",
+    "status": "no_trigger",
+    "http_status": "HTTP/1.1 200 OK",
+    "container_exit": "running 0",
+    "elapsed_ms": 833,
+    "docker_name": "rift-exp-case_000040-y22wdh1c",
+    "evidence": [
+      "trigger returned HTTP/1.1 200 OK"
+    ]
+  },
+  {
+    "case_id": "case_000041",
+    "status": "no_trigger",
+    "http_status": "HTTP/1.1 200 OK",
+    "container_exit": "running 0",
+    "elapsed_ms": 828,
+    "docker_name": "rift-exp-case_000041-6ddksdq4",
+    "evidence": [
+      "trigger returned HTTP/1.1 200 OK"
+    ]
+  },
+  {
+    "case_id": "case_000042",
+    "status": "no_trigger",
+    "http_status": "HTTP/1.1 200 OK",
+    "container_exit": "running 0",
+    "elapsed_ms": 956,
+    "docker_name": "rift-exp-case_000042-ycv6wc5a",
+    "evidence": [
+      "trigger returned HTTP/1.1 200 OK"
+    ]
+  },
+  {
+    "case_id": "case_000043",
+    "status": "no_trigger",
+    "http_status": "HTTP/1.1 301 Moved Permanently",
+    "container_exit": "running 0",
+    "elapsed_ms": 945,
+    "docker_name": "rift-exp-case_000043-wvne12p2",
+    "evidence": [
+      "trigger returned HTTP/1.1 301 Moved Permanently"
+    ]
+  },
+  {
+    "case_id": "case_000044",
+    "status": "no_trigger",
+    "http_status": "HTTP/1.1 301 Moved Permanently",
+    "container_exit": "running 0",
+    "elapsed_ms": 936,
+    "docker_name": "rift-exp-case_000044-1s9me0yu",
+    "evidence": [
+      "trigger returned HTTP/1.1 301 Moved Permanently"
+    ]
+  },
+  {
+    "case_id": "case_000045",
+    "status": "no_trigger",
+    "http_status": "HTTP/1.1 301 Moved Permanently",
+    "container_exit": "running 0",
+    "elapsed_ms": 889,
+    "docker_name": "rift-exp-case_000045-rrraw98w",
+    "evidence": [
+      "trigger returned HTTP/1.1 301 Moved Permanently"
+    ]
+  },
+  {
+    "case_id": "case_000046",
+    "status": "asan_hit",
+    "http_status": "no_response",
+    "container_exit": "exited 133",
+    "elapsed_ms": 994,
+    "docker_name": "rift-exp-case_000046-nbbbgclw",
+    "evidence": [
+      "AddressSanitizer output observed",
+      "heap-buffer-overflow observed",
+      "container exit/status=exited 133",
+      "trigger connection closed without HTTP response"
+    ]
+  },
+  {
+    "case_id": "case_000047",
+    "status": "no_trigger",
+    "http_status": "HTTP/1.1 301 Moved Permanently",
+    "container_exit": "running 0",
+    "elapsed_ms": 785,
+    "docker_name": "rift-exp-case_000047-20ze6wtx",
+    "evidence": [
+      "trigger returned HTTP/1.1 301 Moved Permanently"
+    ]
+  },
+  {
+    "case_id": "case_000048",
+    "status": "no_trigger",
+    "http_status": "HTTP/1.1 301 Moved Permanently",
+    "container_exit": "running 0",
+    "elapsed_ms": 807,
+    "docker_name": "rift-exp-case_000048-ye3vxy1k",
+    "evidence": [
+      "trigger returned HTTP/1.1 301 Moved Permanently"
+    ]
+  },
+  {
+    "case_id": "case_000049",
+    "status": "no_trigger",
+    "http_status": "HTTP/1.1 301 Moved Permanently",
+    "container_exit": "running 0",
+    "elapsed_ms": 803,
+    "docker_name": "rift-exp-case_000049-i27urx2c",
+    "evidence": [
+      "trigger returned HTTP/1.1 301 Moved Permanently"
+    ]
+  },
+  {
+    "case_id": "case_000050",
+    "status": "no_trigger",
+    "http_status": "HTTP/1.1 301 Moved Permanently",
+    "container_exit": "running 0",
+    "elapsed_ms": 945,
+    "docker_name": "rift-exp-case_000050-tq6y70n4",
+    "evidence": [
+      "trigger returned HTTP/1.1 301 Moved Permanently"
+    ]
+  },
+  {
+    "case_id": "case_000051",
+    "status": "asan_hit",
+    "http_status": "no_response",
+    "container_exit": "exited 133",
+    "elapsed_ms": 1038,
+    "docker_name": "rift-exp-case_000051-4fueye8u",
+    "evidence": [
+      "AddressSanitizer output observed",
+      "heap-buffer-overflow observed",
+      "container exit/status=exited 133",
+      "trigger connection closed without HTTP response"
+    ]
+  },
+  {
+    "case_id": "case_000052",
+    "status": "asan_hit",
+    "http_status": "no_response",
+    "container_exit": "exited 133",
+    "elapsed_ms": 1080,
+    "docker_name": "rift-exp-case_000052-gslf28wv",
+    "evidence": [
+      "AddressSanitizer output observed",
+      "heap-buffer-overflow observed",
+      "container exit/status=exited 133",
+      "trigger connection closed without HTTP response"
+    ]
+  },
+  {
+    "case_id": "case_000053",
+    "status": "asan_hit",
+    "http_status": "no_response",
+    "container_exit": "exited 133",
+    "elapsed_ms": 1094,
+    "docker_name": "rift-exp-case_000053-ai9zn25b",
+    "evidence": [
+      "AddressSanitizer output observed",
+      "heap-buffer-overflow observed",
+      "container exit/status=exited 133",
+      "trigger connection closed without HTTP response"
+    ]
+  },
+  {
+    "case_id": "case_000054",
+    "status": "no_trigger",
+    "http_status": "HTTP/1.1 301 Moved Permanently",
+    "container_exit": "running 0",
+    "elapsed_ms": 874,
+    "docker_name": "rift-exp-case_000054-9ncx4vzk",
+    "evidence": [
+      "trigger returned HTTP/1.1 301 Moved Permanently"
+    ]
+  },
+  {
+    "case_id": "case_000055",
+    "status": "no_trigger",
+    "http_status": "HTTP/1.1 301 Moved Permanently",
+    "container_exit": "running 0",
+    "elapsed_ms": 943,
+    "docker_name": "rift-exp-case_000055-x2chugaq",
+    "evidence": [
+      "trigger returned HTTP/1.1 301 Moved Permanently"
+    ]
+  },
+  {
+    "case_id": "case_000056",
+    "status": "no_trigger",
+    "http_status": "HTTP/1.1 302 Moved Temporarily",
+    "container_exit": "running 0",
+    "elapsed_ms": 921,
+    "docker_name": "rift-exp-case_000056-8bmi9pv0",
+    "evidence": [
+      "trigger returned HTTP/1.1 302 Moved Temporarily"
+    ]
+  },
+  {
+    "case_id": "case_000057",
+    "status": "no_trigger",
+    "http_status": "HTTP/1.1 302 Moved Temporarily",
+    "container_exit": "running 0",
+    "elapsed_ms": 941,
+    "docker_name": "rift-exp-case_000057-7072rwvu",
+    "evidence": [
+      "trigger returned HTTP/1.1 302 Moved Temporarily"
+    ]
+  },
+  {
+    "case_id": "case_000058",
+    "status": "no_trigger",
+    "http_status": "HTTP/1.1 301 Moved Permanently",
+    "container_exit": "running 0",
+    "elapsed_ms": 916,
+    "docker_name": "rift-exp-case_000058-7j5giau0",
+    "evidence": [
+      "trigger returned HTTP/1.1 301 Moved Permanently"
+    ]
+  },
+  {
+    "case_id": "case_000059",
+    "status": "no_trigger",
+    "http_status": "HTTP/1.1 404 Not Found",
+    "container_exit": "running 0",
+    "elapsed_ms": 930,
+    "docker_name": "rift-exp-case_000059-p40jxrk3",
+    "evidence": [
+      "trigger returned HTTP/1.1 404 Not Found"
+    ]
+  },
+  {
+    "case_id": "case_000060",
+    "status": "no_trigger",
+    "http_status": "HTTP/1.1 404 Not Found",
+    "container_exit": "running 0",
+    "elapsed_ms": 767,
+    "docker_name": "rift-exp-case_000060-nrdm57n1",
+    "evidence": [
+      "trigger returned HTTP/1.1 404 Not Found"
+    ]
+  },
+  {
+    "case_id": "case_000061",
+    "status": "no_trigger",
+    "http_status": "HTTP/1.1 404 Not Found",
+    "container_exit": "running 0",
+    "elapsed_ms": 698,
+    "docker_name": "rift-exp-case_000061-uiye24i8",
+    "evidence": [
+      "trigger returned HTTP/1.1 404 Not Found"
+    ]
+  },
+  {
+    "case_id": "case_000062",
+    "status": "no_trigger",
+    "http_status": "HTTP/1.1 404 Not Found",
+    "container_exit": "running 0",
+    "elapsed_ms": 942,
+    "docker_name": "rift-exp-case_000062-lrasz05h",
+    "evidence": [
+      "trigger returned HTTP/1.1 404 Not Found"
+    ]
+  },
+  {
+    "case_id": "case_000063",
+    "status": "no_trigger",
+    "http_status": "HTTP/1.1 404 Not Found",
+    "container_exit": "running 0",
+    "elapsed_ms": 1004,
+    "docker_name": "rift-exp-case_000063-npm7ylcq",
+    "evidence": [
+      "trigger returned HTTP/1.1 404 Not Found"
+    ]
+  },
+  {
+    "case_id": "case_000064",
+    "status": "no_trigger",
+    "http_status": "HTTP/1.1 404 Not Found",
+    "container_exit": "running 0",
+    "elapsed_ms": 998,
+    "docker_name": "rift-exp-case_000064-mzazyv60",
+    "evidence": [
+      "trigger returned HTTP/1.1 404 Not Found"
+    ]
+  },
+  {
+    "case_id": "case_000065",
+    "status": "no_trigger",
+    "http_status": "HTTP/1.1 404 Not Found",
+    "container_exit": "running 0",
+    "elapsed_ms": 958,
+    "docker_name": "rift-exp-case_000065-xaub9vv1",
+    "evidence": [
+      "trigger returned HTTP/1.1 404 Not Found"
+    ]
+  },
+  {
+    "case_id": "case_000066",
+    "status": "no_trigger",
+    "http_status": "HTTP/1.1 404 Not Found",
+    "container_exit": "running 0",
+    "elapsed_ms": 942,
+    "docker_name": "rift-exp-case_000066-bzhnikj3",
+    "evidence": [
+      "trigger returned HTTP/1.1 404 Not Found"
+    ]
+  },
+  {
+    "case_id": "case_000067",
+    "status": "no_trigger",
+    "http_status": "HTTP/1.1 404 Not Found",
+    "container_exit": "running 0",
+    "elapsed_ms": 866,
+    "docker_name": "rift-exp-case_000067-4q4z8rku",
+    "evidence": [
+      "trigger returned HTTP/1.1 404 Not Found"
+    ]
+  },
+  {
+    "case_id": "case_000068",
+    "status": "no_trigger",
+    "http_status": "HTTP/1.1 404 Not Found",
+    "container_exit": "running 0",
+    "elapsed_ms": 852,
+    "docker_name": "rift-exp-case_000068-8g1xvzc5",
+    "evidence": [
+      "trigger returned HTTP/1.1 404 Not Found"
+    ]
+  },
+  {
+    "case_id": "case_000069",
+    "status": "no_trigger",
+    "http_status": "HTTP/1.1 404 Not Found",
+    "container_exit": "running 0",
+    "elapsed_ms": 801,
+    "docker_name": "rift-exp-case_000069-7djbuf49",
+    "evidence": [
+      "trigger returned HTTP/1.1 404 Not Found"
+    ]
+  },
+  {
+    "case_id": "case_000070",
+    "status": "no_trigger",
+    "http_status": "HTTP/1.1 404 Not Found",
+    "container_exit": "running 0",
+    "elapsed_ms": 799,
+    "docker_name": "rift-exp-case_000070-u0b6quv0",
+    "evidence": [
+      "trigger returned HTTP/1.1 404 Not Found"
+    ]
+  },
+  {
+    "case_id": "case_000071",
+    "status": "no_trigger",
+    "http_status": "HTTP/1.1 302 Moved Temporarily",
+    "container_exit": "running 0",
+    "elapsed_ms": 770,
+    "docker_name": "rift-exp-case_000071-7pak7oha",
+    "evidence": [
+      "trigger returned HTTP/1.1 302 Moved Temporarily"
+    ]
+  },
+  {
+    "case_id": "case_000072",
+    "status": "no_trigger",
+    "http_status": "HTTP/1.1 200 OK",
+    "container_exit": "running 0",
+    "elapsed_ms": 1025,
+    "docker_name": "rift-exp-case_000072-eo4rp0l2",
+    "evidence": [
+      "trigger returned HTTP/1.1 200 OK"
+    ]
+  },
+  {
+    "case_id": "case_000073",
+    "status": "no_trigger",
+    "http_status": "HTTP/1.1 200 OK",
+    "container_exit": "running 0",
+    "elapsed_ms": 1103,
+    "docker_name": "rift-exp-case_000073-t8ecz330",
+    "evidence": [
+      "trigger returned HTTP/1.1 200 OK"
+    ]
+  },
+  {
+    "case_id": "case_000074",
+    "status": "no_trigger",
+    "http_status": "HTTP/1.1 404 Not Found",
+    "container_exit": "running 0",
+    "elapsed_ms": 1046,
+    "docker_name": "rift-exp-case_000074-6ntarufx",
+    "evidence": [
+      "trigger returned HTTP/1.1 404 Not Found"
+    ]
+  },
+  {
+    "case_id": "case_000075",
+    "status": "no_trigger",
+    "http_status": "HTTP/1.1 404 Not Found",
+    "container_exit": "running 0",
+    "elapsed_ms": 1012,
+    "docker_name": "rift-exp-case_000075-ayxgyq6n",
+    "evidence": [
+      "trigger returned HTTP/1.1 404 Not Found"
+    ]
+  },
+  {
+    "case_id": "case_000076",
+    "status": "no_trigger",
+    "http_status": "HTTP/1.1 404 Not Found",
+    "container_exit": "running 0",
+    "elapsed_ms": 944,
+    "docker_name": "rift-exp-case_000076-yfty64sx",
+    "evidence": [
+      "trigger returned HTTP/1.1 404 Not Found"
+    ]
+  },
+  {
+    "case_id": "case_000077",
+    "status": "no_trigger",
+    "http_status": "HTTP/1.1 404 Not Found",
+    "container_exit": "running 0",
+    "elapsed_ms": 913,
+    "docker_name": "rift-exp-case_000077-bhpo4qa7",
+    "evidence": [
+      "trigger returned HTTP/1.1 404 Not Found"
+    ]
+  },
+  {
+    "case_id": "case_000078",
+    "status": "no_trigger",
+    "http_status": "HTTP/1.1 404 Not Found",
+    "container_exit": "running 0",
+    "elapsed_ms": 843,
+    "docker_name": "rift-exp-case_000078-hi83rn9n",
+    "evidence": [
+      "trigger returned HTTP/1.1 404 Not Found"
+    ]
+  },
+  {
+    "case_id": "case_000079",
+    "status": "no_trigger",
+    "http_status": "HTTP/1.1 404 Not Found",
+    "container_exit": "running 0",
+    "elapsed_ms": 832,
+    "docker_name": "rift-exp-case_000079-e2qy8sfd",
+    "evidence": [
+      "trigger returned HTTP/1.1 404 Not Found"
+    ]
+  },
+  {
+    "case_id": "case_000080",
+    "status": "no_trigger",
+    "http_status": "HTTP/1.1 404 Not Found",
+    "container_exit": "running 0",
+    "elapsed_ms": 791,
+    "docker_name": "rift-exp-case_000080-xlzf9ru4",
+    "evidence": [
+      "trigger returned HTTP/1.1 404 Not Found"
+    ]
+  },
+  {
+    "case_id": "case_000081",
+    "status": "no_trigger",
+    "http_status": "HTTP/1.1 404 Not Found",
+    "container_exit": "running 0",
+    "elapsed_ms": 773,
+    "docker_name": "rift-exp-case_000081-4j00vwph",
+    "evidence": [
+      "trigger returned HTTP/1.1 404 Not Found"
+    ]
+  },
+  {
+    "case_id": "case_000082",
+    "status": "no_trigger",
+    "http_status": "HTTP/1.1 404 Not Found",
+    "container_exit": "running 0",
+    "elapsed_ms": 875,
+    "docker_name": "rift-exp-case_000082-ae87pdra",
+    "evidence": [
+      "trigger returned HTTP/1.1 404 Not Found"
+    ]
+  },
+  {
+    "case_id": "case_000083",
+    "status": "no_trigger",
+    "http_status": "HTTP/1.1 404 Not Found",
+    "container_exit": "running 0",
+    "elapsed_ms": 1216,
+    "docker_name": "rift-exp-case_000083-x9n8yian",
+    "evidence": [
+      "trigger returned HTTP/1.1 404 Not Found"
+    ]
+  },
+  {
+    "case_id": "case_000084",
+    "status": "no_trigger",
+    "http_status": "HTTP/1.1 404 Not Found",
+    "container_exit": "running 0",
+    "elapsed_ms": 1114,
+    "docker_name": "rift-exp-case_000084-hy5a47f0",
+    "evidence": [
+      "trigger returned HTTP/1.1 404 Not Found"
+    ]
+  },
+  {
+    "case_id": "case_000085",
+    "status": "no_trigger",
+    "http_status": "HTTP/1.1 404 Not Found",
+    "container_exit": "running 0",
+    "elapsed_ms": 1040,
+    "docker_name": "rift-exp-case_000085-o9q2npxv",
+    "evidence": [
+      "trigger returned HTTP/1.1 404 Not Found"
+    ]
+  },
+  {
+    "case_id": "case_000086",
+    "status": "no_trigger",
+    "http_status": "HTTP/1.1 404 Not Found",
+    "container_exit": "running 0",
+    "elapsed_ms": 994,
+    "docker_name": "rift-exp-case_000086-5ovjjjjl",
+    "evidence": [
+      "trigger returned HTTP/1.1 404 Not Found"
+    ]
+  },
+  {
+    "case_id": "case_000087",
+    "status": "no_trigger",
+    "http_status": "HTTP/1.1 404 Not Found",
+    "container_exit": "running 0",
+    "elapsed_ms": 889,
+    "docker_name": "rift-exp-case_000087-173jie3n",
+    "evidence": [
+      "trigger returned HTTP/1.1 404 Not Found"
+    ]
+  },
+  {
+    "case_id": "case_000088",
+    "status": "no_trigger",
+    "http_status": "HTTP/1.1 404 Not Found",
+    "container_exit": "running 0",
+    "elapsed_ms": 902,
+    "docker_name": "rift-exp-case_000088-7h3gylqg",
+    "evidence": [
+      "trigger returned HTTP/1.1 404 Not Found"
+    ]
+  },
+  {
+    "case_id": "case_000089",
+    "status": "no_trigger",
+    "http_status": "HTTP/1.1 404 Not Found",
+    "container_exit": "running 0",
+    "elapsed_ms": 832,
+    "docker_name": "rift-exp-case_000089-3x3twy8k",
+    "evidence": [
+      "trigger returned HTTP/1.1 404 Not Found"
+    ]
+  },
+  {
+    "case_id": "case_000090",
+    "status": "no_trigger",
+    "http_status": "HTTP/1.1 404 Not Found",
+    "container_exit": "running 0",
+    "elapsed_ms": 804,
+    "docker_name": "rift-exp-case_000090-29dggvk1",
+    "evidence": [
+      "trigger returned HTTP/1.1 404 Not Found"
+    ]
+  },
+  {
+    "case_id": "case_000091",
+    "status": "no_trigger",
+    "http_status": "HTTP/1.1 301 Moved Permanently",
+    "container_exit": "running 0",
+    "elapsed_ms": 791,
+    "docker_name": "rift-exp-case_000091-6fstch67",
+    "evidence": [
+      "trigger returned HTTP/1.1 301 Moved Permanently"
+    ]
+  },
+  {
+    "case_id": "case_000092",
+    "status": "no_trigger",
+    "http_status": "HTTP/1.1 301 Moved Permanently",
+    "container_exit": "running 0",
+    "elapsed_ms": 754,
+    "docker_name": "rift-exp-case_000092-g647yprp",
+    "evidence": [
+      "trigger returned HTTP/1.1 301 Moved Permanently"
+    ]
+  },
+  {
+    "case_id": "case_000093",
+    "status": "no_trigger",
+    "http_status": "HTTP/1.1 301 Moved Permanently",
+    "container_exit": "running 0",
+    "elapsed_ms": 1201,
+    "docker_name": "rift-exp-case_000093-rq3d9qr9",
+    "evidence": [
+      "trigger returned HTTP/1.1 301 Moved Permanently"
+    ]
+  },
+  {
+    "case_id": "case_000094",
+    "status": "no_trigger",
+    "http_status": "HTTP/1.1 301 Moved Permanently",
+    "container_exit": "running 0",
+    "elapsed_ms": 1129,
+    "docker_name": "rift-exp-case_000094-3lucy6gd",
+    "evidence": [
+      "trigger returned HTTP/1.1 301 Moved Permanently"
+    ]
+  },
+  {
+    "case_id": "case_000095",
+    "status": "no_trigger",
+    "http_status": "HTTP/1.1 301 Moved Permanently",
+    "container_exit": "running 0",
+    "elapsed_ms": 1106,
+    "docker_name": "rift-exp-case_000095-aj7xgxg7",
+    "evidence": [
+      "trigger returned HTTP/1.1 301 Moved Permanently"
+    ]
+  },
+  {
+    "case_id": "case_000096",
+    "status": "no_trigger",
+    "http_status": "HTTP/1.1 301 Moved Permanently",
+    "container_exit": "running 0",
+    "elapsed_ms": 1002,
+    "docker_name": "rift-exp-case_000096-w4drgl35",
+    "evidence": [
+      "trigger returned HTTP/1.1 301 Moved Permanently"
+    ]
+  },
+  {
+    "case_id": "case_000097",
+    "status": "no_trigger",
+    "http_status": "HTTP/1.1 301 Moved Permanently",
+    "container_exit": "running 0",
+    "elapsed_ms": 1009,
+    "docker_name": "rift-exp-case_000097-d2fuzkq4",
+    "evidence": [
+      "trigger returned HTTP/1.1 301 Moved Permanently"
+    ]
+  },
+  {
+    "case_id": "case_000098",
+    "status": "no_trigger",
+    "http_status": "HTTP/1.1 301 Moved Permanently",
+    "container_exit": "running 0",
+    "elapsed_ms": 903,
+    "docker_name": "rift-exp-case_000098-sntogz4k",
+    "evidence": [
+      "trigger returned HTTP/1.1 301 Moved Permanently"
+    ]
+  },
+  {
+    "case_id": "case_000099",
+    "status": "no_trigger",
+    "http_status": "HTTP/1.1 200 OK",
+    "container_exit": "running 0",
+    "elapsed_ms": 905,
+    "docker_name": "rift-exp-case_000099-rx9ixi2f",
+    "evidence": [
+      "trigger returned HTTP/1.1 200 OK"
+    ]
+  },
+  {
+    "case_id": "case_000100",
+    "status": "no_trigger",
+    "http_status": "HTTP/1.1 200 OK",
+    "container_exit": "running 0",
+    "elapsed_ms": 880,
+    "docker_name": "rift-exp-case_000100-a9x7h73w",
+    "evidence": [
+      "trigger returned HTTP/1.1 200 OK"
+    ]
+  },
+  {
+    "case_id": "case_000101",
+    "status": "no_trigger",
+    "http_status": "HTTP/1.1 200 OK",
+    "container_exit": "running 0",
+    "elapsed_ms": 897,
+    "docker_name": "rift-exp-case_000101-b9u79vnd",
+    "evidence": [
+      "trigger returned HTTP/1.1 200 OK"
+    ]
+  },
+  {
+    "case_id": "case_000102",
+    "status": "no_trigger",
+    "http_status": "HTTP/1.1 200 OK",
+    "container_exit": "running 0",
+    "elapsed_ms": 836,
+    "docker_name": "rift-exp-case_000102-1ctdymsx",
+    "evidence": [
+      "trigger returned HTTP/1.1 200 OK"
+    ]
+  },
+  {
+    "case_id": "case_000103",
+    "status": "no_trigger",
+    "http_status": "HTTP/1.1 200 OK",
+    "container_exit": "running 0",
+    "elapsed_ms": 1012,
+    "docker_name": "rift-exp-case_000103-wbogc2iw",
+    "evidence": [
+      "trigger returned HTTP/1.1 200 OK"
+    ]
+  },
+  {
+    "case_id": "case_000104",
+    "status": "no_trigger",
+    "http_status": "HTTP/1.1 404 Not Found",
+    "container_exit": "running 0",
+    "elapsed_ms": 1069,
+    "docker_name": "rift-exp-case_000104-gtu974in",
+    "evidence": [
+      "trigger returned HTTP/1.1 404 Not Found"
+    ]
+  },
+  {
+    "case_id": "case_000105",
+    "status": "no_trigger",
+    "http_status": "HTTP/1.1 404 Not Found",
+    "container_exit": "running 0",
+    "elapsed_ms": 1021,
+    "docker_name": "rift-exp-case_000105-w2jgzs6u",
+    "evidence": [
+      "trigger returned HTTP/1.1 404 Not Found"
+    ]
+  },
+  {
+    "case_id": "case_000106",
+    "status": "no_trigger",
+    "http_status": "HTTP/1.1 404 Not Found",
+    "container_exit": "running 0",
+    "elapsed_ms": 972,
+    "docker_name": "rift-exp-case_000106-h9w0bm5j",
+    "evidence": [
+      "trigger returned HTTP/1.1 404 Not Found"
+    ]
+  },
+  {
+    "case_id": "case_000107",
+    "status": "no_trigger",
+    "http_status": "HTTP/1.1 404 Not Found",
+    "container_exit": "running 0",
+    "elapsed_ms": 935,
+    "docker_name": "rift-exp-case_000107-vtd9dskz",
+    "evidence": [
+      "trigger returned HTTP/1.1 404 Not Found"
+    ]
+  },
+  {
+    "case_id": "case_000108",
+    "status": "no_trigger",
+    "http_status": "HTTP/1.1 404 Not Found",
+    "container_exit": "running 0",
+    "elapsed_ms": 898,
+    "docker_name": "rift-exp-case_000108-dtb951j4",
+    "evidence": [
+      "trigger returned HTTP/1.1 404 Not Found"
+    ]
+  },
+  {
+    "case_id": "case_000109",
+    "status": "no_trigger",
+    "http_status": "HTTP/1.1 404 Not Found",
+    "container_exit": "running 0",
+    "elapsed_ms": 837,
+    "docker_name": "rift-exp-case_000109-4yo3nc37",
+    "evidence": [
+      "trigger returned HTTP/1.1 404 Not Found"
+    ]
+  },
+  {
+    "case_id": "case_000110",
+    "status": "no_trigger",
+    "http_status": "HTTP/1.1 404 Not Found",
+    "container_exit": "running 0",
+    "elapsed_ms": 816,
+    "docker_name": "rift-exp-case_000110-nfxo1gd4",
+    "evidence": [
+      "trigger returned HTTP/1.1 404 Not Found"
+    ]
+  },
+  {
+    "case_id": "case_000111",
+    "status": "no_trigger",
+    "http_status": "HTTP/1.1 404 Not Found",
+    "container_exit": "running 0",
+    "elapsed_ms": 818,
+    "docker_name": "rift-exp-case_000111-vlr7zmwo",
+    "evidence": [
+      "trigger returned HTTP/1.1 404 Not Found"
+    ]
+  },
+  {
+    "case_id": "case_000112",
+    "status": "no_trigger",
+    "http_status": "HTTP/1.1 404 Not Found",
+    "container_exit": "running 0",
+    "elapsed_ms": 786,
+    "docker_name": "rift-exp-case_000112-003er333",
+    "evidence": [
+      "trigger returned HTTP/1.1 404 Not Found"
+    ]
+  },
+  {
+    "case_id": "case_000113",
+    "status": "no_trigger",
+    "http_status": "HTTP/1.1 404 Not Found",
+    "container_exit": "running 0",
+    "elapsed_ms": 4587,
+    "docker_name": "rift-exp-case_000113-a0oukpyy",
+    "evidence": [
+      "trigger returned HTTP/1.1 404 Not Found"
+    ]
+  },
+  {
+    "case_id": "case_000114",
+    "status": "no_trigger",
+    "http_status": "HTTP/1.1 404 Not Found",
+    "container_exit": "running 0",
+    "elapsed_ms": 6119,
+    "docker_name": "rift-exp-case_000114-vwta94e4",
+    "evidence": [
+      "trigger returned HTTP/1.1 404 Not Found"
+    ]
+  },
+  {
+    "case_id": "case_000115",
+    "status": "no_trigger",
+    "http_status": "HTTP/1.1 404 Not Found",
+    "container_exit": "running 0",
+    "elapsed_ms": 8174,
+    "docker_name": "rift-exp-case_000115-76aau3um",
+    "evidence": [
+      "trigger returned HTTP/1.1 404 Not Found"
+    ]
+  },
+  {
+    "case_id": "case_000116",
+    "status": "no_trigger",
+    "http_status": "HTTP/1.1 404 Not Found",
+    "container_exit": "running 0",
+    "elapsed_ms": 7616,
+    "docker_name": "rift-exp-case_000116-19t6wviu",
+    "evidence": [
+      "trigger returned HTTP/1.1 404 Not Found"
+    ]
+  },
+  {
+    "case_id": "case_000117",
+    "status": "no_trigger",
+    "http_status": "HTTP/1.1 404 Not Found",
+    "container_exit": "running 0",
+    "elapsed_ms": 7910,
+    "docker_name": "rift-exp-case_000117-1ljisfhx",
+    "evidence": [
+      "trigger returned HTTP/1.1 404 Not Found"
+    ]
+  },
+  {
+    "case_id": "case_000118",
+    "status": "no_trigger",
+    "http_status": "HTTP/1.1 301 Moved Permanently",
+    "container_exit": "running 0",
+    "elapsed_ms": 7905,
+    "docker_name": "rift-exp-case_000118-4sm16iki",
+    "evidence": [
+      "trigger returned HTTP/1.1 301 Moved Permanently"
+    ]
+  },
+  {
+    "case_id": "case_000119",
+    "status": "asan_hit",
+    "http_status": "no_response",
+    "container_exit": "exited 133",
+    "elapsed_ms": 7868,
+    "docker_name": "rift-exp-case_000119-n0cz5rkv",
+    "evidence": [
+      "AddressSanitizer output observed",
+      "heap-buffer-overflow observed",
+      "container exit/status=exited 133",
+      "trigger connection closed without HTTP response"
+    ]
+  },
+  {
+    "case_id": "case_000120",
+    "status": "asan_hit",
+    "http_status": "no_response",
+    "container_exit": "exited 133",
+    "elapsed_ms": 7829,
+    "docker_name": "rift-exp-case_000120-p14qutl5",
+    "evidence": [
+      "AddressSanitizer output observed",
+      "heap-buffer-overflow observed",
+      "container exit/status=exited 133",
+      "trigger connection closed without HTTP response"
+    ]
+  },
+  {
+    "case_id": "case_000121",
+    "status": "no_trigger",
+    "http_status": "HTTP/1.1 302 Moved Temporarily",
+    "container_exit": "running 0",
+    "elapsed_ms": 6467,
+    "docker_name": "rift-exp-case_000121-qeeej99i",
+    "evidence": [
+      "trigger returned HTTP/1.1 302 Moved Temporarily"
+    ]
+  },
+  {
+    "case_id": "case_000122",
+    "status": "asan_hit",
+    "http_status": "no_response",
+    "container_exit": "exited 133",
+    "elapsed_ms": 6371,
+    "docker_name": "rift-exp-case_000122-eg78xype",
+    "evidence": [
+      "AddressSanitizer output observed",
+      "heap-buffer-overflow observed",
+      "container exit/status=exited 133",
+      "trigger connection closed without HTTP response"
+    ]
+  },
+  {
+    "case_id": "case_000123",
+    "status": "asan_hit",
+    "http_status": "no_response",
+    "container_exit": "exited 133",
+    "elapsed_ms": 2705,
+    "docker_name": "rift-exp-case_000123-27vfc2m9",
+    "evidence": [
+      "AddressSanitizer output observed",
+      "heap-buffer-overflow observed",
+      "container exit/status=exited 133",
+      "trigger connection closed without HTTP response"
+    ]
+  },
+  {
+    "case_id": "case_000124",
+    "status": "asan_hit",
+    "http_status": "no_response",
+    "container_exit": "exited 133",
+    "elapsed_ms": 2246,
+    "docker_name": "rift-exp-case_000124-q1et0ocq",
+    "evidence": [
+      "AddressSanitizer output observed",
+      "heap-buffer-overflow observed",
+      "container exit/status=exited 133",
+      "trigger connection closed without HTTP response"
+    ]
+  },
+  {
+    "case_id": "case_000125",
+    "status": "asan_hit",
+    "http_status": "no_response",
+    "container_exit": "exited 133",
+    "elapsed_ms": 2196,
+    "docker_name": "rift-exp-case_000125-le4rkj5c",
+    "evidence": [
+      "AddressSanitizer output observed",
+      "heap-buffer-overflow observed",
+      "container exit/status=exited 133",
+      "trigger connection closed without HTTP response"
+    ]
+  },
+  {
+    "case_id": "case_000126",
+    "status": "no_trigger",
+    "http_status": "HTTP/1.1 200 OK",
+    "container_exit": "running 0",
+    "elapsed_ms": 2135,
+    "docker_name": "rift-exp-case_000126-k763o750",
+    "evidence": [
+      "trigger returned HTTP/1.1 200 OK"
+    ]
+  },
+  {
+    "case_id": "case_000127",
+    "status": "no_trigger",
+    "http_status": "HTTP/1.1 200 OK",
+    "container_exit": "running 0",
+    "elapsed_ms": 2055,
+    "docker_name": "rift-exp-case_000127-k94k9z62",
+    "evidence": [
+      "trigger returned HTTP/1.1 200 OK"
+    ]
+  },
+  {
+    "case_id": "case_000128",
+    "status": "no_trigger",
+    "http_status": "HTTP/1.1 404 Not Found",
+    "container_exit": "running 0",
+    "elapsed_ms": 1965,
+    "docker_name": "rift-exp-case_000128-a1232ojo",
+    "evidence": [
+      "trigger returned HTTP/1.1 404 Not Found"
+    ]
+  },
+  {
+    "case_id": "case_000129",
+    "status": "no_trigger",
+    "http_status": "HTTP/1.1 404 Not Found",
+    "container_exit": "running 0",
+    "elapsed_ms": 2343,
+    "docker_name": "rift-exp-case_000129-go1q82q2",
+    "evidence": [
+      "trigger returned HTTP/1.1 404 Not Found"
+    ]
+  }
+]

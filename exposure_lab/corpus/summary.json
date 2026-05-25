@@ -1,0 +1,40 @@
+{
+  "blocked_case_count": 0,
+  "blocker_counts": {},
+  "case_count": 129,
+  "directive_order_counts": {
+    "rewrite_before_set": 31,
+    "set_before_rewrite": 98
+  },
+  "fetch_failures": {},
+  "generated_at": "2026-05-25T19:01:55.375241+00:00",
+  "location_kind_counts": {
+    "exact": 3,
+    "prefix": 63,
+    "prefix_preferred": 1,
+    "regex": 62
+  },
+  "privacy": {
+    "stores_raw_public_config": false,
+    "stores_repo_names": false,
+    "stores_repo_urls": false,
+    "stores_source_paths": false
+  },
+  "publicish_case_count": 129,
+  "rewrite_flag_counts": {
+    "break": 50,
+    "last": 18,
+    "none": 31,
+    "permanent": 26,
+    "redirect": 4
+  },
+  "schema_version": 1,
+  "search_stats": {
+    "capped_partitions": 0,
+    "dedup_items": 3820,
+    "queries": 187,
+    "result_items": 9040,
+    "search_errors": 0
+  },
+  "unique_semantic_fingerprint_count": 80
+}
