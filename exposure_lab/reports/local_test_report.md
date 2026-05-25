@@ -1,6 +1,6 @@
 # Rift Local Exposure Lab Report
 
-Generated: 2026-05-25T19:08:00.136093+00:00
+Generated: 2026-05-25T19:12:22.683424+00:00
 
 ## Scope
 
@@ -26,7 +26,7 @@ image. It is not proof of deployment or full RCE for any public system.
 
 | Parameter | Value |
 | --- | --- |
-| Docker image | `rift-exposure-nginx:asan` |
+| Docker image | `rift-exposure-nginx:asan-amd64` |
 | Parallel containers | 10 |
 | Trigger payload length | 8192 plus signs |
 | Cases tested | 129 |
@@ -83,23 +83,23 @@ By rewrite flag:
 | `case_000009` | `no_trigger` | `HTTP/1.1 404 Not Found` | `running 0` | trigger returned HTTP/1.1 404 Not Found |
 | `case_000010` | `no_trigger` | `HTTP/1.1 404 Not Found` | `running 0` | trigger returned HTTP/1.1 404 Not Found |
 | `case_000011` | `no_trigger` | `HTTP/1.1 200 OK` | `running 0` | trigger returned HTTP/1.1 200 OK |
-| `case_000012` | `asan_hit` | `no_response` | `exited 133` | AddressSanitizer output observed; heap-buffer-overflow observed; container exit/status=exited 133; trigger connection closed without HTTP response |
+| `case_000012` | `asan_hit` | `no_response` | `exited 1` | AddressSanitizer output observed; heap-buffer-overflow observed; container exit/status=exited 1; trigger connection closed without HTTP response |
 | `case_000013` | `no_trigger` | `HTTP/1.1 404 Not Found` | `running 0` | trigger returned HTTP/1.1 404 Not Found |
 | `case_000014` | `no_trigger` | `HTTP/1.1 404 Not Found` | `running 0` | trigger returned HTTP/1.1 404 Not Found |
 | `case_000015` | `no_trigger` | `HTTP/1.1 301 Moved Permanently` | `running 0` | trigger returned HTTP/1.1 301 Moved Permanently |
-| `case_000016` | `asan_hit` | `no_response` | `exited 133` | AddressSanitizer output observed; heap-buffer-overflow observed; container exit/status=exited 133; trigger connection closed without HTTP response |
-| `case_000017` | `asan_hit` | `no_response` | `exited 133` | AddressSanitizer output observed; heap-buffer-overflow observed; container exit/status=exited 133; trigger connection closed without HTTP response |
-| `case_000018` | `asan_hit` | `no_response` | `exited 133` | AddressSanitizer output observed; heap-buffer-overflow observed; container exit/status=exited 133; trigger connection closed without HTTP response |
-| `case_000019` | `asan_hit` | `no_response` | `exited 133` | AddressSanitizer output observed; heap-buffer-overflow observed; container exit/status=exited 133; trigger connection closed without HTTP response |
-| `case_000020` | `asan_hit` | `no_response` | `exited 133` | AddressSanitizer output observed; heap-buffer-overflow observed; container exit/status=exited 133; trigger connection closed without HTTP response |
-| `case_000021` | `asan_hit` | `no_response` | `exited 133` | AddressSanitizer output observed; heap-buffer-overflow observed; container exit/status=exited 133; trigger connection closed without HTTP response |
-| `case_000022` | `asan_hit` | `no_response` | `exited 133` | AddressSanitizer output observed; heap-buffer-overflow observed; container exit/status=exited 133; trigger connection closed without HTTP response |
-| `case_000023` | `asan_hit` | `no_response` | `exited 133` | AddressSanitizer output observed; heap-buffer-overflow observed; container exit/status=exited 133; trigger connection closed without HTTP response |
-| `case_000024` | `asan_hit` | `no_response` | `exited 133` | AddressSanitizer output observed; heap-buffer-overflow observed; container exit/status=exited 133; trigger connection closed without HTTP response |
-| `case_000025` | `asan_hit` | `no_response` | `exited 133` | AddressSanitizer output observed; heap-buffer-overflow observed; container exit/status=exited 133; trigger connection closed without HTTP response |
+| `case_000016` | `asan_hit` | `no_response` | `exited 1` | AddressSanitizer output observed; heap-buffer-overflow observed; container exit/status=exited 1; trigger connection closed without HTTP response |
+| `case_000017` | `asan_hit` | `no_response` | `exited 1` | AddressSanitizer output observed; heap-buffer-overflow observed; container exit/status=exited 1; trigger connection closed without HTTP response |
+| `case_000018` | `asan_hit` | `no_response` | `exited 1` | AddressSanitizer output observed; heap-buffer-overflow observed; container exit/status=exited 1; trigger connection closed without HTTP response |
+| `case_000019` | `asan_hit` | `no_response` | `exited 1` | AddressSanitizer output observed; heap-buffer-overflow observed; container exit/status=exited 1; trigger connection closed without HTTP response |
+| `case_000020` | `asan_hit` | `no_response` | `exited 1` | AddressSanitizer output observed; heap-buffer-overflow observed; container exit/status=exited 1; trigger connection closed without HTTP response |
+| `case_000021` | `asan_hit` | `no_response` | `exited 1` | AddressSanitizer output observed; heap-buffer-overflow observed; container exit/status=exited 1; trigger connection closed without HTTP response |
+| `case_000022` | `asan_hit` | `no_response` | `exited 1` | AddressSanitizer output observed; heap-buffer-overflow observed; container exit/status=exited 1; trigger connection closed without HTTP response |
+| `case_000023` | `asan_hit` | `no_response` | `exited 1` | AddressSanitizer output observed; heap-buffer-overflow observed; container exit/status=exited 1; trigger connection closed without HTTP response |
+| `case_000024` | `asan_hit` | `no_response` | `exited 1` | AddressSanitizer output observed; heap-buffer-overflow observed; container exit/status=exited 1; trigger connection closed without HTTP response |
+| `case_000025` | `asan_hit` | `no_response` | `exited 1` | AddressSanitizer output observed; heap-buffer-overflow observed; container exit/status=exited 1; trigger connection closed without HTTP response |
 | `case_000026` | `no_trigger` | `HTTP/1.1 404 Not Found` | `running 0` | trigger returned HTTP/1.1 404 Not Found |
-| `case_000027` | `asan_hit` | `no_response` | `exited 133` | AddressSanitizer output observed; heap-buffer-overflow observed; container exit/status=exited 133; trigger connection closed without HTTP response |
-| `case_000028` | `asan_hit` | `no_response` | `exited 133` | AddressSanitizer output observed; heap-buffer-overflow observed; container exit/status=exited 133; trigger connection closed without HTTP response |
+| `case_000027` | `asan_hit` | `no_response` | `exited 1` | AddressSanitizer output observed; heap-buffer-overflow observed; container exit/status=exited 1; trigger connection closed without HTTP response |
+| `case_000028` | `asan_hit` | `no_response` | `exited 1` | AddressSanitizer output observed; heap-buffer-overflow observed; container exit/status=exited 1; trigger connection closed without HTTP response |
 | `case_000029` | `no_trigger` | `HTTP/1.1 301 Moved Permanently` | `running 0` | trigger returned HTTP/1.1 301 Moved Permanently |
 | `case_000030` | `no_trigger` | `HTTP/1.1 301 Moved Permanently` | `running 0` | trigger returned HTTP/1.1 301 Moved Permanently |
 | `case_000031` | `no_trigger` | `HTTP/1.1 301 Moved Permanently` | `running 0` | trigger returned HTTP/1.1 301 Moved Permanently |
@@ -117,14 +117,14 @@ By rewrite flag:
 | `case_000043` | `no_trigger` | `HTTP/1.1 301 Moved Permanently` | `running 0` | trigger returned HTTP/1.1 301 Moved Permanently |
 | `case_000044` | `no_trigger` | `HTTP/1.1 301 Moved Permanently` | `running 0` | trigger returned HTTP/1.1 301 Moved Permanently |
 | `case_000045` | `no_trigger` | `HTTP/1.1 301 Moved Permanently` | `running 0` | trigger returned HTTP/1.1 301 Moved Permanently |
-| `case_000046` | `asan_hit` | `no_response` | `exited 133` | AddressSanitizer output observed; heap-buffer-overflow observed; container exit/status=exited 133; trigger connection closed without HTTP response |
+| `case_000046` | `asan_hit` | `no_response` | `exited 1` | AddressSanitizer output observed; heap-buffer-overflow observed; container exit/status=exited 1; trigger connection closed without HTTP response |
 | `case_000047` | `no_trigger` | `HTTP/1.1 301 Moved Permanently` | `running 0` | trigger returned HTTP/1.1 301 Moved Permanently |
 | `case_000048` | `no_trigger` | `HTTP/1.1 301 Moved Permanently` | `running 0` | trigger returned HTTP/1.1 301 Moved Permanently |
 | `case_000049` | `no_trigger` | `HTTP/1.1 301 Moved Permanently` | `running 0` | trigger returned HTTP/1.1 301 Moved Permanently |
 | `case_000050` | `no_trigger` | `HTTP/1.1 301 Moved Permanently` | `running 0` | trigger returned HTTP/1.1 301 Moved Permanently |
-| `case_000051` | `asan_hit` | `no_response` | `exited 133` | AddressSanitizer output observed; heap-buffer-overflow observed; container exit/status=exited 133; trigger connection closed without HTTP response |
-| `case_000052` | `asan_hit` | `no_response` | `exited 133` | AddressSanitizer output observed; heap-buffer-overflow observed; container exit/status=exited 133; trigger connection closed without HTTP response |
-| `case_000053` | `asan_hit` | `no_response` | `exited 133` | AddressSanitizer output observed; heap-buffer-overflow observed; container exit/status=exited 133; trigger connection closed without HTTP response |
+| `case_000051` | `asan_hit` | `no_response` | `exited 1` | AddressSanitizer output observed; heap-buffer-overflow observed; container exit/status=exited 1; trigger connection closed without HTTP response |
+| `case_000052` | `asan_hit` | `no_response` | `exited 1` | AddressSanitizer output observed; heap-buffer-overflow observed; container exit/status=exited 1; trigger connection closed without HTTP response |
+| `case_000053` | `asan_hit` | `no_response` | `exited 1` | AddressSanitizer output observed; heap-buffer-overflow observed; container exit/status=exited 1; trigger connection closed without HTTP response |
 | `case_000054` | `no_trigger` | `HTTP/1.1 301 Moved Permanently` | `running 0` | trigger returned HTTP/1.1 301 Moved Permanently |
 | `case_000055` | `no_trigger` | `HTTP/1.1 301 Moved Permanently` | `running 0` | trigger returned HTTP/1.1 301 Moved Permanently |
 | `case_000056` | `no_trigger` | `HTTP/1.1 302 Moved Temporarily` | `running 0` | trigger returned HTTP/1.1 302 Moved Temporarily |
@@ -190,13 +190,13 @@ By rewrite flag:
 | `case_000116` | `no_trigger` | `HTTP/1.1 404 Not Found` | `running 0` | trigger returned HTTP/1.1 404 Not Found |
 | `case_000117` | `no_trigger` | `HTTP/1.1 404 Not Found` | `running 0` | trigger returned HTTP/1.1 404 Not Found |
 | `case_000118` | `no_trigger` | `HTTP/1.1 301 Moved Permanently` | `running 0` | trigger returned HTTP/1.1 301 Moved Permanently |
-| `case_000119` | `asan_hit` | `no_response` | `exited 133` | AddressSanitizer output observed; heap-buffer-overflow observed; container exit/status=exited 133; trigger connection closed without HTTP response |
-| `case_000120` | `asan_hit` | `no_response` | `exited 133` | AddressSanitizer output observed; heap-buffer-overflow observed; container exit/status=exited 133; trigger connection closed without HTTP response |
+| `case_000119` | `asan_hit` | `no_response` | `exited 1` | AddressSanitizer output observed; heap-buffer-overflow observed; container exit/status=exited 1; trigger connection closed without HTTP response |
+| `case_000120` | `asan_hit` | `no_response` | `exited 1` | AddressSanitizer output observed; heap-buffer-overflow observed; container exit/status=exited 1; trigger connection closed without HTTP response |
 | `case_000121` | `no_trigger` | `HTTP/1.1 302 Moved Temporarily` | `running 0` | trigger returned HTTP/1.1 302 Moved Temporarily |
-| `case_000122` | `asan_hit` | `no_response` | `exited 133` | AddressSanitizer output observed; heap-buffer-overflow observed; container exit/status=exited 133; trigger connection closed without HTTP response |
-| `case_000123` | `asan_hit` | `no_response` | `exited 133` | AddressSanitizer output observed; heap-buffer-overflow observed; container exit/status=exited 133; trigger connection closed without HTTP response |
-| `case_000124` | `asan_hit` | `no_response` | `exited 133` | AddressSanitizer output observed; heap-buffer-overflow observed; container exit/status=exited 133; trigger connection closed without HTTP response |
-| `case_000125` | `asan_hit` | `no_response` | `exited 133` | AddressSanitizer output observed; heap-buffer-overflow observed; container exit/status=exited 133; trigger connection closed without HTTP response |
+| `case_000122` | `asan_hit` | `no_response` | `exited 1` | AddressSanitizer output observed; heap-buffer-overflow observed; container exit/status=exited 1; trigger connection closed without HTTP response |
+| `case_000123` | `asan_hit` | `no_response` | `exited 1` | AddressSanitizer output observed; heap-buffer-overflow observed; container exit/status=exited 1; trigger connection closed without HTTP response |
+| `case_000124` | `asan_hit` | `no_response` | `exited 1` | AddressSanitizer output observed; heap-buffer-overflow observed; container exit/status=exited 1; trigger connection closed without HTTP response |
+| `case_000125` | `asan_hit` | `no_response` | `exited 1` | AddressSanitizer output observed; heap-buffer-overflow observed; container exit/status=exited 1; trigger connection closed without HTTP response |
 | `case_000126` | `no_trigger` | `HTTP/1.1 200 OK` | `running 0` | trigger returned HTTP/1.1 200 OK |
 | `case_000127` | `no_trigger` | `HTTP/1.1 200 OK` | `running 0` | trigger returned HTTP/1.1 200 OK |
 | `case_000128` | `no_trigger` | `HTTP/1.1 404 Not Found` | `running 0` | trigger returned HTTP/1.1 404 Not Found |

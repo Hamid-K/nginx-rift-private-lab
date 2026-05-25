@@ -27,7 +27,7 @@ RCE-exploitable.
 Build the local target image:
 
 ```bash
-docker build -t rift-exposure-nginx:asan exposure_lab
+docker build --platform linux/amd64 -t rift-exposure-nginx:asan exposure_lab
 ```
 
 Build a sanitized corpus from GitHub code search:
@@ -61,7 +61,8 @@ Generated outputs:
 
 The committed run generated 129 sanitized publicish local cases from 3,820
 deduplicated GitHub candidate references. The local Docker run tested all 129
-cases with `--parallel 10` and observed 23 ASAN heap-buffer-overflow hits.
+cases with `--parallel 10` on an amd64 ASAN/debug-palloc NGINX image and
+observed 23 ASAN heap-buffer-overflow hits.
 
 Cases marked `no_trigger` are still useful for risk analysis: the static
 ingredients were present in the same location block, but the generated

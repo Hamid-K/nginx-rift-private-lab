@@ -23,3 +23,7 @@
   cases with 80 unique sanitized semantic fingerprints.
 - Full local Docker run tested all 129 cases with 10-way parallelism. Results:
   23 `asan_hit`, 106 `no_trigger`.
+- Final verification used an amd64 ASAN/debug-palloc NGINX image. The portable
+  Dockerfile can be built with `--platform linux/amd64`; on this Docker Desktop
+  host, the direct Ubuntu amd64 build hit an apt signature failure, so the amd64
+  verification image was derived locally from the existing amd64 Rift lab base.
